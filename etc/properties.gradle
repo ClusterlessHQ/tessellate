@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2017 Chris K Wensel <chris@wensel.net>. All Rights Reserved.
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
+if( project.properties[ 'teamcity' ] ) // make them system properties
+  System.properties.putAll( project.properties[ 'teamcity' ] )
+
+if( System.properties[ 'aws.properties' ] )
+  {
+  file( System.properties[ 'aws.properties' ] ).withReader {
+    reader ->
+      def awsProperties = new Properties()
+      awsProperties.load( reader )
+      System.properties.putAll( awsProperties )
+  }
+  }
+
+ext.repoUrl = 'http://conjars.org/repo/'
+ext.repoUserName = System.properties[ 'publish.repo.userName' ]
+ext.repoPassword = System.properties[ 'publish.repo.password' ]
+
+if( System.properties[ 'publish.repo.url' ] )
+  repoUrl = System.properties[ 'publish.repo.url' ]
+
+ext.awsAccessId = System.properties[ 'publish.aws.accessId' ]
+ext.awsSecretKey = System.properties[ 'publish.aws.secretKey' ]
+ext.s3Bucket = System.properties[ 'publish.bucket' ]
+ext.s3BucketDocs = System.properties[ 'publish.docs.bucket' ]
