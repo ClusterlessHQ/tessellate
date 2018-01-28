@@ -8,7 +8,6 @@
 
 package heretical.s3.sync;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.TimeZone;
 
@@ -44,29 +43,29 @@ public class Main
   public static final Fields LINE = new Fields( "line", String.class );
   public static final Fields KEY_LINE = KEY.append( LINE );
 
-  public static void main( String[] args ) throws IOException
+  public static void main( String[] args )
     {
-    if( args.length < 3 )
+    Options options = new Options();
+
+    if( !options.parse( args ) )
       return;
 
-    System.out.println( "source s3 uri = " + args[ 0 ] );
-    System.out.println( "sink file path = " + args[ 2 ] );
+    System.out.println( "source s3 uri = " + options.getInput() );
+    System.out.println( "sink path = " + options.getOutput() );
 
-    if( args.length == 4 )
-      System.out.println( "checkpoint file path = " + args[ 3 ] );
+    if( options.hasInputCheckpoint() )
+      System.out.println( "checkpoint file path = " + options.getInputCheckpoint() );
 
     // read from an S3 bucket
     // optionally restart where a previous run left off
-    S3FileCheckpointer checkpointer = args.length == 4 ? new S3FileCheckpointer() : new S3FileCheckpointer( args[ 3 ] );
-    Tap inputTap = new S3Tap( new TextLine(), checkpointer, URI.create( args[ 0 ] ) );
-
-    // write and read from a Kafka queue
+    S3FileCheckpointer checkpointer = options.hasInputCheckpoint() ? new S3FileCheckpointer( options.getInputCheckpoint() ) : new S3FileCheckpointer();
+    Tap inputTap = new S3Tap( new TextLine(), checkpointer, URI.create( options.getInput() ) );
 
     // write to disk, using log data to create the directory structure
     // if file exists, append to it -- we aren't duplicating s3 reads so this is safe
     DelimitedPartition partitioner = new DelimitedPartition( KEY.append( S3Logs.OPERATION ), "/", "logs.csv" );
     Tap outputTap = new PartitionTap(
-      new DirTap( new TextDelimited( true, ",", "\"" ), args[ 2 ], SinkMode.UPDATE ), partitioner
+      new DirTap( new TextDelimited( true, ",", "\"" ), options.getOutput(), SinkMode.UPDATE ), partitioner
     );
 
     Pipe pipe = new Pipe( "head" );
@@ -91,10 +90,9 @@ public class Main
       .addTail( pipe )
     );
 
-    // start reading from the Kafka queue and writing to the directory as ./[dd-MMM-yyyy]/[S3 operation]/logs.csv
     syncFlow.start();
 
     syncFlow.complete();
-    System.out.println( "completed egress" );
+    System.out.println( "completed" );
     }
   }

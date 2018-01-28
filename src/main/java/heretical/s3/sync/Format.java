@@ -6,16 +6,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-configurations.all {
-  resolutionStrategy.cacheDynamicVersionsFor 5, 'minutes'
-}
+package heretical.s3.sync;
 
-ext.cascadingVersion = '4.0.0-wip-34'
-ext.cascadingLocals3 = '1.0.0-wip-2'
-
-ext.joptVersion = '5.0.3'
-
-ext.junitVersion = '4.12'
-ext.log4jVersion = '1.2.17'
-ext.slf4jVersion = '1.7.5'
-
+/**
+ *
+ */
+public enum Format
+  {
+  csv,tsv,json
+  }

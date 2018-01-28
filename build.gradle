@@ -60,14 +60,13 @@ configurations {
 
 dependencies {
   compile group: 'cascading', name: 'cascading-local-s3', version: cascadingLocals3
-
   compile group: 'cascading', name: 'cascading-local', version: cascadingVersion, changing: true
 
-  compile group: 'org.slf4j', name: 'slf4j-api', version: slf4jVersion
+  compile group: 'net.sf.jopt-simple', name: 'jopt-simple', version: joptVersion
 
+  compile group: 'org.slf4j', name: 'slf4j-api', version: slf4jVersion
   compile group: 'org.slf4j', name: 'slf4j-log4j12', version: slf4jVersion
   compile group: 'log4j', name: 'log4j', version: log4jVersion
-
   compile group: 'org.slf4j', name: 'slf4j-api', version: slf4jVersion
 }
 
