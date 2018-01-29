@@ -15,20 +15,18 @@ import cascading.flow.Flow;
 import cascading.flow.local.LocalFlowConnector;
 import cascading.local.tap.aws.s3.S3FileCheckpointer;
 import cascading.local.tap.aws.s3.S3Tap;
+import cascading.nested.json.JSONCreateFunction;
 import cascading.operation.Debug;
 import cascading.operation.regex.RegexParser;
+import cascading.operation.regex.RegexReplace;
 import cascading.operation.text.DateFormatter;
 import cascading.pipe.Each;
 import cascading.pipe.Pipe;
-import cascading.scheme.local.TextDelimited;
 import cascading.scheme.local.TextLine;
-import cascading.tap.SinkMode;
 import cascading.tap.Tap;
-import cascading.tap.local.DirTap;
-import cascading.tap.local.PartitionTap;
-import cascading.tap.partition.DelimitedPartition;
 import cascading.tuple.Fields;
 import cascading.tuple.type.DateType;
+import heretical.s3.sync.factory.TapFactories;
 
 import static cascading.flow.FlowDef.flowDef;
 
@@ -37,11 +35,21 @@ import static cascading.flow.FlowDef.flowDef;
 public class Main
   {
   public static final String DD_MMM_YYYY = "dd-MMM-yyyy";
+  public static final String DD = "dd";
+  public static final String MMM = "MMM";
+  public static final String YYYY = "yyyy";
   public static final TimeZone UTC = TimeZone.getTimeZone( "UTC" );
-  public static final DateType DMY = new DateType( DD_MMM_YYYY, UTC );
-  public static final Fields KEY = new Fields( "date", DMY );
-  public static final Fields LINE = new Fields( "line", String.class );
-  public static final Fields KEY_LINE = KEY.append( LINE );
+  public static final DateType DMY_TYPE = new DateType( DD_MMM_YYYY, UTC );
+
+  public static final DateType Y_TYPE = new DateType( YYYY, UTC );
+  public static final DateType M_TYPE = new DateType( MMM, UTC );
+  public static final DateType D_TYPE = new DateType( DD, UTC );
+
+  public static final Fields DAY = new Fields( "day", D_TYPE );
+  public static final Fields MONTH = new Fields( "month", M_TYPE );
+  public static final Fields YEAR = new Fields( "year", Y_TYPE );
+  public static final Fields KEY_CLEAN = new Fields( "key-clean", String.class );
+  public static final Fields JSON = new Fields( "json" );
 
   public static void main( String[] args )
     {
@@ -61,27 +69,20 @@ public class Main
     S3FileCheckpointer checkpointer = options.hasInputCheckpoint() ? new S3FileCheckpointer( options.getInputCheckpoint() ) : new S3FileCheckpointer();
     Tap inputTap = new S3Tap( new TextLine(), checkpointer, URI.create( options.getInput() ) );
 
-    // write to disk, using log data to create the directory structure
-    // if file exists, append to it -- we aren't duplicating s3 reads so this is safe
-    DelimitedPartition partitioner = new DelimitedPartition( KEY.append( S3Logs.OPERATION ), "/", "logs.csv" );
-    Tap outputTap = new PartitionTap(
-      new DirTap( new TextDelimited( true, ",", "\"" ), options.getOutput(), SinkMode.UPDATE ), partitioner
-    );
+    Fields partitionKey = YEAR.append( MONTH ).append( DAY );
 
-    Pipe pipe = new Pipe( "head" );
+    if( options.isPartitionOnKey() )
+      partitionKey = partitionKey.append( KEY_CLEAN );
 
-    // extract the log timestamp and reduce to day/month/year for use as the queue key
-    pipe = new Each( pipe, new Fields( "line" ), new RegexParser( S3Logs.TIME, S3Logs.REGEX, 3 ), new Fields( "time", "line" ) );
-    pipe = new Each( pipe, S3Logs.TIME, new DateFormatter( KEY, DD_MMM_YYYY, UTC ), KEY_LINE );
+    Fields sinkFields = S3Logs.FIELDS;
 
-    // watch the progress on the console
-    pipe = new Each( pipe, new Debug( true ) );
+    if( options.getOutputFormat() == Format.json )
+      sinkFields = JSON;
 
-    // parse the full log into its fields and primitive values -- S3Logs.FIELDS declard field names and field types
-    pipe = new Each( pipe, new Fields( "line" ), new RegexParser( S3Logs.FIELDS, S3Logs.REGEX ), KEY.append( S3Logs.FIELDS ) );
+    Tap outputTap = TapFactories.getSinkFactory( options.getOutput() )
+      .getSink( options.getOutput(), options.getOutputFormat(), partitionKey, sinkFields );
 
-    // watch the progress on the console
-    pipe = new Each( pipe, new Debug( true ) );
+    Pipe pipe = createPipeline( options );
 
     Flow syncFlow = new LocalFlowConnector().connect( flowDef()
       .setName( "egress" )
@@ -90,9 +91,36 @@ public class Main
       .addTail( pipe )
     );
 
-    syncFlow.start();
-
     syncFlow.complete();
     System.out.println( "completed" );
+    }
+
+  private static Pipe createPipeline( Options options )
+    {
+    Pipe pipe = new Pipe( "head" );
+
+    // watch the progress on the console
+    if( options.isDebugStream() )
+      pipe = new Each( pipe, new Debug( true ) );
+
+    // parse the full log into its fields and primitive values -- S3Logs.FIELDS declared field names and field types
+    pipe = new Each( pipe, new Fields( "line" ), new RegexParser( S3Logs.FIELDS, S3Logs.REGEX ), Fields.RESULTS );
+
+    // watch the progress on the console
+    if( options.isDebugStream() )
+      pipe = new Each( pipe, new Debug( true ) );
+
+    // create partition key
+    pipe = new Each( pipe, S3Logs.TIME, new DateFormatter( DAY, DD, UTC ), Fields.ALL );
+    pipe = new Each( pipe, S3Logs.TIME, new DateFormatter( MONTH, MMM, UTC ), Fields.ALL );
+    pipe = new Each( pipe, S3Logs.TIME, new DateFormatter( YEAR, YYYY, UTC ), Fields.ALL );
+
+    if( options.isPartitionOnKey() )
+      pipe = new Each( pipe, S3Logs.KEY, new RegexReplace( KEY_CLEAN, "/", "-" ), Fields.ALL );
+
+    if( options.getOutputFormat() == Format.json )
+      pipe = new Each( pipe, S3Logs.FIELDS, new JSONCreateFunction( JSON ), Fields.ALL );
+
+    return pipe;
     }
   }

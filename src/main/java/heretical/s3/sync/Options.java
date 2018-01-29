@@ -13,6 +13,7 @@ import joptsimple.BuiltinHelpFormatter;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
+import joptsimple.OptionSpecBuilder;
 
 /**
  *
@@ -23,10 +24,12 @@ public class Options
   private OptionSet optionSet;
 
   private final OptionSpec<Integer> displayWidth;
+  private final OptionSpecBuilder debugStream;
   private final OptionSpec<String> input;
   private final OptionSpec<String> inputCheckpoint;
   private final OptionSpec<String> output;
   private final OptionSpec<Format> outputFormat;
+  private final OptionSpecBuilder partitionOnKey;
 
   public Options()
     {
@@ -38,6 +41,8 @@ public class Options
       .withRequiredArg()
       .ofType( Integer.class )
       .defaultsTo( 80 );
+
+    debugStream = parser.accepts( "debug-stream" );
 
     input = parser.accepts( "input" )
       .withRequiredArg()
@@ -55,6 +60,8 @@ public class Options
       .withRequiredArg()
       .ofType( Format.class )
       .withValuesConvertedBy( new EnumInsensitiveConverter<>( Format.class, false ) );
+
+    partitionOnKey = parser.accepts( "partition-on-key" );
     }
 
   public boolean parse( String[] args )
@@ -69,6 +76,11 @@ public class Options
       }
 
     return optionSet != null;
+    }
+
+  public boolean isDebugStream()
+    {
+    return optionSet.has( debugStream );
     }
 
   public String getInput()
@@ -89,5 +101,15 @@ public class Options
   public String getOutput()
     {
     return output.value( optionSet );
+    }
+
+  public Format getOutputFormat()
+    {
+    return outputFormat.value( optionSet );
+    }
+
+  public boolean isPartitionOnKey()
+    {
+    return optionSet.has( partitionOnKey );
     }
   }

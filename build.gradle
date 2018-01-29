@@ -61,6 +61,7 @@ configurations {
 dependencies {
   compile group: 'cascading', name: 'cascading-local-s3', version: cascadingLocals3
   compile group: 'cascading', name: 'cascading-local', version: cascadingVersion, changing: true
+  compile group: 'cascading', name: 'cascading-nested-json', version: cascadingVersion, changing: true
 
   compile group: 'net.sf.jopt-simple', name: 'jopt-simple', version: joptVersion
 
