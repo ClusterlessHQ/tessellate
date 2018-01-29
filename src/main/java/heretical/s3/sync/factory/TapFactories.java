@@ -22,6 +22,7 @@ public class TapFactories
   static
     {
     sinkFactories.put( PartitionSinkFactory.INSTANCE.getProtocol(), PartitionSinkFactory.INSTANCE );
+    sinkFactories.put( ESSinkFactory.INSTANCE.getProtocol(), ESSinkFactory.INSTANCE );
     }
 
   public static SinkFactory getSinkFactory( String url )

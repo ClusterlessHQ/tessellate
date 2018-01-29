@@ -63,6 +63,15 @@ dependencies {
   compile group: 'cascading', name: 'cascading-local', version: cascadingVersion, changing: true
   compile group: 'cascading', name: 'cascading-nested-json', version: cascadingVersion, changing: true
 
+  compile group: 'org.elasticsearch', name: 'elasticsearch-hadoop-cascading', version: elasticSearchVersion
+
+  // required by ES libs
+//  compile group: 'org.elasticsearch', name: 'elasticsearch', version: elasticSearchVersion
+  compile 'commons-httpclient:commons-httpclient:3.0.1'
+  compile group: 'commons-logging', name: 'commons-logging', version: '1.1.1'  // required by ES
+  compile "org.codehaus.jackson:jackson-mapper-asl:1.8.8"
+  compile "org.codehaus.jackson:jackson-core-asl:1.8.8"
+
   compile group: 'net.sf.jopt-simple', name: 'jopt-simple', version: joptVersion
 
   compile group: 'org.slf4j', name: 'slf4j-api', version: slf4jVersion
