@@ -11,7 +11,7 @@ configurations.all {
 }
 
 ext.cascadingVersion = '4.0.0-wip-34'
-ext.cascadingLocals3 = '1.0.0-wip-2'
+ext.cascadingLocals3 = '1.0.0-wip-3'
 
 ext.elasticSearchVersion = '6.1.2'
 
