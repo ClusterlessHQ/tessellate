@@ -66,7 +66,6 @@ dependencies {
   compile group: 'org.elasticsearch', name: 'elasticsearch-hadoop-cascading', version: elasticSearchVersion
 
   // required by ES libs
-//  compile group: 'org.elasticsearch', name: 'elasticsearch', version: elasticSearchVersion
   compile 'commons-httpclient:commons-httpclient:3.0.1'
   compile group: 'commons-logging', name: 'commons-logging', version: '1.1.1'  // required by ES
   compile "org.codehaus.jackson:jackson-mapper-asl:1.8.8"
@@ -78,6 +77,12 @@ dependencies {
   compile group: 'org.slf4j', name: 'slf4j-log4j12', version: slf4jVersion
   compile group: 'log4j', name: 'log4j', version: log4jVersion
   compile group: 'org.slf4j', name: 'slf4j-api', version: slf4jVersion
+}
+
+jar {
+  manifest {
+    attributes( "Main-Class": "heretical/s3/sync/Main" )
+  }
 }
 
 javadoc.dependsOn << prepareDist
@@ -99,36 +104,6 @@ javadoc {
       'http://junit.sourceforge.net/javadoc/'
     ]
   }
-}
-
-task sourcesJar( type: Jar, dependsOn: classes ) {
-  from sourceSets.main.allSource
-  classifier = 'sources'
-}
-
-task javadocJar( type: Jar, dependsOn: javadoc ) {
-  classifier = 'javadoc'
-  from javadoc.destinationDir
-}
-
-task testsJar( type: Jar, dependsOn: testClasses ) {
-  from sourceSets.test.output
-  classifier = 'tests'
-}
-
-task testSourcesJar( type: Jar, dependsOn: classes ) {
-  from sourceSets.test.allSource
-  classifier = 'test-sources'
-}
-
-artifacts {
-  archives jar
-  archives sourcesJar
-  archives javadocJar
-  archives testsJar
-  archives testSourcesJar
-  testArtifacts testsJar
-  testArtifacts testSourcesJar
 }
 
 dependencies {
@@ -155,62 +130,6 @@ assemble.doLast {
   copy {
     into distDir
     from configurations.default.allArtifacts.files
-  }
-}
-
-uploadArchives {
-
-  def deployer = repositories.mavenDeployer {
-    configuration = configurations.archives
-
-    repository( url: repoUrl ) {
-      authentication( userName: repoUserName, password: repoPassword )
-    }
-
-    pom.project {
-      description 'An API for data management, analytics, and machine learning on parallel computing clusters.'
-      inceptionYear '2017'
-      url 'http://cascading.org/'
-      scm {
-        url 'https://github.com/cwensel/cascading-local.git'
-      }
-      licenses {
-        license {
-          name 'Mozilla Public License, v. 2.0'
-          url 'http://mozilla.org/MPL/2.0/'
-          distribution 'repo'
-        }
-      }
-    }
-  }
-  // make sure test dependencies come first, so that maven isn't getting
-  // confused, when reading the generated pom
-  [install.repositories.mavenInstaller, deployer]*.pom*.whenConfigured {pom ->
-    def scopeOrder = [test: 1, runtime: 2, provided: 3, compile: 4].withDefault {100}
-    pom.dependencies = pom.dependencies.sort {scopeOrder[ it.scope ]}
-  }
-}
-
-task allJavadoc( type: Javadoc, dependsOn: subprojects.javadoc ) {
-
-  def copyright = '<i>Copyright &#169; 2017 Chris K Wensel. All Rights Reserved.</i>'
-
-  title = "Cascading ${releaseVersion}"
-  destinationDir = file( "${distDir}/javadoc/all/" )
-
-  source subprojects.javadoc.source
-  classpath = rootProject.files( subprojects.javadoc.classpath )
-
-  failOnError = false
-
-  configure( options ) {
-    linkSource = true
-    encoding = "UTF8"
-    bottom = copyright
-    links = [
-      'http://docs.oracle.com/javase/7/docs/api/',
-      'http://junit.sourceforge.net/javadoc/'
-    ]
   }
 }
 
