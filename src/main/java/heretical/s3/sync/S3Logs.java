@@ -15,6 +15,7 @@ import cascading.tuple.coerce.Coercions;
 import cascading.tuple.type.DateType;
 
 /**
+ * https://docs.aws.amazon.com/AmazonS3/latest/dev/LogFormat.html
  */
 public class S3Logs
   {
@@ -26,12 +27,12 @@ public class S3Logs
   public static Fields BUCKET_OWNER = new Fields( "bucketOwner", String.class );
   public static Fields BUCKET = new Fields( "bucket", String.class );
   public static Fields TIME = new Fields( "time", new DateType( "dd/MMM/yyyy:HH:mm:ss Z", TimeZone.getTimeZone( "UTC" ) ) );
-  public static Fields REMOTE_IP_ADDRESS = new Fields( "remoteIpAddress", String.class );
+  public static Fields REMOTE_IP_ADDRESS = new Fields( "remoteIP", String.class );
   public static Fields REQUESTER = new Fields( "requester", CLEAN_STRING );
-  public static Fields REQUEST_ID = new Fields( "requestId", String.class );
+  public static Fields REQUEST_ID = new Fields( "requestID", String.class );
   public static Fields OPERATION = new Fields( "operation", String.class );
   public static Fields KEY = new Fields( "key", CLEAN_STRING );
-  public static Fields REQUEST_URI = new Fields( "requestUri", String.class );
+  public static Fields REQUEST_URI = new Fields( "requestURI", String.class );
   public static Fields HTTP_STATUS = new Fields( "httpStatus", Integer.class );
   public static Fields ERROR_CODE = new Fields( "errorCode", CLEAN_STRING );
   public static Fields BYTES_SENT = new Fields( "bytesSent", CLEAN_LONG );
@@ -40,7 +41,7 @@ public class S3Logs
   public static Fields TURN_AROUND_TIME = new Fields( "turnAroundTime", CLEAN_LONG );
   public static Fields REFERRER = new Fields( "referrer", CLEAN_STRING );
   public static Fields USER_AGENT = new Fields( "userAgent", String.class );
-  public static Fields VERSION_ID = new Fields( "versionId", CLEAN_STRING );
+  public static Fields VERSION_ID = new Fields( "versionID", CLEAN_STRING );
 
   public static final Fields FIELDS = Fields.NONE
     .append( BUCKET_OWNER )

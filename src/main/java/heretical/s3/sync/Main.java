@@ -15,6 +15,7 @@ import cascading.flow.Flow;
 import cascading.flow.local.LocalFlowConnector;
 import cascading.local.tap.aws.s3.S3FileCheckpointer;
 import cascading.local.tap.aws.s3.S3Tap;
+import cascading.nested.json.JSONCoercibleType;
 import cascading.nested.json.JSONCreateFunction;
 import cascading.operation.Debug;
 import cascading.operation.regex.RegexParser;
@@ -22,11 +23,14 @@ import cascading.operation.regex.RegexReplace;
 import cascading.operation.text.DateFormatter;
 import cascading.pipe.Each;
 import cascading.pipe.Pipe;
+import cascading.pipe.assembly.Coerce;
 import cascading.scheme.local.TextLine;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 import cascading.tuple.type.DateType;
 import heretical.s3.sync.factory.TapFactories;
+import heretical.s3.sync.operation.QueryParamsParserFunction;
+import heretical.s3.sync.operation.SourcePathFunction;
 
 import static cascading.flow.FlowDef.flowDef;
 
@@ -48,8 +52,10 @@ public class Main
   public static final Fields DAY = new Fields( "day", D_TYPE );
   public static final Fields MONTH = new Fields( "month", M_TYPE );
   public static final Fields YEAR = new Fields( "year", Y_TYPE );
-  public static final Fields KEY_CLEAN = new Fields( "key-clean", String.class );
-  public static final Fields JSON = new Fields( "json" );
+  public static final Fields KEY_CLEAN = new Fields( "keyClean", String.class );
+  public static final Fields JSON = new Fields( "json", JSONCoercibleType.TYPE );
+  public static final Fields LOG_KEY = new Fields( "logKey", String.class );
+  public static final Fields QUERY_STRING = new Fields( "queryString", JSONCoercibleType.TYPE );
 
   public static void main( String[] args )
     {
@@ -64,6 +70,13 @@ public class Main
     if( options.hasInputCheckpoint() )
       System.out.println( "checkpoint file path = " + options.getInputCheckpoint() );
 
+    Fields sinkFields = LOG_KEY.append( S3Logs.FIELDS );
+
+    if( options.isParseQueryString() )
+      sinkFields = sinkFields.append( QUERY_STRING );
+
+    Pipe pipe = createPipeline( options, sinkFields );
+
     // read from an S3 bucket
     // optionally restart where a previous run left off
     S3FileCheckpointer checkpointer = options.hasInputCheckpoint() ? new S3FileCheckpointer( options.getInputCheckpoint() ) : new S3FileCheckpointer();
@@ -74,15 +87,11 @@ public class Main
     if( options.isPartitionOnKey() )
       partitionKey = partitionKey.append( KEY_CLEAN );
 
-    Fields sinkFields = S3Logs.FIELDS;
-
     if( options.getOutputFormat() == Format.json )
       sinkFields = JSON;
 
     Tap outputTap = TapFactories.getSinkFactory( options.getOutput() )
       .getSink( options.getOutput(), options.getOutputFormat(), partitionKey, sinkFields );
-
-    Pipe pipe = createPipeline( options );
 
     Flow syncFlow = new LocalFlowConnector().connect( flowDef()
       .setName( "egress" )
@@ -95,7 +104,7 @@ public class Main
     System.out.println( "completed" );
     }
 
-  private static Pipe createPipeline( Options options )
+  private static Pipe createPipeline( Options options, Fields objectFields )
     {
     Pipe pipe = new Pipe( "head" );
 
@@ -106,6 +115,12 @@ public class Main
     // parse the full log into its fields and primitive values -- S3Logs.FIELDS declared field names and field types
     pipe = new Each( pipe, new Fields( "line" ), new RegexParser( S3Logs.FIELDS, S3Logs.REGEX ), Fields.RESULTS );
 
+    // records the file name each log line came from
+    pipe = new Each( pipe, Fields.NONE, new SourcePathFunction( LOG_KEY ), Fields.ALL );
+
+    if( options.isParseQueryString() )
+      pipe = new Each( pipe, S3Logs.REQUEST_URI, new QueryParamsParserFunction( QUERY_STRING, true ), Fields.ALL );
+
     // watch the progress on the console
     if( options.isDebugStream() )
       pipe = new Each( pipe, new Debug( true ) );
@@ -115,11 +130,14 @@ public class Main
     pipe = new Each( pipe, S3Logs.TIME, new DateFormatter( MONTH, MMM, UTC ), Fields.ALL );
     pipe = new Each( pipe, S3Logs.TIME, new DateFormatter( YEAR, YYYY, UTC ), Fields.ALL );
 
+    // force time to a string -- JSON functions should declare a type to preserve as at some point
+    pipe = new Coerce( pipe, S3Logs.TIME, String.class );
+
     if( options.isPartitionOnKey() )
       pipe = new Each( pipe, S3Logs.KEY, new RegexReplace( KEY_CLEAN, "/", "-" ), Fields.ALL );
 
     if( options.getOutputFormat() == Format.json )
-      pipe = new Each( pipe, S3Logs.FIELDS, new JSONCreateFunction( JSON ), Fields.ALL );
+      pipe = new Each( pipe, objectFields, new JSONCreateFunction( JSON ), Fields.ALL );
 
     return pipe;
     }

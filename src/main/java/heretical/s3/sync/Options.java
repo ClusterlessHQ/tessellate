@@ -30,6 +30,7 @@ public class Options
   private final OptionSpec<String> output;
   private final OptionSpec<Format> outputFormat;
   private final OptionSpecBuilder partitionOnKey;
+  private final OptionSpecBuilder parseQueryString;
 
   public Options()
     {
@@ -62,6 +63,8 @@ public class Options
       .withValuesConvertedBy( new EnumInsensitiveConverter<>( Format.class, false ) );
 
     partitionOnKey = parser.accepts( "partition-on-key" );
+
+    parseQueryString = parser.accepts( "parse-query-string" );
     }
 
   public boolean parse( String[] args )
@@ -111,5 +114,10 @@ public class Options
   public boolean isPartitionOnKey()
     {
     return optionSet.has( partitionOnKey );
+    }
+
+  public boolean isParseQueryString()
+    {
+    return optionSet.has( parseQueryString );
     }
   }
