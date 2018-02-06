@@ -19,7 +19,7 @@ import cascading.tuple.type.DateType;
  */
 public class S3Logs
   {
-  public static final String REGEX = "(\\S+) ([a-z0-9][a-z0-9-.]+) \\[(.*\\+.*)] (\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b) (\\S+) (\\S+) (\\S+) (\\S+) \"(\\w+ \\S+ \\S+)\" (\\d+|-) (\\S+) (\\d+|-) (\\d+|-) (\\d+|-) (\\d+|-) \"(https?://.*/?|-)\" \"(.*)\" (\\S+)";
+  public static final String REGEX = "(\\S+) ([a-z0-9][a-z0-9-.]+) \\[(.*\\+.*)] (\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b) (\\S+) (\\S+) (\\S+) (\\S+) \"(\\w+ \\S+ \\S+)\" (\\d+|-) (\\S+) (\\d+|-) (\\d+|-) (\\d+|-) (\\d+|-) \"([^\"]*|-)\" \"(.*)\" (\\S+)";
 
   public static final CleanCoercibleType<Long> CLEAN_LONG = new CleanCoercibleType<>( Coercions.LONG_OBJECT, o -> o.equals( "-" ) ? null : o );
   public static final CleanCoercibleType<String> CLEAN_STRING = new CleanCoercibleType<>( Coercions.STRING, o -> o.equals( "-" ) ? null : o );

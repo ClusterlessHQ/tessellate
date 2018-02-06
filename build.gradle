@@ -81,6 +81,12 @@ dependencies {
   testCompile group: 'cascading', name: 'cascading-core', version: cascadingVersion, classifier: 'tests', changing: true
 }
 
+//configurations.all {
+//  resolutionStrategy {
+//    force "cascading:cascading-local:${cascadingVersion}"
+//  }
+//}
+
 jar {
   manifest {
     attributes( "Main-Class": "heretical/s3/sync/Main" )
@@ -90,7 +96,7 @@ jar {
 javadoc.dependsOn << prepareDist
 
 javadoc {
-  def copyright = '<i>Copyright &#169; 21017 Chris K Wensel. All Rights Reserved.</i>'
+  def copyright = '<i>Copyright &#169; 2018 Chris K Wensel. All Rights Reserved.</i>'
 
   title = "Pointer Path ${releaseVersion}"
   destinationDir = file( "${distDir}/javadoc/${project.name}" )

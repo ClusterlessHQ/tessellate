@@ -38,12 +38,10 @@ import static cascading.flow.FlowDef.flowDef;
  */
 public class Main
   {
-  public static final String DD_MMM_YYYY = "dd-MMM-yyyy";
   public static final String DD = "dd";
-  public static final String MMM = "MMM";
+  public static final String MMM = "MM";
   public static final String YYYY = "yyyy";
   public static final TimeZone UTC = TimeZone.getTimeZone( "UTC" );
-  public static final DateType DMY_TYPE = new DateType( DD_MMM_YYYY, UTC );
 
   public static final DateType Y_TYPE = new DateType( YYYY, UTC );
   public static final DateType M_TYPE = new DateType( MMM, UTC );
@@ -56,6 +54,7 @@ public class Main
   public static final Fields JSON = new Fields( "json", JSONCoercibleType.TYPE );
   public static final Fields LOG_KEY = new Fields( "logKey", String.class );
   public static final Fields QUERY_STRING = new Fields( "queryString", JSONCoercibleType.TYPE );
+  public static Fields STANDARD_TIME = new Fields( "time", new DateType( "yyyy-MM-dd'T'HH:mm'Z'", TimeZone.getTimeZone( "UTC" ) ) );
 
   public static void main( String[] args )
     {
@@ -131,7 +130,8 @@ public class Main
     pipe = new Each( pipe, S3Logs.TIME, new DateFormatter( YEAR, YYYY, UTC ), Fields.ALL );
 
     // force time to a string -- JSON functions should declare a type to preserve as at some point
-    pipe = new Coerce( pipe, S3Logs.TIME, String.class );
+    pipe = new Coerce( pipe, STANDARD_TIME );
+    pipe = new Coerce( pipe, STANDARD_TIME, String.class );
 
     if( options.isPartitionOnKey() )
       pipe = new Each( pipe, S3Logs.KEY, new RegexReplace( KEY_CLEAN, "/", "-" ), Fields.ALL );
