@@ -24,8 +24,10 @@ import cascading.operation.text.DateFormatter;
 import cascading.pipe.Each;
 import cascading.pipe.Pipe;
 import cascading.pipe.assembly.Coerce;
+import cascading.scheme.local.TextDelimited;
 import cascading.scheme.local.TextLine;
 import cascading.tap.Tap;
+import cascading.tap.local.DirTap;
 import cascading.tuple.Fields;
 import cascading.tuple.type.DateType;
 import heretical.s3.sync.factory.TapFactories;
@@ -92,11 +94,14 @@ public class Main
     Tap outputTap = TapFactories.getSinkFactory( options.getOutput() )
       .getSink( options.getOutput(), options.getOutputFormat(), partitionKey, sinkFields );
 
+    Tap trapTap = new DirTap( new TextDelimited(), options.getErrors() );
+
     Flow syncFlow = new LocalFlowConnector().connect( flowDef()
       .setName( "egress" )
       .addSource( pipe, inputTap )
       .addSink( pipe, outputTap )
       .addTail( pipe )
+      .addTrap( pipe, trapTap )
     );
 
     syncFlow.complete();

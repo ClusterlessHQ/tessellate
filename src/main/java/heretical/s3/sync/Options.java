@@ -29,6 +29,7 @@ public class Options
   private final OptionSpec<String> inputCheckpoint;
   private final OptionSpec<String> output;
   private final OptionSpec<Format> outputFormat;
+  private final OptionSpec<String> errors;
   private final OptionSpecBuilder partitionOnKey;
   private final OptionSpecBuilder parseQueryString;
 
@@ -61,6 +62,11 @@ public class Options
       .withRequiredArg()
       .ofType( Format.class )
       .withValuesConvertedBy( new EnumInsensitiveConverter<>( Format.class, false ) );
+
+    errors = parser.accepts( "errors" )
+      .withRequiredArg()
+      .ofType( String.class )
+      .defaultsTo( "errors.csv" );
 
     partitionOnKey = parser.accepts( "partition-on-key" );
 
@@ -109,6 +115,11 @@ public class Options
   public Format getOutputFormat()
     {
     return outputFormat.value( optionSet );
+    }
+
+  public String getErrors()
+    {
+    return errors.value( optionSet );
     }
 
   public boolean isPartitionOnKey()
