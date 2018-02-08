@@ -27,7 +27,7 @@ import cascading.pipe.assembly.Coerce;
 import cascading.scheme.local.TextDelimited;
 import cascading.scheme.local.TextLine;
 import cascading.tap.Tap;
-import cascading.tap.local.DirTap;
+import cascading.tap.local.FileTap;
 import cascading.tuple.Fields;
 import cascading.tuple.type.DateType;
 import heretical.s3.sync.factory.TapFactories;
@@ -94,7 +94,7 @@ public class Main
     Tap outputTap = TapFactories.getSinkFactory( options.getOutput() )
       .getSink( options.getOutput(), options.getOutputFormat(), partitionKey, sinkFields );
 
-    Tap trapTap = new DirTap( new TextDelimited(), options.getErrors() );
+    Tap trapTap = new FileTap( new TextDelimited(), options.getErrors() );
 
     Flow syncFlow = new LocalFlowConnector().connect( flowDef()
       .setName( "egress" )
