@@ -1,33 +1,27 @@
-# S3 Log Sync
+# Tessellate
 
-A simple application for syncing AWS S3 access logs from S3 to disk or Elasticsearch.
+A command line tool for reading and writing data to/from multiple locations and across
+multiple formats.
 
 ## About
 
-Specifically this project is intended to optimize the reliable retrieval of Amazon S3 access logs, parse them, and 
-organize them somewhere useful.
+A primary activity of any data-engineering effort is to format and organize data for different access patterns.
 
-More broadly, it is intended to showcase using Cascading local mode as a toolkit for building ETL applications.
+For example, logs frequently arrive as lines of text, but are often best consumed as structured data. And different
+stakeholders may have different needs of the log data, so it must be organized in different ways that support those
+needs.
 
-This project was built with:
+Tessellate was designed to support data engineers and data scientists in their efforts to manage data.
 
-* [Cascading](http://www.cascading.org)
-* [Cascading-Local](http://www.heretical.io/projects/cascading-local/) 
+Tessellate may be used from the command line, but also natively supports the
+[Clusterless](https://github.com/ClusterlessHQ/clusterless) workload model.
+
+## Features
 
 ## To Build
 
-    > gradle shadowJar
+> ./gradlew installDist
 
 ## To Run
 
-To sync the logs from an S3 bucket to disk, partitioning the data by request date and retrieved key 
-(`2012/Jul/13/retrieved-file.tgz/`): 
-
-    > java -jar s3-log-sync-shaded-1.0.0-wip-dev.jar --input s3://logs.example.org/files.example.org \
-      --input-checkpoint output/checkpoints --output output/logs --output-format json --partition-on-key
-
-To sync logs into an Elasticsearch index while parsing the request URI query string into a JSON tree:
-
-    > java -jar s3-log-sync-shaded-1.0.0-wip-dev.jar --input s3://logs.example.org/files.example.org \ 
-      --input-checkpoint output/checkpoints --output es://localhost:9200/logs/s3 --output-format json \
-      --parse-query-string
+> ./main/build/install/tess/bin/tess --help

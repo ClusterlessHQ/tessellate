@@ -1,0 +1,21 @@
+{
+  "source": {
+    "inputs": [
+      "s3://bucket/path"
+    ],
+    "schema": {
+      "declared": [
+        "one|int",
+        "two|int",
+        "three|int|-",
+        "four|Instant|twelfths"
+      ],
+      "format": "csv"
+    },
+    "partitions": [
+      "one",
+      "two->@two",
+      "three->@three|DateTime|yyyyMMdd"
+    ]
+  }
+}

@@ -1,0 +1,110 @@
+/*
+ * Copyright (c) 2023 Chris K Wensel <chris@wensel.net>. All Rights Reserved.
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
+package io.clusterless.tessellate.pipeline;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import heretical.pointer.operation.BuildSpec;
+import heretical.pointer.operation.json.JSONBuilder;
+import io.clusterless.tessellate.model.PipelineDef;
+import io.clusterless.tessellate.util.JSONUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.nio.file.Path;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+/**
+ * The PipelineOptionsMerge class is used to merge the command line sourced {@link PipelineOptions} into a
+ * {@link PipelineDef}.
+ */
+public class PipelineOptionsMerge {
+    private static final Logger LOG = LoggerFactory.getLogger(PipelineOptionsMerge.class);
+    static BuildSpec spec = new BuildSpec()
+            .putInto("inputs", "/source/inputs")
+            .putInto("inputManifest", "/source/manifest")
+            .putInto("output", "/sink/output")
+            .putInto("outputManifest", "/sink/manifest");
+
+    private static final Map<Comparable, Function<PipelineOptions, JsonNode>> argumentLookups = new HashMap<>();
+
+    static {
+        argumentLookups.put("inputs", pipelineOptions -> nullOrNode(pipelineOptions.inputs()));
+        argumentLookups.put("output", pipelineOptions -> nullOrNode(pipelineOptions.output()));
+    }
+
+    private static JSONBuilder builder = new JSONBuilder(spec);
+
+    PipelineOptions pipelineOptions;
+    private Map<Comparable, Object> arguments;
+
+    public PipelineOptionsMerge(PipelineOptions pipelineOptions) {
+        this.pipelineOptions = pipelineOptions;
+    }
+
+    public Map<Comparable, Object> arguments() {
+        if (arguments != null) {
+            return arguments;
+        }
+
+        arguments = argumentLookups.entrySet()
+                .stream()
+                .map(e -> {
+                    JsonNode apply = e.getValue().apply(pipelineOptions);
+                    return apply == null ? null : Map.entry(e.getKey(), apply);
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        return arguments;
+    }
+
+    public PipelineDef merge() {
+        Path path = pipelineOptions.pipelinePath();
+
+        JsonNode jsonNode;
+
+        if (path != null) {
+            LOG.info("pipeline path: {}", path);
+            jsonNode = JSONUtil.readTreeSafe(path.toFile());
+        } else {
+            jsonNode = JSONUtil.CONFIG_MAPPER.valueToTree(new PipelineDef());
+        }
+
+        return merge(jsonNode);
+    }
+
+    protected PipelineDef merge(JsonNode jsonNode) {
+
+        builder.build((k, t) -> arguments().get(k), jsonNode);
+
+        LOG.info("pipeline: {}", JSONUtil.writeAsStringSafe(jsonNode));
+
+        return JSONUtil.treeToValueSafe(jsonNode, PipelineDef.class);
+    }
+
+    private static JsonNode nullOrNode(Object output) {
+        if (output == null) {
+            return null;
+        }
+        return JSONUtil.valueToTree(output);
+    }
+
+    private static JsonNode nullOrNode(Collection<?> objects) {
+        if (objects == null || objects.isEmpty()) {
+            return null;
+        }
+
+        return JSONUtil.valueToTree(objects);
+    }
+}
