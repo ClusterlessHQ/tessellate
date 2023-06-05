@@ -1,3 +1,9 @@
+import org.jreleaser.model.Active
+import org.jreleaser.model.Distribution
+import org.jreleaser.model.Stereotype
+import java.io.FileInputStream
+import java.util.*
+
 /*
  * Copyright (c) 2023 Chris K Wensel <chris@wensel.net>. All Rights Reserved.
  *
@@ -9,9 +15,21 @@
 plugins {
     java
     application
+    id("org.jreleaser") version "1.6.0"
 }
 
-println("githubUsername: ${property("githubUsername")}");
+val versionProperties = Properties().apply {
+    load(FileInputStream(File(rootProject.rootDir, "version.properties")))
+}
+
+val release = false;
+val buildNumber = System.getenv("GITHUB_RUN_NUMBER") ?: "dev"
+val wipReleases = "wip-${buildNumber}"
+
+version = if (release)
+    "${versionProperties["release.major"]}-${versionProperties["release.minor"]}"
+else "${versionProperties["release.major"]}-${wipReleases}"
+
 
 repositories {
     mavenCentral()
@@ -84,4 +102,55 @@ java {
 application {
     applicationName = "tess"
     mainClass.set("io.clusterless.tessellate.Main")
+}
+
+jreleaser {
+    project {
+        description.set("Tessellate is tool for parsing and partitioning data.")
+        authors.add("Chris K Wensel")
+        copyright.set("Chris K Wensel")
+        license.set("MPL-2.0")
+        stereotype.set(Stereotype.CLI)
+
+        links {
+            homepage.set("https://github.com/ClusterlessHQ")
+        }
+        inceptionYear.set("2023")
+        gitRootSearch.set(true)
+    }
+
+    signing {
+        armored.set(true)
+        enabled.set(true)
+        active.set(Active.ALWAYS)
+        verify.set(false)
+    }
+
+    release {
+        github {
+            overwrite.set(true)
+            sign.set(true)
+            repoOwner.set("ClusterlessHQ")
+            name.set("tessellate")
+            username.set("cwensel")
+            branch.set("wip-1.0")
+            changelog.enabled.set(false)
+            milestone.close.set(false)
+        }
+    }
+
+    distributions {
+        create("tess") {
+            distributionType.set(Distribution.DistributionType.JAVA_BINARY)
+            artifact {
+                path.set(file("build/distributions/{{distributionName}}-{{projectVersion}}.zip"))
+            }
+        }
+    }
+}
+
+tasks.register("release") {
+    dependsOn("jreleaserConfig")
+    dependsOn("jreleaserAssemble")
+    dependsOn("jreleaserRelease")
 }

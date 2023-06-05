@@ -12,4 +12,4 @@ plugins {
 }
 
 rootProject.name = "tessellate"
-include("main")
+include("tessellate-main")
