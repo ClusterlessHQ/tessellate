@@ -15,6 +15,5 @@ import io.clusterless.tessellate.model.Sink;
  *
  */
 public interface SinkFactory extends TapFactory {
-
     Tap getSink(Sink sinkModel);
 }

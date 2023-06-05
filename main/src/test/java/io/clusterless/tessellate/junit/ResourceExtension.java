@@ -14,14 +14,19 @@ import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
+import java.io.UncheckedIOException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Comparator;
 import java.util.Optional;
 
 public class ResourceExtension implements ParameterResolver {
@@ -85,7 +90,19 @@ public class ResourceExtension implements ParameterResolver {
                 .toAbsolutePath()
                 .normalize();
 
-        resolved.toFile().mkdirs();
+        if (Files.exists(resolved)) {
+            try {
+                Files.walk(resolved)
+                        .sorted(Comparator.reverseOrder())
+                        .map(Path::toFile)
+                        .forEach(File::delete);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        // only create the parent directories to the target directory
+        resolved.getParent().toFile().mkdirs();
 
         return resolveParam(parameterContext, resolved);
     }

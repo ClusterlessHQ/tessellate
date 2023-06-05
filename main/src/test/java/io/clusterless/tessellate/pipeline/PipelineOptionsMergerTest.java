@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @TestWithResources
 public class PipelineOptionsMergerTest {
     @Test
-    void name(@GivenTextResource("/config/pipeline.json") String pipelineJson) throws IOException {
+    void usingOptions(@GivenTextResource("/config/pipeline.json") String pipelineJson) throws IOException {
         List<URI> inputs = List.of(URI.create("s3://foo/input"));
         URI output = URI.create("s3://foo/output");
 
@@ -37,5 +37,16 @@ public class PipelineOptionsMergerTest {
 
         assertEquals(inputs, merged.source().inputs());
         assertEquals(output, merged.sink().output());
+    }
+
+    @Test
+    void fromSchema(@GivenTextResource("/config/pipeline-named-schema.json") String pipelineJson) throws IOException {
+        PipelineOptions pipelineOptions = new PipelineOptions();
+
+        PipelineOptionsMerge merger = new PipelineOptionsMerge(pipelineOptions);
+
+        PipelineDef merged = merger.merge(JSONUtil.readTree(pipelineJson));
+
+        assertEquals(18, merged.source().schema().declared().size());
     }
 }

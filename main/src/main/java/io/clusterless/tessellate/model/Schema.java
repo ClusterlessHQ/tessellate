@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Schema implements Model {
+    private String name;
+    private List<String> documentation = new ArrayList<>();
     private List<Field> declared = new ArrayList<>();
     private Format format;
     private Compression compression = Compression.none;
@@ -23,6 +25,14 @@ public class Schema implements Model {
 
     public static Builder builder() {
         return Builder.builder();
+    }
+
+    public String name() {
+        return name;
+    }
+
+    public List<String> documentation() {
+        return documentation;
     }
 
     public boolean embedsSchema() {
@@ -46,6 +56,8 @@ public class Schema implements Model {
     }
 
     public static final class Builder {
+        private String name;
+        private List<String> documentation = new ArrayList<>();
         private List<Field> declared = new ArrayList<>();
         private Format format;
         private Compression compression = Compression.none;
@@ -57,6 +69,16 @@ public class Schema implements Model {
 
         public static Builder builder() {
             return new Builder();
+        }
+
+        public Builder withName(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder withDocumentation(List<String> documentation) {
+            this.documentation = documentation;
+            return this;
         }
 
         public Builder withDeclared(List<Field> declared) {
@@ -89,6 +111,8 @@ public class Schema implements Model {
             schema.pattern = this.pattern;
             schema.format = this.format;
             schema.compression = this.compression;
+            schema.documentation = this.documentation;
+            schema.name = this.name;
             schema.embedsSchema = this.embedsSchema;
             schema.declared = this.declared;
             return schema;

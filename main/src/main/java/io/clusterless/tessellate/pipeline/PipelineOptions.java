@@ -31,6 +31,9 @@ public class PipelineOptions {
     @CommandLine.Option(names = {"-o", "--output"}, description = "output uris")
     private URI output;
 
+    @CommandLine.Option(names = {"-d", "--debug"}, description = "debug output for pipeline")
+    private boolean debug;
+
     public PipelineOptions setInputs(List<URI> inputs) {
         this.inputs = inputs;
         return this;
@@ -51,5 +54,9 @@ public class PipelineOptions {
 
     public URI output() {
         return output;
+    }
+
+    public boolean debug() {
+        return debug;
     }
 }

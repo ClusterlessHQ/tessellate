@@ -1,0 +1,7 @@
+{
+  "source": {
+    "schema": {
+      "name": "aws-s3-access-log"
+    }
+  }
+}

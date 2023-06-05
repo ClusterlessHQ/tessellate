@@ -71,7 +71,9 @@ public class TapFactories {
     }
 
     public static <T extends TapFactory> T findFactory(List<URI> uris, Format format, Compression compression, LinkedListMultimap<Protocol, T> factoriesMap) {
-        Set<String> schemes = uris.stream().map(URI::getScheme).collect(Collectors.toSet());
+        Set<String> schemes = uris.stream()
+                .map(URI::getScheme)
+                .collect(Collectors.toSet());
 
         if (schemes.size() > 1) {
             throw new IllegalArgumentException("all uris must have common scheme, got: " + schemes);
@@ -93,7 +95,7 @@ public class TapFactories {
 
         // disambiguate factories by format
         Optional<T> first = factories.stream()
-                .filter(factory -> factory.hasFormat(format))
+                .filter(factory -> factory.hasFormat(format.parent()))
                 .filter(factory -> factory.hasCompression(compression))
                 .findFirst();
 

@@ -6,7 +6,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package io.clusterless.tessellate.model;
+package io.clusterless.tessellate.pipeline;
 
 import cascading.tuple.Fields;
 import cascading.tuple.coerce.Coercions;
@@ -14,6 +14,8 @@ import cascading.tuple.type.DateType;
 import com.adelean.inject.resources.junit.jupiter.GivenTextResource;
 import com.adelean.inject.resources.junit.jupiter.TestWithResources;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.clusterless.tessellate.model.Partition;
+import io.clusterless.tessellate.model.PipelineDef;
 import io.clusterless.tessellate.temporal.IntervalDateTimeFormatter;
 import io.clusterless.tessellate.type.InstantType;
 import io.clusterless.tessellate.type.WrappedCoercibleType;

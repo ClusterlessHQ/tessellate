@@ -9,11 +9,15 @@
 package io.clusterless.tessellate.model;
 
 import cascading.tuple.Fields;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.clusterless.tessellate.util.FieldsParser;
 
-public class Field {
+public class Field implements Model {
+    @JsonIgnore
     private Fields fields;
 
+    @JsonCreator
     public Field(String field) {
         this.fields = FieldsParser.INSTANCE.parseSingleFields(field, null);
     }

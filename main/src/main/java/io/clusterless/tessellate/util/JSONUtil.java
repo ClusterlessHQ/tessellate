@@ -24,7 +24,7 @@ public class JSONUtil {
     public static final ObjectMapper CONFIG_MAPPER;
     public static final JSONCoercibleType TYPE;
 
-    public static final ObjectReader READER;
+    public static final ObjectReader CONFIG_READER;
 
     static {
         CONFIG_MAPPER = new ObjectMapper();
@@ -40,7 +40,8 @@ public class JSONUtil {
         CONFIG_MAPPER.setConfig(CONFIG_MAPPER.getSerializationConfig()
                 .withoutFeatures(
                         SerializationFeature.WRITE_DATES_AS_TIMESTAMPS,
-                        SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS
+                        SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS,
+                        SerializationFeature.FAIL_ON_EMPTY_BEANS
                 )
         );
 
@@ -60,7 +61,7 @@ public class JSONUtil {
                 )
         );
 
-        READER = CONFIG_MAPPER
+        CONFIG_READER = CONFIG_MAPPER
                 .enable(JsonParser.Feature.ALLOW_COMMENTS)
                 .enable(JsonParser.Feature.ALLOW_YAML_COMMENTS)
                 .reader();
@@ -98,11 +99,11 @@ public class JSONUtil {
     }
 
     public static JsonNode readTree(InputStream inputStream) throws IOException {
-        return READER.readTree(inputStream);
+        return CONFIG_READER.readTree(inputStream);
     }
 
     public static JsonNode readTree(String json) throws IOException {
-        return READER.readTree(json);
+        return CONFIG_READER.readTree(json);
     }
 
     public static <J extends JsonNode> J readTreeSafe(File file) {
@@ -118,12 +119,12 @@ public class JSONUtil {
             throw new FileNotFoundException("does not exist: " + file);
         }
 
-        return (J) READER.readTree(new FileInputStream(file));
+        return (J) CONFIG_READER.readTree(new FileInputStream(file));
     }
 
     public static <T> T readObjectSafe(byte[] bytes, Class<T> type) {
         try {
-            return READER.readValue(bytes, type);
+            return CONFIG_READER.readValue(bytes, type);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -131,7 +132,7 @@ public class JSONUtil {
 
     public static <T> T readObjectSafe(String json, Class<T> type) {
         try {
-            return READER.readValue(json, type);
+            return CONFIG_READER.readValue(json, type);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -139,7 +140,7 @@ public class JSONUtil {
 
     public static <T> T readObjectSafe(Path path, Class<T> type) {
         try {
-            return READER.readValue(path.toFile(), type);
+            return CONFIG_READER.readValue(path.toFile(), type);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -147,7 +148,7 @@ public class JSONUtil {
 
     public static <T> T treeToValueSafe(JsonNode n, Class<T> type) {
         try {
-            return READER.treeToValue(n, type);
+            return CONFIG_READER.treeToValue(n, type);
         } catch (JsonProcessingException e) {
             throw new UncheckedIOException(e);
         }
@@ -155,13 +156,13 @@ public class JSONUtil {
 
     public static JsonNode valueToTree(Object value) {
         try {
-            return READER.readTree(CONFIG_WRITER.writeValueAsString(value));
+            return CONFIG_READER.readTree(CONFIG_WRITER.writeValueAsString(value));
         } catch (JsonProcessingException e) {
             throw new UncheckedIOException(e);
         }
     }
 
     public static <T> T treeToValue(JsonNode n, Class<T> type) throws JsonProcessingException {
-        return READER.treeToValue(n, type);
+        return CONFIG_READER.treeToValue(n, type);
     }
 }

@@ -13,6 +13,7 @@ import cascading.scheme.Scheme;
 import cascading.scheme.local.CompressorScheme;
 import cascading.scheme.local.Compressors;
 import cascading.scheme.local.TextDelimited;
+import cascading.scheme.local.TextLine;
 import cascading.tap.SinkMode;
 import cascading.tap.Tap;
 import cascading.tap.local.FileTap;
@@ -97,6 +98,9 @@ public class DirectoryFactory implements SourceFactory, SinkFactory {
         Fields declaredFields = Models.fieldAsFields(schema.declared(), String.class, isSink(dataset) ? Fields.ALL : Fields.UNKNOWN);
         switch (schema.format()) {
             default:
+            case text:
+                scheme = new TextLine(new Fields("line"), compressor);
+                break;
             case csv:
                 scheme = new TextDelimited(declaredFields, compressor, schema.embedsSchema(), ",", "\"");
                 break;
@@ -159,9 +163,9 @@ public class DirectoryFactory implements SourceFactory, SinkFactory {
     protected Tap createParentTap(URI uri, boolean isDir, Scheme<Properties, InputStream, OutputStream, ?, ?> scheme, String prefix) {
         if (isDir) {
             if (prefix == null) {
-                return new PrefixedDirTap(scheme, uri.getPath(), SinkMode.UPDATE);
+                return new PrefixedDirTap(scheme, uri.getPath(), SinkMode.KEEP);
             } else {
-                return new PrefixedDirTap(scheme, uri.getPath(), SinkMode.UPDATE, prefix);
+                return new PrefixedDirTap(scheme, uri.getPath(), SinkMode.KEEP, prefix);
             }
         } else {
             return new FileTap(scheme, uri.getPath(), SinkMode.KEEP);

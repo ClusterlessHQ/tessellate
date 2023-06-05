@@ -1,4 +1,5 @@
 {
+  "name": "aws-s3-access-log",
   "documentation": [
     "https://docs.aws.amazon.com/AmazonS3/latest/dev/LogFormat.html"
   ],

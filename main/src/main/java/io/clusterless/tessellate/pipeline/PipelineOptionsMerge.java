@@ -9,6 +9,7 @@
 package io.clusterless.tessellate.pipeline;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import heretical.pointer.operation.BuildSpec;
 import heretical.pointer.operation.json.JSONBuilder;
 import io.clusterless.tessellate.model.PipelineDef;
@@ -16,6 +17,8 @@ import io.clusterless.tessellate.util.JSONUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashMap;
@@ -85,12 +88,43 @@ public class PipelineOptionsMerge {
     }
 
     protected PipelineDef merge(JsonNode jsonNode) {
-
+        // apply cli arguments
         builder.build((k, t) -> arguments().get(k), jsonNode);
+
+        // merge the stored schema with any provided values
+        loadAndMerge(jsonNode, "/source");
+        loadAndMerge(jsonNode, "/sink");
 
         LOG.info("pipeline: {}", JSONUtil.writeAsStringSafe(jsonNode));
 
         return JSONUtil.treeToValueSafe(jsonNode, PipelineDef.class);
+    }
+
+    private void loadAndMerge(JsonNode jsonNode, String target) {
+        JsonNode schemaName = jsonNode.at(target + "/schema/name");
+
+        if (schemaName.isMissingNode() || schemaName.isNull()) {
+            return;
+        }
+
+        ObjectNode schema = (ObjectNode) jsonNode.at(target + "/schema");
+
+        String resourceName = "schemas/" + schemaName.textValue() + ".json";
+
+        LOG.info("loading schema: {}", resourceName);
+
+        ClassLoader classLoader = this.getClass().getClassLoader();
+        try (InputStream resourceAsStream = classLoader.getResourceAsStream(resourceName)) {
+
+            if (resourceAsStream == null) {
+                throw new IllegalStateException("could not load: " + resourceName);
+            }
+
+            JSONUtil.CONFIG_MAPPER.readerForUpdating(schema)
+                    .readTree(resourceAsStream);
+        } catch (IOException e) {
+            throw new IllegalStateException("failed loading schema: " + schemaName.textValue(), e);
+        }
     }
 
     private static JsonNode nullOrNode(Object output) {

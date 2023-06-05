@@ -11,8 +11,28 @@ plugins {
     application
 }
 
+println("githubUsername: ${property("githubUsername")}");
+
 repositories {
     mavenCentral()
+
+    maven {
+        url = uri("https://maven.pkg.github.com/cwensel/*")
+        name = "github"
+        credentials(PasswordCredentials::class) {
+            username = property("githubUsername") as String
+            password = property("githubPassword") as String
+        }
+        content {
+            includeVersionByRegex("net.wensel", "cascading-.*", ".*-wip-.*")
+        }
+    }
+
+    mavenLocal() {
+        content {
+            includeVersionByRegex("net.wensel", "cascading-.*", ".*-wip-dev")
+        }
+    }
 }
 
 dependencies {
@@ -24,7 +44,7 @@ dependencies {
     implementation("org.slf4j:slf4j-api:2.0.7")
     implementation("org.slf4j:slf4j-jdk14:2.0.7")
 
-    val cascading = "4.5.0"
+    val cascading = "4.5.1-wip-dev"
     implementation("net.wensel:cascading-core:$cascading")
     implementation("net.wensel:cascading-nested-json:$cascading")
     implementation("net.wensel:cascading-local:$cascading")
