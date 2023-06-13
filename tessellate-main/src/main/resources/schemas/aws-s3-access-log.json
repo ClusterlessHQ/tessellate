@@ -8,7 +8,7 @@
   "declared": [
     "bucketOwner|string",
     "bucket|string",
-    "time|DateTime|dd/MMM/yyyy:HH:mm:ss Z",
+    "time|Instant|dd/MMM/yyyy:HH:mm:ss Z",
     "remoteIP|string",
     "requester|string|-",
     "requestID|string",

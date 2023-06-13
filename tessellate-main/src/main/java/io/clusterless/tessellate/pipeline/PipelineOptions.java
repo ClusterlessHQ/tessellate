@@ -10,10 +10,7 @@ package io.clusterless.tessellate.pipeline;
 
 import picocli.CommandLine;
 
-import java.net.URI;
 import java.nio.file.Path;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * pipeline
@@ -21,42 +18,56 @@ import java.util.List;
  * outputPath
  * errorPath
  */
-public class PipelineOptions {
+public class PipelineOptions implements AWSOptions {
     @CommandLine.Option(names = {"-p", "--pipeline"}, description = "pipeline file")
     private Path pipelinePath;
 
-    @CommandLine.Option(names = {"-i", "--input"}, description = "input uris")
-    private List<URI> inputs = new LinkedList<>();
-
-    @CommandLine.Option(names = {"-o", "--output"}, description = "output uris")
-    private URI output;
+    @CommandLine.Mixin
+    private InputOptions inputOptions = new InputOptions();
+    @CommandLine.Mixin
+    private OutputOptions outputOptions = new OutputOptions();
 
     @CommandLine.Option(names = {"-d", "--debug"}, description = "debug output for pipeline")
     private boolean debug;
 
-    public PipelineOptions setInputs(List<URI> inputs) {
-        this.inputs = inputs;
-        return this;
-    }
+    @CommandLine.Option(names = {"--aws-endpoint"}, description = "aws endpoint")
+    protected String endpoint;
 
-    public PipelineOptions setOutput(URI output) {
-        this.output = output;
-        return this;
-    }
+    @CommandLine.Option(names = {"--aws-region"}, description = "aws region")
+    protected String region;
+
+    @CommandLine.Option(names = {"--aws-assumed-role-arn"}, description = "aws assumed role arn")
+    protected String assumedRoleARN;
+
 
     public Path pipelinePath() {
         return pipelinePath;
     }
 
-    public List<URI> inputs() {
-        return inputs;
+    public InputOptions inputOptions() {
+        return inputOptions;
     }
 
-    public URI output() {
-        return output;
+    public OutputOptions outputOptions() {
+        return outputOptions;
     }
 
     public boolean debug() {
         return debug;
+    }
+
+    @Override
+    public String awsEndpoint() {
+        return endpoint;
+    }
+
+    @Override
+    public String aswRegion() {
+        return region;
+    }
+
+    @Override
+    public String awsAssumedRoleARN() {
+        return assumedRoleARN;
     }
 }

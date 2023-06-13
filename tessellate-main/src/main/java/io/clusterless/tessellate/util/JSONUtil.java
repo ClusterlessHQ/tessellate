@@ -11,7 +11,6 @@ package io.clusterless.tessellate.util;
 import cascading.nested.json.JSONCoercibleType;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -85,14 +84,6 @@ public class JSONUtil {
         try {
             return CONFIG_WRITER_PRETTY
                     .writeValueAsString(object);
-        } catch (JsonProcessingException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    public static <T> T dataToValueSafe(TreeNode n, Class<T> valueType) {
-        try {
-            return DATA_MAPPER.treeToValue(n, valueType);
         } catch (JsonProcessingException e) {
             throw new UncheckedIOException(e);
         }

@@ -9,11 +9,13 @@
 package io.clusterless.tessellate.factory;
 
 import cascading.tap.Tap;
+import cascading.tuple.Fields;
 import io.clusterless.tessellate.model.Sink;
+import io.clusterless.tessellate.pipeline.PipelineOptions;
 
 /**
  *
  */
 public interface SinkFactory extends TapFactory {
-    Tap getSink(Sink sinkModel);
+    Tap getSink(PipelineOptions pipelineOptions, Sink sinkModel, Fields currentFields);
 }

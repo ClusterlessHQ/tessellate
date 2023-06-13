@@ -10,9 +10,10 @@ package io.clusterless.tessellate.factory;
 
 import cascading.tap.Tap;
 import io.clusterless.tessellate.model.Source;
+import io.clusterless.tessellate.pipeline.PipelineOptions;
 
 public interface SourceFactory extends TapFactory {
 
-    Tap getSource(Source sourceModel);
+    Tap getSource(PipelineOptions pipelineOptions, Source sourceModel);
 
 }

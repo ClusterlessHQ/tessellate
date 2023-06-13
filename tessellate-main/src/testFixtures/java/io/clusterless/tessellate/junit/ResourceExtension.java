@@ -34,23 +34,62 @@ public class ResourceExtension implements ParameterResolver {
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
         return
                 parameterContext.isAnnotated(PathForResource.class) ||
-                        parameterContext.isAnnotated(PathForOutput.class);
+                        parameterContext.isAnnotated(PathForOutput.class) ||
+                        parameterContext.isAnnotated(URLForOutput.class);
     }
 
     @Override
     public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
         if (parameterContext.isAnnotated(PathForResource.class)) {
-            return resolveInput(parameterContext, extensionContext);
+            return resolveResourceInput(parameterContext, extensionContext);
+        } else if (parameterContext.isAnnotated(PathForOutput.class)) {
+            return resolveFileOutput(parameterContext, extensionContext);
         } else {
-            return resolveOutput(parameterContext, extensionContext);
+            return resolveURLOutput(parameterContext, extensionContext);
         }
     }
 
-    private static Object resolveInput(ParameterContext parameterContext, ExtensionContext extensionContext) {
+    private Object resolveURLOutput(ParameterContext parameterContext, ExtensionContext extensionContext) {
+        Optional<URLForOutput> annotation = parameterContext.findAnnotation(URLForOutput.class);
+
+        if (annotation.isEmpty()) {
+            throw new ParameterResolutionException("URLForOutput annotation not present");
+        }
+
+        URLForOutput urlForOutput = annotation.get();
+
+        String path = urlForOutput.path();
+
+        Class<?> requiredTestClass = extensionContext.getRequiredTestClass();
+        Method requiredTestMethod = extensionContext.getRequiredTestMethod();
+
+        Path resolved = Paths.get("/output")
+                .resolve(requiredTestClass.getName())
+                .resolve(requiredTestMethod.getName())
+                .resolve(path)
+                .normalize();
+
+        URI uri;
+        try {
+            uri = new URI(urlForOutput.scheme(), urlForOutput.host(), resolved.toString(), null);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+
+        if (parameterContext.getParameter().getType() == URI.class) {
+            return uri;
+        } else if (parameterContext.getParameter().getType() == URL.class) {
+            return url(uri);
+        } else {
+            return resolved.toString();
+        }
+    }
+
+    private static Object resolveResourceInput(ParameterContext parameterContext, ExtensionContext extensionContext) {
         Optional<PathForResource> annotation = parameterContext.findAnnotation(PathForResource.class);
 
         if (annotation.isEmpty()) {
-            throw new ParameterResolutionException("URIForResource annotation not present");
+            throw new ParameterResolutionException("PathForResource annotation not present");
         }
 
         PathForResource pathForResource = annotation.get();
@@ -68,11 +107,11 @@ public class ResourceExtension implements ParameterResolver {
         return resolveParam(parameterContext, resolved);
     }
 
-    private Object resolveOutput(ParameterContext parameterContext, ExtensionContext extensionContext) {
+    private Object resolveFileOutput(ParameterContext parameterContext, ExtensionContext extensionContext) {
         Optional<PathForOutput> annotation = parameterContext.findAnnotation(PathForOutput.class);
 
         if (annotation.isEmpty()) {
-            throw new ParameterResolutionException("URIForResource annotation not present");
+            throw new ParameterResolutionException("PathForOutput annotation not present");
         }
 
         PathForOutput pathForOutput = annotation.get();

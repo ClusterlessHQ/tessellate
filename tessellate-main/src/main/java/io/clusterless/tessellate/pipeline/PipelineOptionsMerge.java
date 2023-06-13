@@ -42,8 +42,8 @@ public class PipelineOptionsMerge {
     private static final Map<Comparable, Function<PipelineOptions, JsonNode>> argumentLookups = new HashMap<>();
 
     static {
-        argumentLookups.put("inputs", pipelineOptions -> nullOrNode(pipelineOptions.inputs()));
-        argumentLookups.put("output", pipelineOptions -> nullOrNode(pipelineOptions.output()));
+        argumentLookups.put("inputs", pipelineOptions -> nullOrNode(pipelineOptions.inputOptions().inputs()));
+        argumentLookups.put("output", pipelineOptions -> nullOrNode(pipelineOptions.outputOptions().output()));
     }
 
     private static JSONBuilder builder = new JSONBuilder(spec);

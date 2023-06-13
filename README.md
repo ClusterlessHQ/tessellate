@@ -1,7 +1,6 @@
 # Tessellate
 
-A command line tool for reading and writing data to/from multiple locations and across
-multiple formats.
+A command line tool for reading and writing data to/from multiple locations and across multiple formats.
 
 ## About
 
@@ -17,6 +16,23 @@ Tessellate may be used from the command line, but also natively supports the
 [Clusterless](https://github.com/ClusterlessHQ/clusterless) workload model.
 
 ## Features
+
+Supported formats:
+
+- `text/regex` - lines of text parsed by regex
+- `csv` - with or without headers
+- `tsv` - with or without headers
+- [Apache Parquet](https://parquet.apache.org)
+
+Supported locations:
+
+- `file://`
+- `s3://`
+- `hdfs://`
+
+Supported operations:
+
+- Path partitioning - data can be partitioned by intrinsic values in the data set. e.g. (year=2023/month=01/day=01)
 
 ## To Build
 

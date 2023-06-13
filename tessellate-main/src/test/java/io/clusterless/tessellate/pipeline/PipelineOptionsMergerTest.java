@@ -28,8 +28,8 @@ public class PipelineOptionsMergerTest {
         URI output = URI.create("s3://foo/output");
 
         PipelineOptions pipelineOptions = new PipelineOptions();
-        pipelineOptions.setInputs(inputs);
-        pipelineOptions.setOutput(output);
+        pipelineOptions.inputOptions().setInputs(inputs);
+        pipelineOptions.outputOptions().setOutput(output);
 
         PipelineOptionsMerge merger = new PipelineOptionsMerge(pipelineOptions);
 
@@ -48,5 +48,6 @@ public class PipelineOptionsMergerTest {
         PipelineDef merged = merger.merge(JSONUtil.readTree(pipelineJson));
 
         assertEquals(18, merged.source().schema().declared().size());
+        assertEquals(3, merged.source().partitions().size());
     }
 }

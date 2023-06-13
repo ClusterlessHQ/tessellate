@@ -9,14 +9,24 @@
 package io.clusterless.tessellate.pipeline;
 
 import cascading.CascadingTesting;
-import io.clusterless.tessellate.junit.PathForOutput;
 import io.clusterless.tessellate.junit.PathForResource;
 import io.clusterless.tessellate.junit.ResourceExtension;
+import io.clusterless.tessellate.junit.URLForOutput;
 import io.clusterless.tessellate.model.*;
 import io.clusterless.tessellate.util.Format;
 import io.clusterless.tessellate.util.JSONUtil;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 
 import java.io.IOException;
 import java.net.URI;
@@ -27,119 +37,44 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  *
  */
+@Testcontainers
+@ExtendWith(SystemStubsExtension.class)
 @ExtendWith(ResourceExtension.class)
-public class PipelineTest {
+public class PipelineIntegrationTest {
+    public static final String TEST_BUCKET = "test-bucket";
 
-    @Test
-    void noHeaders(@PathForResource("/data/delimited.csv") URI input, @PathForOutput URI output) throws IOException {
-        PipelineOptions pipelineOptions = new PipelineOptions();
+    static DockerImageName localstackImage = DockerImageName.parse("localstack/localstack:2.1.0");
 
-        PipelineDef def = PipelineDef.builder()
-                .withName("test")
-                .withSource(Source.builder()
-                        .withInputs(List.of(input))
-                        .withSchema(Schema.builder()
-                                .withFormat(Format.csv)
-                                .withEmbedsSchema(false)
-                                .build())
-                        .build())
-                .withSink(Sink.builder()
-                        .withOutput(output)
-                        .withSchema(Schema.builder()
-                                .withFormat(Format.tsv)
-                                .withEmbedsSchema(false)
-                                .build())
-                        .build())
-                .build();
+    @Container
+    static LocalStackContainer localstack = new LocalStackContainer(localstackImage)
+            .withServices(
+                    LocalStackContainer.Service.S3
+            );
 
-        Pipeline pipeline = new Pipeline(pipelineOptions, def);
+    protected String defaultRegion() {
+        return localstack.getRegion();
+    }
 
-        pipeline.run();
+    @SystemStub
+    private EnvironmentVariables environmentVariables = new EnvironmentVariables()
+            .set("AWS_PROFILE", null)
+            .set("AWS_ACCESS_KEY_ID", localstack.getAccessKey())
+            .set("AWS_SECRET_ACCESS_KEY", localstack.getSecretKey())
+            .set("AWS_DEFAULT_REGION", localstack.getRegion())
+            .set("AWS_S3_ENDPOINT", localstack.getEndpointOverride(LocalStackContainer.Service.S3).toString());
 
-        CascadingTesting.validateEntries(
-                pipeline.flow().openSink(),
-                l -> assertEquals(12, l, "wrong length"),
-                l -> assertEquals(5, l, "wrong size"),
-                l -> {
-                }
-        );
+    @BeforeEach
+    public void bootstrap() {
+        try (S3Client s3 = S3Client.builder()
+                .region(Region.of(defaultRegion()))
+                .endpointOverride(localstack.getEndpointOverride(LocalStackContainer.Service.S3))
+                .build()) {
+            s3.createBucket(b -> b.bucket(TEST_BUCKET));
+        }
     }
 
     @Test
-    void headers(@PathForResource("/data/delimited-header.csv") URI input, @PathForOutput URI output) throws IOException {
-        PipelineOptions pipelineOptions = new PipelineOptions();
-
-        PipelineDef def = PipelineDef.builder()
-                .withName("test")
-                .withSource(Source.builder()
-                        .withInputs(List.of(input))
-                        .withSchema(Schema.builder()
-                                .withFormat(Format.csv)
-                                .withEmbedsSchema(true)
-                                .build())
-                        .build())
-                .withSink(Sink.builder()
-                        .withOutput(output)
-                        .withSchema(Schema.builder()
-                                .withFormat(Format.tsv)
-                                .withEmbedsSchema(true)
-                                .build())
-                        .build())
-                .build();
-
-        Pipeline pipeline = new Pipeline(pipelineOptions, def);
-
-        pipeline.run();
-
-        CascadingTesting.validateEntries(
-                pipeline.flow().openSink(),
-                l -> assertEquals(13, l, "wrong length"), // headers are declared so aren't counted
-                l -> assertEquals(5, l, "wrong size"),
-                l -> {
-                }
-        );
-    }
-
-    @Test
-    void awsS3AccessLog(@PathForResource("/data/aws-s3-access-log.txt") URI input, @PathForOutput URI output) throws IOException {
-        PipelineOptions pipelineOptions = new PipelineOptions();
-
-        PipelineDef def = PipelineDef.builder()
-                .withName("test")
-                .withSource(Source.builder()
-                        .withInputs(List.of(input))
-                        .withSchema(Schema.builder()
-                                .withName("aws-s3-access-log")
-                                .build())
-                        .build())
-                .withSink(Sink.builder()
-                        .withOutput(output)
-                        .withSchema(Schema.builder()
-                                .withFormat(Format.tsv)
-                                .withEmbedsSchema(true)
-                                .build())
-                        .build())
-                .build();
-
-        PipelineOptionsMerge merger = new PipelineOptionsMerge(pipelineOptions);
-
-        PipelineDef merged = merger.merge(JSONUtil.valueToTree(def));
-
-        Pipeline pipeline = new Pipeline(pipelineOptions, merged);
-
-        pipeline.run();
-
-        CascadingTesting.validateEntries(
-                pipeline.flow().openSink(),
-                l -> assertEquals(2, l, "wrong length"), // headers are declared so aren't counted
-                l -> assertEquals(18, l, "wrong size"),
-                l -> {
-                }
-        );
-    }
-
-    @Test
-    void writeReadParquet(@PathForResource("/data/aws-s3-access-log.txt") URI input, @PathForOutput("intermediate") URI intermediate, @PathForOutput("output") URI output) throws IOException {
+    void writeReadParquet(@PathForResource("/data/aws-s3-access-log.txt") URI input, @URLForOutput(scheme = "s3", host = TEST_BUCKET, path = "intermediate") URI intermediate, @URLForOutput(scheme = "s3", host = TEST_BUCKET, path = "output") URI output) throws IOException {
         PipelineOptions pipelineOptions = new PipelineOptions();
         PipelineOptionsMerge merger = new PipelineOptionsMerge(pipelineOptions);
 
@@ -204,7 +139,7 @@ public class PipelineTest {
     }
 
     @Test
-    void writeReadParquetPartitioned(@PathForResource("/data/aws-s3-access-log.txt") URI input, @PathForOutput("intermediate") URI intermediate, @PathForOutput("output") URI output) throws IOException {
+    void writeReadParquetPartitioned(@PathForResource("/data/aws-s3-access-log.txt") URI input, @URLForOutput(scheme = "s3", host = TEST_BUCKET, path = "intermediate") URI intermediate, @URLForOutput(scheme = "s3", host = TEST_BUCKET, path = "output") URI output) throws IOException {
         PipelineOptions pipelineOptions = new PipelineOptions();
         PipelineOptionsMerge merger = new PipelineOptionsMerge(pipelineOptions);
 

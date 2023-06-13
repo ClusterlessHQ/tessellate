@@ -9,6 +9,8 @@
 package io.clusterless.tessellate.factory;
 
 import com.google.common.collect.LinkedListMultimap;
+import io.clusterless.tessellate.factory.hdfs.ParquetFactory;
+import io.clusterless.tessellate.factory.local.DirectoryFactory;
 import io.clusterless.tessellate.model.Sink;
 import io.clusterless.tessellate.model.Source;
 import io.clusterless.tessellate.util.Compression;
@@ -23,7 +25,10 @@ import java.util.stream.Collectors;
  *
  */
 public class TapFactories {
-    static Set<TapFactory> tapFactories = Set.of(DirectoryFactory.INSTANCE);
+    static Set<TapFactory> tapFactories = Set.of(
+            DirectoryFactory.INSTANCE,
+            ParquetFactory.INSTANCE
+    );
     private static final LinkedListMultimap<Protocol, SourceFactory> sourceFactories = LinkedListMultimap.create();
     private static final LinkedListMultimap<Protocol, SinkFactory> sinkFactories = LinkedListMultimap.create();
 
@@ -100,7 +105,7 @@ public class TapFactories {
                 .findFirst();
 
         return first.orElseThrow(() ->
-                new IllegalArgumentException("no factory found for: " + scheme + ", with format: " + format + ", with compression: " + compression)
+                new IllegalArgumentException("no factory found for: " + scheme + ", with format: " + format.parent() + ", with compression: " + compression)
         );
     }
 

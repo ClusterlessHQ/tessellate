@@ -2,6 +2,12 @@
   "source": {
     "schema": {
       "name": "aws-s3-access-log"
-    }
+    },
+    "partitions": [
+      "one",
+      "two->@two",
+      "three->@three|DateTime|yyyyMMdd"
+    ]
   }
+}
 }

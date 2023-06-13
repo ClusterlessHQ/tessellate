@@ -8,6 +8,9 @@
 
 package io.clusterless.tessellate.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
 import java.util.Objects;
 import java.util.Optional;
 
@@ -19,6 +22,7 @@ public class Partition implements Model {
     private final Field from;
     private final Field to;
 
+    @JsonCreator
     public Partition(String partition) {
         Objects.requireNonNull(partition, "partition cannot be null");
 
@@ -45,5 +49,14 @@ public class Partition implements Model {
 
     public Field to() {
         return to;
+    }
+
+    @JsonValue
+    public String toString() {
+        if (from == null) {
+            return to.toString();
+        } else {
+            return from + TRANSLATE + to;
+        }
     }
 }

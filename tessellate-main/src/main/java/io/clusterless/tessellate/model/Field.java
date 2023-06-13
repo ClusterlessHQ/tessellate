@@ -13,20 +13,27 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.clusterless.tessellate.util.FieldsParser;
 
+import java.util.Objects;
+
 public class Field implements Model {
     @JsonIgnore
     private Fields fields;
+    private final String field;
 
     @JsonCreator
     public Field(String field) {
-        this.fields = FieldsParser.INSTANCE.parseSingleFields(field, null);
-    }
+        Objects.requireNonNull(field, "field may not be null");
 
-    public Field(Fields fields) {
-        this.fields = fields;
+        this.field = field;
+        this.fields = FieldsParser.INSTANCE.parseSingleFields(this.field, null);
     }
 
     public Fields fields() {
         return fields;
+    }
+
+    @Override
+    public String toString() {
+        return field;
     }
 }

@@ -6,7 +6,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package io.clusterless.tessellate.factory;
+package io.clusterless.tessellate.factory.local.tap;
 
 import cascading.CascadingException;
 import cascading.scheme.Scheme;

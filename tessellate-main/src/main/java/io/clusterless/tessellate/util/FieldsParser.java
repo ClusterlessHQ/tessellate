@@ -8,17 +8,19 @@
 
 package io.clusterless.tessellate.util;
 
+import cascading.nested.json.JSONCoercibleType;
 import cascading.tuple.Fields;
 import cascading.tuple.coerce.Coercions;
 import cascading.tuple.type.CoercibleType;
 import cascading.tuple.type.DateType;
+import cascading.tuple.type.InstantType;
 import io.clusterless.tessellate.temporal.IntervalUnits;
-import io.clusterless.tessellate.type.InstantType;
 import io.clusterless.tessellate.type.WrappedCoercibleType;
 
 import java.lang.reflect.Type;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -42,7 +44,7 @@ import java.util.TimeZone;
 public class FieldsParser {
     public static final FieldsParser INSTANCE = new FieldsParser();
 
-    private DateType defaultDateTimeType = TemporalTypes.DATE_TIME_TYPE_MICROS;
+    private DateType defaultDateTimeType = new DateType("yyyy-MM-dd HH:mm:ss.SSSSSS z", TimeZone.getTimeZone("UTC"));
     private InstantType defaultInstantType = InstantType.ISO_MICROS;
 
     /**
@@ -107,14 +109,14 @@ public class FieldsParser {
                 TemporalUnit unit = getUnit(first);
                 if (unit != null) {
                     if (second == null) {
-                        type = new InstantType(unit);
+                        type = new InstantType(unit, IntervalUnits.formatter(unit));
                     } else {
                         DateTimeFormatter pattern = createPattern(second);
                         type = new InstantType(unit, () -> pattern);
                     }
                 } else {
                     DateTimeFormatter pattern = createPattern(first);
-                    type = new InstantType(() -> pattern);
+                    type = new InstantType(ChronoUnit.MILLIS, () -> pattern);
                 }
             }
         }
@@ -132,6 +134,25 @@ public class FieldsParser {
         }
 
         return type;
+    }
+
+    public String resolveTypeName(Type type) {
+        if (type instanceof JSONCoercibleType) {
+            return "json";
+        }
+        if (type instanceof DateType) {
+            return "DateTime";
+        }
+        if (type instanceof InstantType) {
+            return "Instant";
+        }
+        if (type == String.class) {
+            return "String";
+        }
+
+        String[] typeNames = Coercions.getTypeNames(new Type[]{type});
+
+        return typeNames[0];
     }
 
     private static DateTimeFormatter createPattern(String splitType) {

@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2023 Chris K Wensel <chris@wensel.net>. All Rights Reserved.
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
 import org.jreleaser.model.Active
 import org.jreleaser.model.Distribution
 import org.jreleaser.model.Stereotype
@@ -15,6 +23,7 @@ import java.util.*
 plugins {
     java
     application
+    `java-test-fixtures`
     id("org.jreleaser") version "1.6.0"
 }
 
@@ -53,6 +62,10 @@ repositories {
     }
 }
 
+var integrationTestImplementation = configurations.create("integrationTestImplementation")
+
+val jupiter = "5.9.1"
+
 dependencies {
     implementation("com.google.guava:guava:31.1-jre")
 
@@ -62,12 +75,23 @@ dependencies {
     implementation("org.slf4j:slf4j-api:2.0.7")
     implementation("org.slf4j:slf4j-jdk14:2.0.7")
 
-    val cascading = "4.5.1-wip-dev"
+    val cascading = "4.6.0-wip-8"
     implementation("net.wensel:cascading-core:$cascading")
     implementation("net.wensel:cascading-nested-json:$cascading")
     implementation("net.wensel:cascading-local:$cascading")
     implementation("net.wensel:cascading-local-hadoop3-io:$cascading")
     implementation("net.wensel:cascading-hadoop3-parquet:$cascading")
+    implementation("net.wensel:cascading-hadoop3-io:$cascading")
+
+    val parquet = "1.13.1"
+    implementation("org.apache.parquet:parquet-common:$parquet")
+    implementation("org.apache.parquet:parquet-column:$parquet")
+    implementation("org.apache.parquet:parquet-hadoop:$parquet")
+
+    val hadoop3Version = "3.3.4"
+    implementation("org.apache.hadoop:hadoop-mapreduce-client-core:$hadoop3Version")
+    implementation("org.apache.hadoop:hadoop-common:$hadoop3Version")
+    implementation("org.apache.hadoop:hadoop-aws:$hadoop3Version")
 
     val jackson = "2.14.2"
     implementation("com.fasterxml.jackson.core:jackson-core:$jackson")
@@ -83,14 +107,53 @@ dependencies {
     testImplementation("io.hosuaby:inject-resources-core:$injectResources")
     testImplementation("io.hosuaby:inject-resources-junit-jupiter:$injectResources")
 
+    // https://github.com/webcompere/system-stubs
+    val systemStubs = "2.0.2"
+    testImplementation("uk.org.webcompere:system-stubs-core:$systemStubs")
+    testImplementation("uk.org.webcompere:system-stubs-jupiter:$systemStubs")
+    testImplementation("org.mockito:mockito-inline:5.1.1")
+
+    // https://mvnrepository.com/artifact/software.amazon.awssdk
+    val awsSdk = "2.20.69"
+    integrationTestImplementation("software.amazon.awssdk:s3:$awsSdk")
+
+    val testContainers = "1.18.3"
+    integrationTestImplementation("org.testcontainers:testcontainers:$testContainers")
+    integrationTestImplementation("org.testcontainers:junit-jupiter:$testContainers")
+    integrationTestImplementation("org.testcontainers:localstack:$testContainers")
+    // https://github.com/testcontainers/testcontainers-java/issues/1442#issuecomment-694342883
+    integrationTestImplementation("com.amazonaws:aws-java-sdk-s3:1.12.13")
+
+    testFixturesImplementation("org.jetbrains:annotations:24.0.0")
+    testFixturesImplementation("org.junit.jupiter:junit-jupiter-api:$jupiter")
 }
 
 testing {
     suites {
         val test by getting(JvmTestSuite::class) {
-            useJUnitJupiter("5.9.1")
+            useJUnitJupiter(jupiter)
+        }
+        val integrationTest by registering(JvmTestSuite::class) {
+            dependencies {
+                implementation(project())
+            }
+
+            targets {
+                all {
+                    testTask.configure {
+                        shouldRunAfter(test)
+                    }
+                }
+            }
         }
     }
+}
+
+configurations["integrationTestRuntimeOnly"].extendsFrom(configurations.runtimeOnly.get())
+configurations["integrationTestImplementation"].extendsFrom(configurations.testImplementation.get())
+
+tasks.named("check") {
+    dependsOn(testing.suites.named("integrationTest"))
 }
 
 java {
