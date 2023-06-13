@@ -39,8 +39,8 @@ repositories {
         url = uri("https://maven.pkg.github.com/cwensel/*")
         name = "github"
         credentials(PasswordCredentials::class) {
-            username = property("githubUsername") as String
-            password = property("githubPassword") as String
+            username = (project.findProperty("githubUsername") ?: System.getenv("USERNAME")) as? String
+            password = (project.findProperty("githubPassword") ?: System.getenv("GITHUB_TOKEN")) as? String
         }
         content {
             includeVersionByRegex("net.wensel", "cascading-.*", ".*-wip-.*")
@@ -214,10 +214,11 @@ jreleaser {
     }
 
     signing {
+        enabled.set(false)
         armored.set(true)
-        enabled.set(true)
         active.set(Active.ALWAYS)
         verify.set(false)
+        files.set(false)
     }
 
     release {
