@@ -39,8 +39,8 @@ repositories {
         url = uri("https://maven.pkg.github.com/cwensel/*")
         name = "github"
         credentials(PasswordCredentials::class) {
-            username = property("githubUsername") as String
-            password = property("githubPassword") as String
+            username = (project.findProperty("githubUsername") ?: System.getenv("USERNAME")) as? String
+            password = (project.findProperty("githubPassword") ?: System.getenv("GITHUB_TOKEN")) as? String
         }
         content {
             includeVersionByRegex("net.wensel", "cascading-.*", ".*-wip-.*")
@@ -200,12 +200,12 @@ application {
 
 jreleaser {
     project {
+        dryrun.set(false)
         description.set("Tessellate is tool for parsing and partitioning data.")
         authors.add("Chris K Wensel")
         copyright.set("Chris K Wensel")
         license.set("MPL-2.0")
         stereotype.set(Stereotype.CLI)
-
         links {
             homepage.set("https://github.com/ClusterlessHQ")
         }
@@ -215,15 +215,14 @@ jreleaser {
 
     signing {
         armored.set(true)
-        enabled.set(true)
-        active.set(Active.ALWAYS)
+        active.set(Active.NEVER)
         verify.set(false)
     }
 
     release {
         github {
             overwrite.set(true)
-            sign.set(true)
+            sign.set(false)
             repoOwner.set("ClusterlessHQ")
             name.set("tessellate")
             username.set("cwensel")
@@ -244,6 +243,7 @@ jreleaser {
 }
 
 tasks.register("release") {
+    dependsOn("distZip")
     dependsOn("jreleaserConfig")
     dependsOn("jreleaserAssemble")
     dependsOn("jreleaserRelease")
