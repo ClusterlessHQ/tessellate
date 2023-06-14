@@ -12,14 +12,6 @@ import org.jreleaser.model.Stereotype
 import java.io.FileInputStream
 import java.util.*
 
-/*
- * Copyright (c) 2023 Chris K Wensel <chris@wensel.net>. All Rights Reserved.
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- */
-
 plugins {
     java
     application
@@ -93,6 +85,9 @@ dependencies {
     implementation("org.apache.hadoop:hadoop-common:$hadoop3Version")
     implementation("org.apache.hadoop:hadoop-aws:$hadoop3Version")
 
+    // this is forcefully included by hadoop-aws, so we declare it explicitly
+    implementation("com.amazonaws:aws-java-sdk-bundle:1.12.487")
+
     val jackson = "2.14.2"
     implementation("com.fasterxml.jackson.core:jackson-core:$jackson")
     implementation("com.fasterxml.jackson.core:jackson-databind:$jackson")
@@ -113,9 +108,9 @@ dependencies {
     testImplementation("uk.org.webcompere:system-stubs-jupiter:$systemStubs")
     testImplementation("org.mockito:mockito-inline:5.1.1")
 
-    // https://mvnrepository.com/artifact/software.amazon.awssdk
-    val awsSdk = "2.20.69"
-    integrationTestImplementation("software.amazon.awssdk:s3:$awsSdk")
+//     https://mvnrepository.com/artifact/software.amazon.awssdk
+    val awsSdk2 = "2.20.69"
+    integrationTestImplementation("software.amazon.awssdk:s3:$awsSdk2")
 
     val testContainers = "1.18.3"
     integrationTestImplementation("org.testcontainers:testcontainers:$testContainers")
@@ -126,6 +121,41 @@ dependencies {
 
     testFixturesImplementation("org.jetbrains:annotations:24.0.0")
     testFixturesImplementation("org.junit.jupiter:junit-jupiter-api:$jupiter")
+
+    configurations.configureEach {
+        exclude(group = "org.slf4j", module = "slf4j-log4j12")
+        exclude(group = "org.slf4j", module = "slf4j-reload4j")
+        exclude(group = "log4j", module = "log4j")
+        exclude(group = "ch.qos.reload4j", module = "reload4j")
+    }
+
+    configurations {
+        implementation.configure {
+            exclude(group = "com.amazonaws", module = "aws-java-sdk-core")
+            exclude(group = "com.amazonaws", module = "aws-java-sdk-kms")
+            exclude(group = "com.amazonaws", module = "aws-java-sdk-s3")
+            exclude(group = "org.apache.directory.server")
+            exclude(group = "org.apache.curator")
+            exclude(group = "org.apache.avro")
+            exclude(group = "org.apache.hadoop", module = "hadoop-yarn-api")
+            exclude(group = "org.apache.hadoop", module = "hadoop-yarn-core")
+            exclude(group = "org.apache.hadoop", module = "hadoop-yarn-client")
+            exclude(group = "org.apache.hadoop", module = "hadoop-yarn-common")
+            exclude(group = "org.apache.kerby")
+            exclude(group = "com.google.protobuf")
+            exclude(group = "com.google.inject.extensions", module = "guice-servlet")
+            exclude(group = "com.sun.jersey")
+            exclude(group = "com.sun.jersey.contribs")
+            exclude(group = "org.eclipse.jetty")
+            exclude(group = "org.eclipse.jetty.websocket")
+            exclude(group = "org.apache.zookeeper")
+            exclude(group = "commons-cli")
+            exclude(group = "com.jcraft")
+            exclude(group = "com.nimbusds")
+            exclude(group = "io.netty")
+            exclude(group = "javax.servlet", module = "javax.servlet-api")
+        }
+    }
 }
 
 testing {
