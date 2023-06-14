@@ -62,7 +62,7 @@ dependencies {
     implementation("com.google.guava:guava:31.1-jre")
 
     implementation("org.jetbrains:annotations:24.0.0")
-    implementation("info.picocli:picocli:4.7.1")
+    implementation("info.picocli:picocli:4.7.4")
 
     implementation("org.slf4j:slf4j-api:2.0.7")
     implementation("org.slf4j:slf4j-jdk14:2.0.7")
