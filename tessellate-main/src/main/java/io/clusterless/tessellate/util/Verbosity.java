@@ -8,10 +8,13 @@
 
 package io.clusterless.tessellate.util;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
+import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 
-import java.util.logging.Level;
-import java.util.logging.LogManager;
+import static org.slf4j.Logger.ROOT_LOGGER_NAME;
+
 
 public class Verbosity {
     static {
@@ -21,7 +24,8 @@ public class Verbosity {
     private int level = 0;
 
     public static void setLoggingLevel(Level level) {
-        LogManager.getLogManager().getLogger("").setLevel(level);
+        LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
+        context.getLogger(ROOT_LOGGER_NAME).setLevel(level);
     }
 
     public static void disable() {
@@ -29,7 +33,7 @@ public class Verbosity {
     }
 
     public static void debug() {
-        setLoggingLevel(Level.FINE);
+        setLoggingLevel(Level.DEBUG);
     }
 
     public static void info() {

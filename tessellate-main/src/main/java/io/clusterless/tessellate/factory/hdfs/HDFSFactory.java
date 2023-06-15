@@ -226,6 +226,11 @@ public abstract class HDFSFactory extends FilesFactory {
     }
 
     protected URI s3ToS3a(URI uri) {
+        // relative path for file://
+        if (uri.getScheme() == null) {
+            return uri;
+        }
+
         if (uri.getScheme().equals("s3")) {
             uri = URIs.copyWithScheme(uri, "s3a");
         }

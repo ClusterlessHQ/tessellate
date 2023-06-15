@@ -16,6 +16,8 @@ import io.clusterless.tessellate.model.Source;
 import io.clusterless.tessellate.util.Compression;
 import io.clusterless.tessellate.util.Format;
 import io.clusterless.tessellate.util.Protocol;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.util.*;
@@ -25,6 +27,7 @@ import java.util.stream.Collectors;
  *
  */
 public class TapFactories {
+    private static final Logger LOG = LoggerFactory.getLogger(TapFactories.class);
     static Set<TapFactory> tapFactories = Set.of(
             DirectoryFactory.INSTANCE,
             ParquetFactory.INSTANCE
@@ -57,7 +60,7 @@ public class TapFactories {
         List<URI> inputUris = sourceModel.uris();
         Format format = sourceModel.schema().format();
         Compression compression = sourceModel.schema().compression();
-        return TapFactories.findSourceFactory(inputUris, format, compression);
+        return findSourceFactory(inputUris, format, compression);
     }
 
     public static SourceFactory findSourceFactory(List<URI> uris, Format format, Compression compression) {
@@ -68,7 +71,7 @@ public class TapFactories {
         List<URI> inputUris = sinkModel.uris();
         Format format = sinkModel.schema().format();
         Compression compression = sinkModel.schema().compression();
-        return TapFactories.findSinkFactory(inputUris, format, compression);
+        return findSinkFactory(inputUris, format, compression);
     }
 
     public static SinkFactory findSinkFactory(List<URI> uris, Format format, Compression compression) {
@@ -78,6 +81,7 @@ public class TapFactories {
     public static <T extends TapFactory> T findFactory(List<URI> uris, Format format, Compression compression, LinkedListMultimap<Protocol, T> factoriesMap) {
         Set<String> schemes = uris.stream()
                 .map(URI::getScheme)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
         if (schemes.size() > 1) {
@@ -85,7 +89,9 @@ public class TapFactories {
         }
 
         Optional<String> scheme = schemes.stream().findFirst();
-        Protocol protocol = scheme.map(Protocol::valueOf).orElse(null);
+        Protocol protocol = scheme.map(Protocol::valueOf).orElse(Protocol.file);
+
+        LOG.info("using protocol: {}", protocol);
 
         List<T> factories = factoriesMap.get(protocol); // null is ok
 

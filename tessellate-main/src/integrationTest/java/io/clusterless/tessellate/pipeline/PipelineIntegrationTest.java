@@ -95,14 +95,15 @@ public class PipelineIntegrationTest {
                         .build())
                 .build();
 
-        Pipeline pipelineWrite = new Pipeline(pipelineOptions, merger.merge(JSONUtil.valueToTree(writeAsParquet)));
+        PipelineDef merged = merger.merge(JSONUtil.valueToTree(writeAsParquet));
+        Pipeline pipelineWrite = new Pipeline(pipelineOptions, merged);
 
         pipelineWrite.run();
 
         CascadingTesting.validateEntries(
                 pipelineWrite.flow().openSink(),
                 l -> assertEquals(2, l, "wrong length"), // headers are declared so aren't counted
-                l -> assertEquals(18, l, "wrong size"),
+                l -> assertEquals(merged.source().schema().declared().size(), l, "wrong size"),
                 l -> {
                 }
         );
@@ -132,7 +133,7 @@ public class PipelineIntegrationTest {
         CascadingTesting.validateEntries(
                 pipelineRead.flow().openSink(),
                 l -> assertEquals(2, l, "wrong length"), // headers are declared so aren't counted
-                l -> assertEquals(18, l, "wrong size"),
+                l -> assertEquals(merged.source().schema().declared().size(), l, "wrong size"),
                 l -> {
                 }
         );
@@ -166,14 +167,15 @@ public class PipelineIntegrationTest {
                         .build())
                 .build();
 
-        Pipeline pipelineWrite = new Pipeline(pipelineOptions, merger.merge(JSONUtil.valueToTree(writeAsParquet)));
+        PipelineDef merged = merger.merge(JSONUtil.valueToTree(writeAsParquet));
+        Pipeline pipelineWrite = new Pipeline(pipelineOptions, merged);
 
         pipelineWrite.run();
 
         CascadingTesting.validateEntries(
                 pipelineWrite.flow().openSink(),
                 l -> assertEquals(2, l, "wrong length"), // headers are declared so aren't counted
-                l -> assertEquals(21, l, "wrong size"),
+                l -> assertEquals(merged.source().schema().declared().size() + 3, l, "wrong size"),
                 l -> {
                 }
         );
@@ -209,7 +211,7 @@ public class PipelineIntegrationTest {
         CascadingTesting.validateEntries(
                 pipelineRead.flow().openSink(),
                 l -> assertEquals(2, l, "wrong length"), // headers are declared so aren't counted
-                l -> assertEquals(21, l, "wrong size"),
+                l -> assertEquals(merged.source().schema().declared().size() + 3, l, "wrong size"),
                 l -> {
                 }
         );

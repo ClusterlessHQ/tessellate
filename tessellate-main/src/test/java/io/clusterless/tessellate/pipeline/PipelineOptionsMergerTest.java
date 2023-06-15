@@ -47,7 +47,7 @@ public class PipelineOptionsMergerTest {
 
         PipelineDef merged = merger.merge(JSONUtil.readTree(pipelineJson));
 
-        assertEquals(18, merged.source().schema().declared().size());
+        assertEquals(26, merged.source().schema().declared().size());
         assertEquals(3, merged.source().partitions().size());
     }
 }
