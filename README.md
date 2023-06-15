@@ -2,6 +2,11 @@
 
 A command line tool for reading and writing data to/from multiple locations and across multiple formats.
 
+This project is under active development and many features are considered alpha.
+
+Please do play around with this project in order to provide early feedback, but do expect things to change until we hit
+1.0 release.
+
 ## About
 
 A primary activity of any data-engineering effort is to format and organize data for different access patterns.
@@ -40,4 +45,8 @@ Supported operations:
 
 ## To Run
 
-> ./main/build/install/tess/bin/tess --help
+> ./tessellate-main/build/install/tess/bin/tess --help
+
+To print a project file template:
+
+> tess --print-project
