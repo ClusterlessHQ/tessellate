@@ -41,3 +41,11 @@ jobs:
           JRELEASER_GPG_SECRET_KEY: ${{ secrets.JRELEASER_GPG_SECRET_KEY }}
         run: |
           ./gradlew --no-daemon --info --stacktrace release
+
+      - name: Archive Release Log
+        uses: actions/upload-artifact@v3
+        with:
+          name: jreleaser-log
+          path: |
+            tessellate-main/build/jreleaser/trace.log
+            tessellate-main/build/jreleaser/output.properties
