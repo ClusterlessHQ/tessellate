@@ -199,8 +199,9 @@ application {
 }
 
 jreleaser {
+    dryrun.set(false)
+
     project {
-        dryrun.set(false)
         description.set("Tessellate is tool for parsing and partitioning data.")
         authors.add("Chris K Wensel")
         copyright.set("Chris K Wensel")
