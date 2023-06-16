@@ -244,7 +244,5 @@ jreleaser {
 
 tasks.register("release") {
     dependsOn("distZip")
-    dependsOn("jreleaserConfig")
-    dependsOn("jreleaserAssemble")
     dependsOn("jreleaserRelease")
 }
