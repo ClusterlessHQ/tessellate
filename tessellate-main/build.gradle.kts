@@ -86,8 +86,9 @@ dependencies {
     implementation("org.apache.hadoop:hadoop-common:$hadoop3Version")
     implementation("org.apache.hadoop:hadoop-aws:$hadoop3Version")
 
-    // this is forcefully included by hadoop-aws, so we declare it explicitly
-    implementation("com.amazonaws:aws-java-sdk-bundle:1.12.487")
+    // the bundle is too large, so we only include the s3 and dynamodb dependencies
+    implementation("com.amazonaws:aws-java-sdk-s3:1.12.487")
+    implementation("com.amazonaws:aws-java-sdk-dynamodb:1.12.487")
 
     val jackson = "2.14.2"
     implementation("com.fasterxml.jackson.core:jackson-core:$jackson")
@@ -132,9 +133,7 @@ dependencies {
 
     configurations {
         implementation.configure {
-            exclude(group = "com.amazonaws", module = "aws-java-sdk-core")
-            exclude(group = "com.amazonaws", module = "aws-java-sdk-kms")
-            exclude(group = "com.amazonaws", module = "aws-java-sdk-s3")
+            exclude(group = "com.amazonaws", module = "aws-java-sdk-bundle")
             exclude(group = "org.apache.directory.server")
             exclude(group = "org.apache.curator")
             exclude(group = "org.apache.avro")
