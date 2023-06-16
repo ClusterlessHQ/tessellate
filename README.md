@@ -41,6 +41,13 @@ Supported operations:
 
 ## To Build
 
+So that the Cascading WIP releases can be retrieved, to `gradle.properties` add:
+
+```
+githubUsername=[your github username]
+githubPassword=[your github password]
+```
+
 > ./gradlew installDist
 
 ## To Run
@@ -50,3 +57,5 @@ Supported operations:
 To print a project file template:
 
 > tess --print-project
+
+Documentation coming soon, but see the tests for usage. 
