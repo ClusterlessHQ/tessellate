@@ -50,6 +50,10 @@ public class Verbosity {
         setLoggingLevel(verbosity.length);
     }
 
+    public boolean isVerbose() {
+        return level > 0;
+    }
+
     public int level() {
         return level;
     }

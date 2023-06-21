@@ -13,6 +13,7 @@ import io.clusterless.tessellate.pipeline.Pipeline;
 import io.clusterless.tessellate.pipeline.PipelineOptions;
 import io.clusterless.tessellate.pipeline.PipelineOptionsMerge;
 import io.clusterless.tessellate.util.JSONUtil;
+import io.clusterless.tessellate.util.MetricsPrinter;
 import io.clusterless.tessellate.util.Verbosity;
 import picocli.CommandLine;
 
@@ -31,6 +32,9 @@ public class Main implements Callable<Integer> {
     protected Verbosity verbosity = new Verbosity();
 
     @CommandLine.Mixin
+    protected MetricsPrinter metrics = new MetricsPrinter();
+
+    @CommandLine.Mixin
     protected PipelineOptions pipelineOptions = new PipelineOptions();
 
     @CommandLine.Option(names = "--print-project", description = "show project template, will not run pipeline")
@@ -43,8 +47,9 @@ public class Main implements Callable<Integer> {
 
         try {
             commandLine.parseArgs(args);
-        } catch (CommandLine.MissingParameterException e) {
+        } catch (CommandLine.MissingParameterException | CommandLine.UnmatchedArgumentException e) {
             System.err.println(e.getMessage());
+            commandLine.usage(System.out);
             System.exit(-1);
         }
 
@@ -63,7 +68,7 @@ public class Main implements Callable<Integer> {
         } catch (Exception e) {
             System.err.println(e.getMessage());
 
-            if (main.verbosity().level() > 0) {
+            if (main.verbosity().isVerbose()) {
                 e.printStackTrace(System.err);
             }
 
@@ -95,10 +100,16 @@ public class Main implements Callable<Integer> {
     }
 
     private Integer executePipeline(PipelineDef pipelineDef) {
-        Pipeline pipeline = new Pipeline(pipelineOptions, pipelineDef);
+        try {
+            Pipeline pipeline = new Pipeline(pipelineOptions, pipelineDef);
 
-        pipeline.build();
+            metrics.start(pipeline);
 
-        return pipeline.run();
+            pipeline.build();
+
+            return pipeline.run();
+        } finally {
+            metrics.stop();
+        }
     }
 }

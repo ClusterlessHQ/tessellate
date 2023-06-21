@@ -30,6 +30,8 @@ import io.clusterless.tessellate.util.Models;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import static cascading.flow.FlowDef.flowDef;
 
 public class Pipeline {
@@ -38,6 +40,8 @@ public class Pipeline {
     private final PipelineDef pipelineDef;
     private Flow flow;
     private LocalFlowProcess localFlowProcess;
+
+    private final AtomicBoolean running = new AtomicBoolean(false);
 
     public Pipeline(PipelineOptions pipelineOptions, PipelineDef pipelineDef) {
         this.pipelineOptions = pipelineOptions;
@@ -61,6 +65,14 @@ public class Pipeline {
 
     public Flow flow() {
         return flow;
+    }
+
+    public boolean hasFlow() {
+        return flow != null;
+    }
+
+    public boolean isRunning() {
+        return hasFlow() && running.get();
     }
 
     public void build() {
@@ -123,7 +135,12 @@ public class Pipeline {
             build();
         }
 
-        flow.complete();
+        running.set(true);
+        try {
+            flow.complete();
+        } finally {
+            running.set(false);
+        }
 
         return 0;
     }
