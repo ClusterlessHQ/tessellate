@@ -8,40 +8,33 @@
 
 package io.clusterless.tessellate.factory.hdfs;
 
+import cascading.nested.json.hadoop3.JSONTextLine;
 import cascading.scheme.Scheme;
-import cascading.scheme.hadoop.TextDelimited;
 import cascading.scheme.hadoop.TextLine;
 import cascading.tuple.Fields;
 import io.clusterless.tessellate.factory.TapFactory;
 import io.clusterless.tessellate.model.Dataset;
-import io.clusterless.tessellate.model.Schema;
 import io.clusterless.tessellate.pipeline.PipelineOptions;
 import io.clusterless.tessellate.util.Compression;
 import io.clusterless.tessellate.util.Format;
+import io.clusterless.tessellate.util.JSONUtil;
 
 import java.util.Set;
 
-public class TextFactory extends LinesFactory {
-    public static TapFactory INSTANCE = new TextFactory();
+public class JSONFSFactory extends LinesFSFactory {
+    public static TapFactory INSTANCE = new JSONFSFactory();
 
     @Override
     public Set<Format> getFormats() {
-        return Set.of(Format.text, Format.csv, Format.tsv);
+        return Set.of(Format.json);
     }
 
     @Override
     protected Scheme createScheme(PipelineOptions pipelineOptions, Dataset dataset, Fields declaredFields) {
-        Schema schema = dataset.schema();
-        TextLine.Compress compress = schema.compression() == Compression.none ? TextLine.Compress.DISABLE : TextLine.Compress.ENABLE;
-
-        switch (schema.format()) {
-            default:
-            case text:
-                return new TextLine(new Fields("line"), new Fields("line"), compress);
-            case csv:
-                return new TextDelimited(declaredFields, compress, schema.embedsSchema(), ",", "\"");
-            case tsv:
-                return new TextDelimited(declaredFields, compress, schema.embedsSchema(), "\t", "\"");
+        if (dataset.schema().compression() == Compression.none) {
+            return new JSONTextLine(JSONUtil.DATA_MAPPER, declaredFields);
+        } else {
+            return new JSONTextLine(JSONUtil.DATA_MAPPER, declaredFields, TextLine.Compress.ENABLE);
         }
     }
 }

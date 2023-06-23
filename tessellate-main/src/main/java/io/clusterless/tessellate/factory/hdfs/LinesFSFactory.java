@@ -12,12 +12,18 @@ import cascading.tuple.Fields;
 import io.clusterless.tessellate.model.Dataset;
 import io.clusterless.tessellate.pipeline.PipelineOptions;
 import io.clusterless.tessellate.util.Compression;
+import io.clusterless.tessellate.util.Protocol;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Properties;
 import java.util.Set;
 
-public abstract class LinesFactory extends HDFSFactory {
+public abstract class LinesFSFactory extends FSFactory {
+    @Override
+    public Set<Protocol> getProtocols() {
+        return Set.of(Protocol.hdfs, Protocol.s3);
+    }
+
     @Override
     public Set<Compression> getCompressions() {
         return Set.of(Compression.none, Compression.gzip, Compression.snappy, Compression.lz4, Compression.bzip2);

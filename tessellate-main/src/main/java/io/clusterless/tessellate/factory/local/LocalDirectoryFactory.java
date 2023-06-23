@@ -44,8 +44,8 @@ import java.util.Set;
 /**
  *
  */
-public class DirectoryFactory extends FilesFactory {
-    public static TapFactory INSTANCE = new DirectoryFactory();
+public class LocalDirectoryFactory extends FilesFactory {
+    public static TapFactory INSTANCE = new LocalDirectoryFactory();
     private int openWritesThreshold = 100;
 
     @Override

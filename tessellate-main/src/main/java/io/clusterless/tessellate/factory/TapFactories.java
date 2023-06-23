@@ -9,10 +9,10 @@
 package io.clusterless.tessellate.factory;
 
 import com.google.common.collect.LinkedListMultimap;
-import io.clusterless.tessellate.factory.hdfs.JSONFactory;
+import io.clusterless.tessellate.factory.hdfs.JSONFSFactory;
 import io.clusterless.tessellate.factory.hdfs.ParquetFactory;
-import io.clusterless.tessellate.factory.hdfs.TextFactory;
-import io.clusterless.tessellate.factory.local.DirectoryFactory;
+import io.clusterless.tessellate.factory.hdfs.TextFSFactory;
+import io.clusterless.tessellate.factory.local.LocalDirectoryFactory;
 import io.clusterless.tessellate.model.Sink;
 import io.clusterless.tessellate.model.Source;
 import io.clusterless.tessellate.util.Compression;
@@ -30,18 +30,18 @@ import java.util.stream.Collectors;
  */
 public class TapFactories {
     private static final Logger LOG = LoggerFactory.getLogger(TapFactories.class);
-    static Set<TapFactory> tapFactories = Set.of(
-            DirectoryFactory.INSTANCE,
+    static Set<TapFactory> tapFactories = new LinkedHashSet<>(List.of(
+            LocalDirectoryFactory.INSTANCE,
             ParquetFactory.INSTANCE,
-            JSONFactory.INSTANCE,
-            TextFactory.INSTANCE
-    );
+            JSONFSFactory.INSTANCE,
+            TextFSFactory.INSTANCE
+    ));
     private static final LinkedListMultimap<Protocol, SourceFactory> sourceFactories = LinkedListMultimap.create();
     private static final LinkedListMultimap<Protocol, SinkFactory> sinkFactories = LinkedListMultimap.create();
 
     static {
-        sourceFactories.put(null, (SourceFactory) DirectoryFactory.INSTANCE);
-        sinkFactories.put(null, (SinkFactory) DirectoryFactory.INSTANCE);
+        sourceFactories.put(null, (SourceFactory) LocalDirectoryFactory.INSTANCE);
+        sinkFactories.put(null, (SinkFactory) LocalDirectoryFactory.INSTANCE);
 
         for (TapFactory tapFactory : tapFactories) {
             if (tapFactory instanceof SourceFactory) {

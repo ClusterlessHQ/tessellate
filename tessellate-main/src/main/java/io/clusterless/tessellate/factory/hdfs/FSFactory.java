@@ -30,7 +30,6 @@ import io.clusterless.tessellate.model.Sink;
 import io.clusterless.tessellate.pipeline.AWSOptions;
 import io.clusterless.tessellate.pipeline.PipelineOptions;
 import io.clusterless.tessellate.util.Property;
-import io.clusterless.tessellate.util.Protocol;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.s3a.Constants;
 import org.apache.hadoop.fs.s3a.S3AFileSystem;
@@ -43,20 +42,18 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Properties;
 import java.util.stream.Collectors;
 
-public abstract class HDFSFactory extends FilesFactory {
-    private static final Logger LOG = LoggerFactory.getLogger(HDFSFactory.class);
+public abstract class FSFactory extends FilesFactory {
+    private static final Logger LOG = LoggerFactory.getLogger(FSFactory.class);
 
     static {
         // prevents npe when run inside a docker container on some hosts
         UserGroupInformation.setLoginUser(UserGroupInformation.createRemoteUser(System.getProperty("user.name", "nobody")));
-    }
-
-    @Override
-    public Set<Protocol> getProtocols() {
-        return Set.of(Protocol.file, Protocol.hdfs, Protocol.s3);
     }
 
     @Override

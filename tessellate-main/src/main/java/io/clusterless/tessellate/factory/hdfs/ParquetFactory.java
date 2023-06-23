@@ -17,13 +17,19 @@ import io.clusterless.tessellate.pipeline.PipelineOptions;
 import io.clusterless.tessellate.util.Compression;
 import io.clusterless.tessellate.util.Format;
 import io.clusterless.tessellate.util.JSONUtil;
+import io.clusterless.tessellate.util.Protocol;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Set;
 
-public class ParquetFactory extends HDFSFactory {
+public class ParquetFactory extends FSFactory {
     public static TapFactory INSTANCE = new ParquetFactory();
+
+    @Override
+    public Set<Protocol> getProtocols() {
+        return Set.of(Protocol.file, Protocol.hdfs, Protocol.s3);
+    }
 
     @Override
     public Set<Format> getFormats() {
