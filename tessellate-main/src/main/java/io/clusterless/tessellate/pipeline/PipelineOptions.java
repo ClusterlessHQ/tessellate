@@ -39,7 +39,6 @@ public class PipelineOptions implements AWSOptions {
     @CommandLine.Option(names = {"--aws-assumed-role-arn"}, description = "aws assumed role arn")
     protected String assumedRoleARN;
 
-
     public Path pipelinePath() {
         return pipelinePath;
     }

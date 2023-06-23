@@ -12,12 +12,13 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Sink implements Dataset, Model {
+public class Sink implements Dataset, Model, HasManifest {
     private URI manifest;
+    private String manifestLot;
     private URI output;
     private Schema schema = new Schema();
     private List<Partition> partitions = new ArrayList<>();
-    private boolean namedPartitions;
+    private boolean namedPartitions = true;
 
     private Filename filename = new Filename();
 
@@ -29,8 +30,13 @@ public class Sink implements Dataset, Model {
         return output;
     }
 
+    @Override
     public URI manifest() {
         return manifest;
+    }
+
+    public String manifestLot() {
+        return manifestLot;
     }
 
     public Schema schema() {
@@ -56,10 +62,11 @@ public class Sink implements Dataset, Model {
 
     public static final class Builder {
         private URI manifest;
+        private String manifestLot;
         private URI output;
         private Schema schema = new Schema();
         private List<Partition> partitions = new ArrayList<>();
-        private boolean namedPartitions;
+        private boolean namedPartitions = true;
         private Filename filename = new Filename();
 
         private Builder() {
@@ -71,6 +78,11 @@ public class Sink implements Dataset, Model {
 
         public Builder withManifest(URI manifest) {
             this.manifest = manifest;
+            return this;
+        }
+
+        public Builder withManifestLot(String manifestLot) {
+            this.manifestLot = manifestLot;
             return this;
         }
 
@@ -101,12 +113,13 @@ public class Sink implements Dataset, Model {
 
         public Sink build() {
             Sink sink = new Sink();
-            sink.manifest = this.manifest;
-            sink.partitions = this.partitions;
-            sink.schema = this.schema;
-            sink.output = this.output;
             sink.namedPartitions = this.namedPartitions;
+            sink.manifest = this.manifest;
+            sink.manifestLot = this.manifestLot;
+            sink.schema = this.schema;
             sink.filename = this.filename;
+            sink.output = this.output;
+            sink.partitions = this.partitions;
             return sink;
         }
     }

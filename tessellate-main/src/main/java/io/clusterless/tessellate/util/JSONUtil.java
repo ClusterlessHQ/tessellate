@@ -12,11 +12,15 @@ import cascading.nested.json.JSONCoercibleType;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import java.io.*;
+import java.net.URI;
 import java.nio.file.Path;
+import java.util.LinkedList;
+import java.util.List;
 
 public class JSONUtil {
     public static final ObjectMapper DATA_MAPPER;
@@ -153,7 +157,23 @@ public class JSONUtil {
         }
     }
 
+    public static JsonNode stringToTree(String value) {
+        try {
+            return CONFIG_READER.readTree(value);
+        } catch (JsonProcessingException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     public static <T> T treeToValue(JsonNode n, Class<T> type) throws JsonProcessingException {
         return CONFIG_READER.treeToValue(n, type);
+    }
+
+    public static List<URI> toList(JsonNode node) {
+        try {
+            return JSONUtil.CONFIG_READER.treeToValue(node, TypeFactory.defaultInstance().constructParametricType(LinkedList.class, URI.class));
+        } catch (JsonProcessingException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }

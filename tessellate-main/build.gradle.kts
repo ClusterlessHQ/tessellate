@@ -86,6 +86,9 @@ dependencies {
     implementation("org.apache.hadoop:hadoop-common:$hadoop3Version")
     implementation("org.apache.hadoop:hadoop-aws:$hadoop3Version")
 
+    // required by hadoop in java 9+
+    implementation("javax.xml.bind:jaxb-api:2.3.0")
+
     // the bundle is too large, so we only include the s3 and dynamodb dependencies
     implementation("com.amazonaws:aws-java-sdk-s3:1.12.487")
     implementation("com.amazonaws:aws-java-sdk-dynamodb:1.12.487")
@@ -98,6 +101,7 @@ dependencies {
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8:$jackson")
 
     implementation("org.fusesource.jansi:jansi:2.4.0")
+    implementation("com.github.hal4j:uritemplate:1.3.1")
 
     testImplementation("net.wensel:cascading-core:$cascading:tests")
 

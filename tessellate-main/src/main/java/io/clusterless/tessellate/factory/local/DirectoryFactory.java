@@ -23,6 +23,7 @@ import cascading.tuple.Fields;
 import io.clusterless.tessellate.factory.TapFactory;
 import io.clusterless.tessellate.factory.local.tap.PrefixedDirTap;
 import io.clusterless.tessellate.model.Dataset;
+import io.clusterless.tessellate.model.HasManifest;
 import io.clusterless.tessellate.model.Schema;
 import io.clusterless.tessellate.model.Sink;
 import io.clusterless.tessellate.pipeline.PipelineOptions;
@@ -30,6 +31,7 @@ import io.clusterless.tessellate.util.Compression;
 import io.clusterless.tessellate.util.Format;
 import io.clusterless.tessellate.util.JSONUtil;
 import io.clusterless.tessellate.util.Protocol;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -68,6 +70,45 @@ public class DirectoryFactory extends FilesFactory {
 
     @Override
     protected Tap createTap(PipelineOptions pipelineOptions, Dataset dataset, Fields currentFields) {
+        boolean isSink = isSink(dataset);
+
+        Fields declaredFields = declaredFields(dataset, currentFields);
+
+        if (dataset instanceof HasManifest && ((HasManifest) dataset).manifest() != null) {
+            throw new IllegalStateException("manifests not supported for local sinks/sources");
+        }
+
+        List<URI> uris = dataset.uris();
+
+        if (uris.size() > 1) {
+            throw new IllegalArgumentException("only one URI is supported");
+        }
+
+        URI uri = uris.get(0);
+
+        boolean isDir = isLocalDirectory(uri);
+
+        String prefix = null;
+
+        if (isSink && isDir) {
+            prefix = getPartFileName((Sink) dataset, declaredFields);
+        }
+
+        Scheme<Properties, InputStream, OutputStream, ?, ?> scheme = createScheme(dataset, declaredFields);
+
+        Tap parentTap = createParentTap(uri, isDir, scheme, prefix);
+
+        Optional<Partition> partition = createPartition(dataset);
+
+        if (partition.isEmpty()) {
+            return parentTap;
+        }
+
+        return new PartitionTap(parentTap, partition.get(), openWritesThreshold());
+    }
+
+    @NotNull
+    protected Scheme<Properties, InputStream, OutputStream, ?, ?> createScheme(Dataset dataset, Fields declaredFields) {
         Scheme<Properties, InputStream, OutputStream, ?, ?> scheme;
 
         CompressorScheme.Compressor compressor = null;
@@ -91,8 +132,6 @@ public class DirectoryFactory extends FilesFactory {
                 break;
         }
 
-        Fields declaredFields = declaredFields(dataset);
-
         switch (schema.format()) {
             default:
             case text:
@@ -113,32 +152,7 @@ public class DirectoryFactory extends FilesFactory {
                 };
                 break;
         }
-
-        List<URI> uris = dataset.uris();
-
-        if (uris.size() > 1) {
-            throw new IllegalArgumentException("only one URI is supported");
-        }
-
-        URI uri = uris.get(0);
-
-        boolean isDir = isLocalDirectory(uri);
-
-        String prefix = null;
-
-        if (isSink(dataset) && isDir) {
-            prefix = getPartFileName((Sink) dataset, declaredFields);
-        }
-
-        Tap parentTap = createParentTap(uri, isDir, scheme, prefix);
-
-        Optional<Partition> partition = createPartition(dataset);
-
-        if (partition.isEmpty()) {
-            return parentTap;
-        }
-
-        return new PartitionTap(parentTap, partition.get(), openWritesThreshold());
+        return scheme;
     }
 
     protected Tap createParentTap(URI uri, boolean isDir, Scheme<Properties, InputStream, OutputStream, ?, ?> scheme, String prefix) {

@@ -12,8 +12,10 @@ import cascading.tap.Tap;
 import io.clusterless.tessellate.model.Source;
 import io.clusterless.tessellate.pipeline.PipelineOptions;
 
+import java.io.IOException;
+
 public interface SourceFactory extends TapFactory {
 
-    Tap getSource(PipelineOptions pipelineOptions, Source sourceModel);
+    Tap getSource(PipelineOptions pipelineOptions, Source sourceModel) throws IOException;
 
 }

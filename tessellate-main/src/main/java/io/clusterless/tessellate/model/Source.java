@@ -12,7 +12,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Source implements Dataset, Model {
+public class Source implements Dataset, Model, HasManifest {
     private URI manifest;
     private List<URI> inputs = new ArrayList<>();
     private Schema schema = new Schema();

@@ -30,6 +30,7 @@ import io.clusterless.tessellate.util.Models;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static cascading.flow.FlowDef.flowDef;
@@ -75,16 +76,17 @@ public class Pipeline {
         return hasFlow() && running.get();
     }
 
-    public void build() {
+    public void build() throws IOException {
         SourceFactory sourceFactory = TapFactories.findSourceFactory(pipelineDef.source());
         SinkFactory sinkFactory = TapFactories.findSinkFactory(pipelineDef.sink());
 
         Tap sourceTap = sourceFactory.getSource(pipelineOptions, pipelineDef.source());
 
-        if (pipelineDef.source().schema().embedsSchema()) {
+        if (pipelineDef.source().schema().embedsSchema() || pipelineDef.source().schema().format().alwaysEmbedsSchema()) {
             sourceTap.retrieveSourceFields(flowProcess());
         }
 
+        // get source fields here so that any partition fields will be captured
         Fields currentFields = sourceTap.getSourceFields();
 
         Pipe pipe = new Pipe("head");
@@ -129,7 +131,7 @@ public class Pipeline {
                 .addTail(pipe));
     }
 
-    public Integer run() {
+    public Integer run() throws IOException {
 
         if (flow == null) {
             build();

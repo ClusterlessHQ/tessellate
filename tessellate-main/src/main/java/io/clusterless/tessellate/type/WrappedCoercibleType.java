@@ -59,4 +59,9 @@ public class WrappedCoercibleType<Canonical> implements CoercibleType<Canonical>
     public int hashCode() {
         return Objects.hash(coercibleType, nullToken);
     }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[" + coercibleType + "]";
+    }
 }

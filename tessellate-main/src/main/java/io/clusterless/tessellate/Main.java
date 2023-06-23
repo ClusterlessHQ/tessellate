@@ -17,6 +17,7 @@ import io.clusterless.tessellate.util.MetricsPrinter;
 import io.clusterless.tessellate.util.Verbosity;
 import picocli.CommandLine;
 
+import java.io.IOException;
 import java.util.concurrent.Callable;
 
 /**
@@ -86,7 +87,7 @@ public class Main implements Callable<Integer> {
     }
 
     @Override
-    public Integer call() {
+    public Integer call() throws IOException {
         PipelineOptionsMerge merge = new PipelineOptionsMerge(pipelineOptions);
 
         PipelineDef pipelineDef = merge.merge();
@@ -99,7 +100,7 @@ public class Main implements Callable<Integer> {
         return executePipeline(pipelineDef);
     }
 
-    private Integer executePipeline(PipelineDef pipelineDef) {
+    private Integer executePipeline(PipelineDef pipelineDef) throws IOException {
         try {
             Pipeline pipeline = new Pipeline(pipelineOptions, pipelineDef);
 

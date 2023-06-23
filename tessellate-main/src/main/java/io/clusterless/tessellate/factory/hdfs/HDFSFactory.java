@@ -19,6 +19,11 @@ import cascading.tap.local.hadoop.LocalHfsAdaptor;
 import cascading.tap.partition.Partition;
 import cascading.tuple.Fields;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import io.clusterless.tessellate.factory.ManifestReader;
+import io.clusterless.tessellate.factory.ManifestWriter;
+import io.clusterless.tessellate.factory.Observed;
+import io.clusterless.tessellate.factory.hdfs.fs.ObserveLocalFileSystem;
+import io.clusterless.tessellate.factory.hdfs.fs.ObserveS3AFileSystem;
 import io.clusterless.tessellate.factory.local.FilesFactory;
 import io.clusterless.tessellate.model.Dataset;
 import io.clusterless.tessellate.model.Sink;
@@ -26,8 +31,6 @@ import io.clusterless.tessellate.pipeline.AWSOptions;
 import io.clusterless.tessellate.pipeline.PipelineOptions;
 import io.clusterless.tessellate.util.Property;
 import io.clusterless.tessellate.util.Protocol;
-import io.clusterless.tessellate.util.URIs;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.s3a.Constants;
 import org.apache.hadoop.fs.s3a.S3AFileSystem;
@@ -35,12 +38,17 @@ import org.apache.hadoop.fs.s3a.S3AUtils;
 import org.apache.hadoop.fs.s3a.auth.AssumedRoleCredentialProvider;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public abstract class HDFSFactory extends FilesFactory {
+    private static final Logger LOG = LoggerFactory.getLogger(HDFSFactory.class);
+
     static {
         // prevents npe when run inside a docker container on some hosts
         UserGroupInformation.setLoginUser(UserGroupInformation.createRemoteUser(System.getProperty("user.name", "nobody")));
@@ -57,24 +65,27 @@ public abstract class HDFSFactory extends FilesFactory {
     }
 
     @Override
-    protected Tap createTap(PipelineOptions pipelineOptions, Dataset dataset, Fields currentFields) {
-        List<URI> uris = dataset.uris().stream()
-                .map(URIs::copyWithoutQuery)
-                .map(this::s3ToS3a)
-                .collect(Collectors.toList());
+    protected Tap createTap(PipelineOptions pipelineOptions, Dataset dataset, Fields currentFields) throws IOException {
+        boolean isSink = isSink(dataset);
 
-        URI commonRoot = findCommonRoot(uris);
-
-        Fields declaredFields = isSink(dataset) && currentFields.isDefined() ? currentFields : declaredFields(dataset);
+        Fields declaredFields = declaredFields(dataset, currentFields);
 
         Properties local = initLocalProperties(pipelineOptions, dataset, declaredFields);
+
+        ManifestReader manifestReader = ManifestReader.from(dataset);
+
+        List<URI> uris = manifestReader.uris(local);
+
+        URI commonRoot = manifestReader.findCommonRoot(local);
+
+        LOG.info("{}: handing uris: {}, with common: {}", logPrefix(isSink), uris.size(), commonRoot);
 
         Scheme scheme = createScheme(pipelineOptions, dataset, declaredFields);
 
         Tap tap;
 
-        if (isSink(dataset)) {
-            tap = createSinkTap(local, scheme, commonRoot, uris);
+        if (isSink) {
+            tap = createSinkTap(local, scheme, commonRoot, uris, ((Sink) dataset).manifest());
         } else {
             tap = createSourceTap(local, scheme, commonRoot, uris);
         }
@@ -82,10 +93,27 @@ public abstract class HDFSFactory extends FilesFactory {
         Optional<Partition> partition = createPartition(dataset);
 
         if (partition.isPresent()) {
+            LOG.info("{}: partitioning on: {}", logPrefix(isSink), partition.get().getPartitionFields());
             tap = new PartitionTap((Hfs) tap, partition.get(), openWritesThreshold());
         }
 
-        return new LocalHfsAdaptor(tap);
+        ManifestWriter manifestWriter = ManifestWriter.from(dataset, commonRoot);
+
+        return new LocalHfsAdaptor(tap) {
+            @Override
+            public boolean commitResource(Properties conf) throws IOException {
+                boolean result = super.commitResource(conf);
+
+                manifestWriter.writeSuccess(conf);
+
+                return result;
+            }
+        };
+    }
+
+    @NotNull
+    private static String logPrefix(boolean isSink) {
+        return isSink ? "writing" : "reading";
     }
 
     @NotNull
@@ -102,6 +130,13 @@ public abstract class HDFSFactory extends FilesFactory {
         local.setProperty("mapred.output.direct." + S3AFileSystem.class.getSimpleName(), "true");
         local.setProperty("cascading.tapcollector.partname", String.format("%%s%%s%s-%%05d-%%05d", prefix));
         local.setProperty("mapreduce.input.fileinputformat.input.dir.recursive", "true");
+
+        // intercept all writes against the s3a: and file: filesystem
+        local.setProperty("mapred.output.direct." + ObserveS3AFileSystem.class.getSimpleName(), "true");
+        local.setProperty("fs.s3a.impl", ObserveS3AFileSystem.class.getName());
+        local.setProperty("fs.s3.impl", ObserveS3AFileSystem.class.getName());
+        local.setProperty("mapred.output.direct." + ObserveLocalFileSystem.class.getSimpleName(), "true");
+        local.setProperty("fs.file.impl", ObserveLocalFileSystem.class.getName());
 
         return applyAWSProperties(pipelineOptions, dataset, local);
     }
@@ -143,37 +178,15 @@ public abstract class HDFSFactory extends FilesFactory {
         return local;
     }
 
-    private URI findCommonRoot(List<URI> uris) {
-        if (uris.size() == 1) {
-            return uris.get(0);
-        }
-
-        Set<String> roots = uris.stream()
-                .map(Objects::toString)
-                .collect(Collectors.toSet());
-
-        String commonPrefix = StringUtils.getCommonPrefix(roots.toArray(new String[0]));
-
-        if (commonPrefix.isEmpty()) {
-            throw new IllegalArgumentException("to many unique roots, got: " + roots);
-        }
-
-        if (commonPrefix.endsWith("/")) {
-            return URI.create(commonPrefix);
-        }
-
-        // remove the filename part of the path
-        return URIs.trim(URI.create(commonPrefix), 1);
-    }
-
     @NotNull
-    private static Hfs createSourceTap(Properties local, Scheme scheme, URI finalURI, List<URI> uris) {
+    private static Hfs createSourceTap(Properties local, Scheme scheme, URI commonURI, List<URI> uris) {
+        Observed.INSTANCE.reads(commonURI);
+
         String[] identifiers = uris.stream()
                 .map(URI::toString)
-                .collect(Collectors.toList())
-                .toArray(new String[uris.size()]);
+                .toArray(String[]::new);
 
-        return new Hfs(scheme, finalURI.toString(), SinkMode.UPDATE) {
+        return new Hfs(scheme, commonURI.toString(), SinkMode.UPDATE) {
             @Override
             public boolean isSink() {
                 return false;
@@ -197,12 +210,14 @@ public abstract class HDFSFactory extends FilesFactory {
     }
 
     @NotNull
-    private static Hfs createSinkTap(Properties local, Scheme scheme, URI finalURI, List<URI> uris) {
+    private static Hfs createSinkTap(Properties local, Scheme scheme, URI commonURI, List<URI> uris, URI manifest) {
         if (uris.size() > 1) {
             throw new IllegalArgumentException("cannot write to multiple uris, got: " + uris.stream().limit(10));
         }
 
-        return new Hfs(scheme, finalURI.toString(), SinkMode.UPDATE) {
+        Observed.INSTANCE.writes(commonURI);
+
+        return new Hfs(scheme, commonURI.toString(), SinkMode.UPDATE) {
             @Override
             public void sourceConfInit(FlowProcess<? extends Configuration> process, Configuration conf) {
                 HadoopUtil.copyConfiguration(local, conf);
@@ -223,18 +238,5 @@ public abstract class HDFSFactory extends FilesFactory {
         list.addFirst(DefaultAWSCredentialsProviderChain.class);
 
         return list.stream().map(Class::getName).collect(Collectors.joining(","));
-    }
-
-    protected URI s3ToS3a(URI uri) {
-        // relative path for file://
-        if (uri.getScheme() == null) {
-            return uri;
-        }
-
-        if (uri.getScheme().equals("s3")) {
-            uri = URIs.copyWithScheme(uri, "s3a");
-        }
-
-        return uri;
     }
 }

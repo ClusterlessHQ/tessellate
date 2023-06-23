@@ -10,8 +10,7 @@ package io.clusterless.tessellate.util;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.util.StringJoiner;
 import java.util.regex.Pattern;
 
@@ -34,6 +33,14 @@ public class URIs {
         }
     }
 
+    public static URI copyWithHost(URI uri, String host) {
+        try {
+            return new URI(uri.getScheme(), host, uri.getPath(), uri.getQuery());
+        } catch (URISyntaxException exception) {
+            throw new IllegalArgumentException(exception.getMessage(), exception);
+        }
+    }
+
     public static URI copyWithQuery(URI uri, String query) {
         try {
             return new URI(uri.getScheme(), uri.getAuthority(), uri.getPath(), query, null);
@@ -50,24 +57,12 @@ public class URIs {
         }
     }
 
-    /**
-     * @param raw
-     * @return
-     * @throws IllegalArgumentException
-     */
-    public static URI encodeEscapedToURI(String raw) {
-        String encoded = encodeEscaped(raw);
-
+    public static URI copyWithPathAppend(URI uri, String path) {
         try {
-            return new URI(encoded);
+            return new URI(uri.getScheme(), uri.getAuthority(), Paths.get(uri.getPath(), path).toString(), null, null);
         } catch (URISyntaxException e) {
-            throw new IllegalArgumentException(e.getMessage() + ", use {{...}} to url encode portions of the path", e);
+            throw new IllegalArgumentException("unable to copy uri");
         }
-    }
-
-    public static String encodeEscaped(String raw) {
-        return pattern.matcher(raw)
-                .replaceAll((r) -> URLEncoder.encode(r.group(2), StandardCharsets.UTF_8));
     }
 
     public static URI trim(URI uri, int trim) {
@@ -90,5 +85,9 @@ public class URIs {
         }
 
         return copyWithPath(uri, joiner.toString());
+    }
+
+    public static URI cleanFileUrls(URI uri) {
+        return uri.getScheme().equals("file") ? URIs.copyWithHost(uri, "") : uri.normalize();
     }
 }

@@ -37,7 +37,8 @@ public class PipelineOptionsMerge {
             .putInto("inputs", "/source/inputs")
             .putInto("inputManifest", "/source/manifest")
             .putInto("output", "/sink/output")
-            .putInto("outputManifest", "/sink/manifest");
+            .putInto("outputManifest", "/sink/manifest")
+            .putInto("outputManifestLot", "/sink/manifestLot");
 
     private static final Map<Comparable, Function<PipelineOptions, JsonNode>> argumentLookups = new HashMap<>();
 

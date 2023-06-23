@@ -18,30 +18,50 @@ import java.util.Set;
 public enum Format {
     csv("csv"),
     tsv("tsv"),
-    parquet("parquet"),
+    parquet(true, "parquet"),
     text,
     json(text, "jsonl", "json"),
     regex(text, "log");
 
     private final Format parent;
+    private final boolean alwaysEmbedsSchema;
     private final Set<String> extensions = new LinkedHashSet<>();
 
     Format(Format parent, String... extensions) {
         this.parent = parent;
+        this.alwaysEmbedsSchema = false;
+        this.extensions.addAll(List.of(extensions));
+    }
+
+    Format(Format parent, boolean alwaysEmbedsSchema, String... extensions) {
+        this.parent = parent;
+        this.alwaysEmbedsSchema = alwaysEmbedsSchema;
         this.extensions.addAll(List.of(extensions));
     }
 
     Format() {
         this.parent = this;
+        this.alwaysEmbedsSchema = false;
     }
 
     Format(String... extensions) {
         this.parent = this;
+        this.alwaysEmbedsSchema = false;
+        this.extensions.addAll(List.of(extensions));
+    }
+
+    Format(boolean alwaysEmbedsSchema, String... extensions) {
+        this.parent = this;
+        this.alwaysEmbedsSchema = alwaysEmbedsSchema;
         this.extensions.addAll(List.of(extensions));
     }
 
     public Format parent() {
         return parent;
+    }
+
+    public boolean alwaysEmbedsSchema() {
+        return alwaysEmbedsSchema;
     }
 
     public String extension() {

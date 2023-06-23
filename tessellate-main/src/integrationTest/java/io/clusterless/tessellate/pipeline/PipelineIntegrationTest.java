@@ -9,12 +9,14 @@
 package io.clusterless.tessellate.pipeline;
 
 import cascading.CascadingTesting;
+import com.github.hal4j.uritemplate.URITemplate;
 import io.clusterless.tessellate.junit.PathForResource;
 import io.clusterless.tessellate.junit.ResourceExtension;
 import io.clusterless.tessellate.junit.URLForOutput;
 import io.clusterless.tessellate.model.*;
 import io.clusterless.tessellate.util.Format;
 import io.clusterless.tessellate.util.JSONUtil;
+import io.clusterless.tessellate.util.URIs;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,6 +32,8 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -74,7 +78,9 @@ public class PipelineIntegrationTest {
     }
 
     @Test
-    void writeReadParquet(@PathForResource("/data/aws-s3-access-log.txt") URI input, @URLForOutput(scheme = "s3", host = TEST_BUCKET, path = "intermediate") URI intermediate, @URLForOutput(scheme = "s3", host = TEST_BUCKET, path = "output") URI output) throws IOException {
+    void writeReadParquet(@PathForResource("/data/aws-s3-access-log.txt") URI input,
+                          @URLForOutput(scheme = "s3", host = TEST_BUCKET, path = "intermediate") URI intermediate,
+                          @URLForOutput(scheme = "s3", host = TEST_BUCKET, path = "output") URI output) throws IOException {
         PipelineOptions pipelineOptions = new PipelineOptions();
         PipelineOptionsMerge merger = new PipelineOptionsMerge(pipelineOptions);
 
@@ -140,7 +146,10 @@ public class PipelineIntegrationTest {
     }
 
     @Test
-    void writeReadParquetPartitioned(@PathForResource("/data/aws-s3-access-log.txt") URI input, @URLForOutput(scheme = "s3", host = TEST_BUCKET, path = "intermediate") URI intermediate, @URLForOutput(scheme = "s3", host = TEST_BUCKET, path = "output") URI output) throws IOException {
+    void writeReadParquetPartitioned(
+            @PathForResource("/data/aws-s3-access-log.txt") URI input,
+            @URLForOutput(scheme = "s3", host = TEST_BUCKET, path = "intermediate") URI intermediate,
+            @URLForOutput(scheme = "s3", host = TEST_BUCKET, path = "output") URI output) throws IOException {
         PipelineOptions pipelineOptions = new PipelineOptions();
         PipelineOptionsMerge merger = new PipelineOptionsMerge(pipelineOptions);
 
@@ -184,6 +193,99 @@ public class PipelineIntegrationTest {
                 .withName("read")
                 .withSource(Source.builder()
                         .withInputs(List.of(intermediate))
+                        .withSchema(Schema.builder()
+                                .withFormat(Format.parquet)
+                                .withEmbedsSchema(true)
+                                .build())
+                        .withNamedPartitions(true)
+                        .withPartitions(List.of(
+                                new Partition("year|DateTime|yyyy"),
+                                new Partition("month|DateTime|MM"),
+                                new Partition("day|DateTime|dd")
+                        ))
+                        .build())
+                .withSink(Sink.builder()
+                        .withOutput(output)
+                        .withSchema(Schema.builder()
+                                .withFormat(Format.csv)
+                                .withEmbedsSchema(true)
+                                .build())
+                        .build())
+                .build();
+
+        Pipeline pipelineRead = new Pipeline(pipelineOptions, merger.merge(JSONUtil.valueToTree(readAsParquet)));
+
+        pipelineRead.run();
+
+        CascadingTesting.validateEntries(
+                pipelineRead.flow().openSink(),
+                l -> assertEquals(2, l, "wrong length"), // headers are declared so aren't counted
+                l -> assertEquals(merged.source().schema().declared().size() + 3, l, "wrong size"),
+                l -> {
+                }
+        );
+    }
+
+    @Test
+    void writeReadParquetPartitionedWithManifests(
+            @PathForResource("/data/aws-s3-access-log.txt") URI input,
+            @URLForOutput(scheme = "s3", host = TEST_BUCKET, path = "intermediateManifest") URI intermediateManifest,
+            @URLForOutput(scheme = "s3", host = TEST_BUCKET, path = "intermediate") URI intermediate,
+            @URLForOutput(scheme = "s3", host = TEST_BUCKET, path = "output") URI output
+    ) throws IOException {
+        PipelineOptions pipelineOptions = new PipelineOptions();
+        PipelineOptionsMerge merger = new PipelineOptionsMerge(pipelineOptions);
+
+        intermediateManifest = URIs.copyWithPathAppend(intermediateManifest, "/lot={lot}/state={state}{/attempt*}/manifest.json");
+
+        PipelineDef writeAsParquet = PipelineDef.builder()
+                .withName("write")
+                .withSource(Source.builder()
+                        .withInputs(List.of(input))
+                        .withSchema(Schema.builder()
+                                .withName("aws-s3-access-log")
+                                .build())
+                        .build())
+                .withSink(Sink.builder()
+                        .withOutput(intermediate)
+                        .withManifest(intermediateManifest)
+                        .withManifestLot("20211112PT5M000")
+                        .withSchema(Schema.builder()
+                                .withFormat(Format.parquet)
+                                .withEmbedsSchema(true)
+                                .build())
+                        .withNamedPartitions(true)
+                        .withPartitions(List.of(
+                                new Partition("time->year|DateTime|yyyy"), // DateTime can parse year, month, and day. Instant cannot,
+                                new Partition("time->month|DateTime|MM"),
+                                new Partition("time->day|DateTime|dd")
+                        ))
+                        .build())
+                .build();
+
+        PipelineDef merged = merger.merge(JSONUtil.valueToTree(writeAsParquet));
+        Pipeline pipelineWrite = new Pipeline(pipelineOptions, merged);
+
+        pipelineWrite.run();
+
+        CascadingTesting.validateEntries(
+                pipelineWrite.flow().openSink(),
+                l -> assertEquals(2, l, "wrong length"), // headers are declared so aren't counted
+                l -> assertEquals(merged.source().schema().declared().size() + 3, l, "wrong size"),
+                l -> {
+                }
+        );
+
+        URI resolvedIntermediateManifest = new URITemplate(URLDecoder.decode(intermediateManifest.toString(), StandardCharsets.UTF_8))
+                .expand("lot", "20211112PT5M000")
+                .expand("state", "complete")
+                .discard("attempt")
+                .toURI();
+
+        PipelineDef readAsParquet = PipelineDef.builder()
+                .withName("read")
+                .withSource(Source.builder()
+                        .withManifest(resolvedIntermediateManifest)
                         .withSchema(Schema.builder()
                                 .withFormat(Format.parquet)
                                 .withEmbedsSchema(true)
