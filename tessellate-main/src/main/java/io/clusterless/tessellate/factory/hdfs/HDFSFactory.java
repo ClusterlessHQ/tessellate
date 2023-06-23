@@ -117,7 +117,7 @@ public abstract class HDFSFactory extends FilesFactory {
     }
 
     @NotNull
-    private Properties initLocalProperties(PipelineOptions pipelineOptions, Dataset dataset, Fields declaredFields) {
+    protected Properties initLocalProperties(PipelineOptions pipelineOptions, Dataset dataset, Fields declaredFields) {
         String prefix = PART_NAME_DEFAULT;
 
         // hdfs always treat paths as directories, so we need to provide a prefix for the part files

@@ -9,7 +9,9 @@
 package io.clusterless.tessellate.factory;
 
 import com.google.common.collect.LinkedListMultimap;
+import io.clusterless.tessellate.factory.hdfs.JSONFactory;
 import io.clusterless.tessellate.factory.hdfs.ParquetFactory;
+import io.clusterless.tessellate.factory.hdfs.TextFactory;
 import io.clusterless.tessellate.factory.local.DirectoryFactory;
 import io.clusterless.tessellate.model.Sink;
 import io.clusterless.tessellate.model.Source;
@@ -30,7 +32,9 @@ public class TapFactories {
     private static final Logger LOG = LoggerFactory.getLogger(TapFactories.class);
     static Set<TapFactory> tapFactories = Set.of(
             DirectoryFactory.INSTANCE,
-            ParquetFactory.INSTANCE
+            ParquetFactory.INSTANCE,
+            JSONFactory.INSTANCE,
+            TextFactory.INSTANCE
     );
     private static final LinkedListMultimap<Protocol, SourceFactory> sourceFactories = LinkedListMultimap.create();
     private static final LinkedListMultimap<Protocol, SinkFactory> sinkFactories = LinkedListMultimap.create();
@@ -60,7 +64,11 @@ public class TapFactories {
         List<URI> inputUris = sourceModel.uris();
         Format format = sourceModel.schema().format();
         Compression compression = sourceModel.schema().compression();
-        return findSourceFactory(inputUris, format, compression);
+        SourceFactory sourceFactory = findSourceFactory(inputUris, format, compression);
+
+        LOG.info("found source factory, format: {}, compression: {}, factory: {}", format, compression, sourceFactory.getClass().getSimpleName());
+
+        return sourceFactory;
     }
 
     public static SourceFactory findSourceFactory(List<URI> uris, Format format, Compression compression) {
@@ -71,7 +79,11 @@ public class TapFactories {
         List<URI> inputUris = sinkModel.uris();
         Format format = sinkModel.schema().format();
         Compression compression = sinkModel.schema().compression();
-        return findSinkFactory(inputUris, format, compression);
+        SinkFactory sinkFactory = findSinkFactory(inputUris, format, compression);
+
+        LOG.info("found sink factory, format: {}, compression: {}, factory: {}", format, compression, sinkFactory.getClass().getSimpleName());
+
+        return sinkFactory;
     }
 
     public static SinkFactory findSinkFactory(List<URI> uris, Format format, Compression compression) {
@@ -90,8 +102,6 @@ public class TapFactories {
 
         Optional<String> scheme = schemes.stream().findFirst();
         Protocol protocol = scheme.map(Protocol::valueOf).orElse(Protocol.file);
-
-        LOG.info("using protocol: {}", protocol);
 
         List<T> factories = factoriesMap.get(protocol); // null is ok
 
@@ -141,13 +151,26 @@ public class TapFactories {
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getFormats(), TapFactories::merge));
     }
 
+    public static Map<Protocol, Set<Compression>> getSourceCompression() {
+        return sourceFactories.entries().stream()
+                .filter(e -> e.getKey() != null)
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getCompressions(), TapFactories::merge));
+    }
+
     public static Map<Protocol, Set<Format>> getSinkFormats() {
         return sinkFactories.entries().stream()
                 .filter(e -> e.getKey() != null)
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getFormats(), TapFactories::merge));
     }
 
+    public static Map<Protocol, Set<Compression>> getSinkCompression() {
+        return sinkFactories.entries().stream()
+                .filter(e -> e.getKey() != null)
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getCompressions(), TapFactories::merge));
+    }
+
     private static <T> Set<T> merge(Set<T> lhs, Set<T> rhs) {
+        lhs = new HashSet<>(lhs);
         lhs.addAll(rhs);
         return lhs;
     }

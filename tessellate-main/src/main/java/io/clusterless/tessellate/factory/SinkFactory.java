@@ -14,10 +14,11 @@ import io.clusterless.tessellate.model.Sink;
 import io.clusterless.tessellate.pipeline.PipelineOptions;
 
 import java.io.IOException;
+import java.util.Properties;
 
 /**
  *
  */
 public interface SinkFactory extends TapFactory {
-    Tap getSink(PipelineOptions pipelineOptions, Sink sinkModel, Fields currentFields) throws IOException;
+    Tap<Properties, ?, ?> getSink(PipelineOptions pipelineOptions, Sink sinkModel, Fields currentFields) throws IOException;
 }

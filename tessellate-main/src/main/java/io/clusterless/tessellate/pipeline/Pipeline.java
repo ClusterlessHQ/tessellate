@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static cascading.flow.FlowDef.flowDef;
@@ -78,9 +79,7 @@ public class Pipeline {
 
     public void build() throws IOException {
         SourceFactory sourceFactory = TapFactories.findSourceFactory(pipelineDef.source());
-        SinkFactory sinkFactory = TapFactories.findSinkFactory(pipelineDef.sink());
-
-        Tap sourceTap = sourceFactory.getSource(pipelineOptions, pipelineDef.source());
+        Tap<Properties, ?, ?> sourceTap = sourceFactory.getSource(pipelineOptions, pipelineDef.source());
 
         if (pipelineDef.source().schema().embedsSchema() || pipelineDef.source().schema().format().alwaysEmbedsSchema()) {
             sourceTap.retrieveSourceFields(flowProcess());
@@ -122,7 +121,9 @@ public class Pipeline {
 
         LOG.info("sinking into fields: {}", currentFields);
 
-        Tap sinkTap = sinkFactory.getSink(pipelineOptions, pipelineDef.sink(), currentFields);
+        SinkFactory sinkFactory = TapFactories.findSinkFactory(pipelineDef.sink());
+
+        Tap<Properties, ?, ?> sinkTap = sinkFactory.getSink(pipelineOptions, pipelineDef.sink(), currentFields);
 
         flow = new LocalFlowConnector().connect(flowDef()
                 .setName("pipeline")

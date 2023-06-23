@@ -8,6 +8,7 @@
 
 package io.clusterless.tessellate;
 
+import io.clusterless.tessellate.factory.TapFactories;
 import io.clusterless.tessellate.model.PipelineDef;
 import io.clusterless.tessellate.pipeline.Pipeline;
 import io.clusterless.tessellate.pipeline.PipelineOptions;
@@ -29,6 +30,12 @@ import java.util.concurrent.Callable;
         version = "1.0-wip"
 )
 public class Main implements Callable<Integer> {
+    enum Show {
+        formats,
+        protocols,
+        compression
+    }
+
     @CommandLine.Mixin
     protected Verbosity verbosity = new Verbosity();
 
@@ -40,6 +47,13 @@ public class Main implements Callable<Integer> {
 
     @CommandLine.Option(names = "--print-project", description = "show project template, will not run pipeline")
     protected boolean printProject = false;
+
+
+    @CommandLine.Option(names = "--show-source", description = "show protocols, formats, or compression options")
+    protected Show showSource;
+
+    @CommandLine.Option(names = "--show-sink", description = "show protocols, formats or compression options")
+    protected Show showSink;
 
     public static void main(String[] args) {
         Main main = new Main();
@@ -59,6 +73,28 @@ public class Main implements Callable<Integer> {
             return;
         } else if (commandLine.isVersionHelpRequested()) {
             commandLine.printVersionHelp(System.out);
+            return;
+        }
+
+        if (main.showSource != null) {
+            if (main.showSource == Show.protocols) {
+                System.out.println(JSONUtil.writeAsStringSafePretty(TapFactories.getSourceProtocols()));
+            } else if (main.showSource == Show.formats) {
+                System.out.println(JSONUtil.writeAsStringSafePretty(TapFactories.getSourceFormats()));
+            } else if (main.showSource == Show.compression) {
+                System.out.println(JSONUtil.writeAsStringSafePretty(TapFactories.getSourceCompression()));
+            }
+            return;
+        }
+
+        if (main.showSink != null) {
+            if (main.showSink == Show.protocols) {
+                System.out.println(JSONUtil.writeAsStringSafePretty(TapFactories.getSinkProtocols()));
+            } else if (main.showSink == Show.formats) {
+                System.out.println(JSONUtil.writeAsStringSafePretty(TapFactories.getSinkFormats()));
+            } else if (main.showSink == Show.compression) {
+                System.out.println(JSONUtil.writeAsStringSafePretty(TapFactories.getSinkCompression()));
+            }
             return;
         }
 

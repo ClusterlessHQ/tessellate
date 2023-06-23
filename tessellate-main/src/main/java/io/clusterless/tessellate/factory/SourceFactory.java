@@ -13,9 +13,8 @@ import io.clusterless.tessellate.model.Source;
 import io.clusterless.tessellate.pipeline.PipelineOptions;
 
 import java.io.IOException;
+import java.util.Properties;
 
 public interface SourceFactory extends TapFactory {
-
-    Tap getSource(PipelineOptions pipelineOptions, Source sourceModel) throws IOException;
-
+    Tap<Properties, ?, ?> getSource(PipelineOptions pipelineOptions, Source sourceModel) throws IOException;
 }

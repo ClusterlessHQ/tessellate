@@ -27,10 +27,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.UUID;
 
 public abstract class FilesFactory implements SourceFactory, SinkFactory {
-
     public static final String PART_NAME_DEFAULT = "part";
 
     protected static boolean isSink(Dataset dataset) {
@@ -68,18 +68,18 @@ public abstract class FilesFactory implements SourceFactory, SinkFactory {
     }
 
     @Override
-    public Tap getSource(PipelineOptions pipelineOptions, Source sourceModel) throws IOException {
+    public Tap<Properties, ?, ?> getSource(PipelineOptions pipelineOptions, Source sourceModel) throws IOException {
         return createTap(pipelineOptions, sourceModel, Fields.NONE);
     }
 
     @Override
-    public Tap getSink(PipelineOptions pipelineOptions, Sink sinkModel, Fields currentFields) throws IOException {
+    public Tap<Properties, ?, ?> getSink(PipelineOptions pipelineOptions, Sink sinkModel, Fields currentFields) throws IOException {
         return createTap(pipelineOptions, sinkModel, currentFields);
     }
 
     public abstract int openWritesThreshold();
 
-    protected abstract Tap createTap(PipelineOptions pipelineOptions, Dataset dataset, Fields currentFields) throws IOException;
+    protected abstract Tap<Properties, ?, ?> createTap(PipelineOptions pipelineOptions, Dataset dataset, Fields currentFields) throws IOException;
 
     protected boolean isLocalDirectory(URI uri) {
         Path path = uri.getScheme() == null ? Paths.get(uri.getPath()) : Paths.get(uri);

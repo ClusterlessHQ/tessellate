@@ -69,7 +69,7 @@ public class DirectoryFactory extends FilesFactory {
     }
 
     @Override
-    protected Tap createTap(PipelineOptions pipelineOptions, Dataset dataset, Fields currentFields) {
+    protected Tap<Properties, ?, ?> createTap(PipelineOptions pipelineOptions, Dataset dataset, Fields currentFields) {
         boolean isSink = isSink(dataset);
 
         Fields declaredFields = declaredFields(dataset, currentFields);
@@ -96,7 +96,7 @@ public class DirectoryFactory extends FilesFactory {
 
         Scheme<Properties, InputStream, OutputStream, ?, ?> scheme = createScheme(dataset, declaredFields);
 
-        Tap parentTap = createParentTap(uri, isDir, scheme, prefix);
+        Tap<Properties, ?, ?> parentTap = createParentTap(uri, isDir, scheme, prefix);
 
         Optional<Partition> partition = createPartition(dataset);
 
@@ -155,7 +155,7 @@ public class DirectoryFactory extends FilesFactory {
         return scheme;
     }
 
-    protected Tap createParentTap(URI uri, boolean isDir, Scheme<Properties, InputStream, OutputStream, ?, ?> scheme, String prefix) {
+    protected Tap<Properties, ?, ?> createParentTap(URI uri, boolean isDir, Scheme<Properties, InputStream, OutputStream, ?, ?> scheme, String prefix) {
         if (isDir) {
             if (prefix == null) {
                 return new PrefixedDirTap(scheme, uri.getPath(), SinkMode.KEEP);
