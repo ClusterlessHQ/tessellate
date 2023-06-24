@@ -15,7 +15,7 @@
     "operation|string",
     "key|string|-",
     "requestURI|string",
-    "httpStatus|Integer",
+    "httpStatus|Integer|-",
     "errorCode|string|-",
     "bytesSent|Long|-",
     "objectSize|Long|-",
