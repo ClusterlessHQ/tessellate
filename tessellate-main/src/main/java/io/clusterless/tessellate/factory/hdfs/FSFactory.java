@@ -62,7 +62,7 @@ public abstract class FSFactory extends FilesFactory {
     }
 
     @Override
-    protected Tap createTap(PipelineOptions pipelineOptions, Dataset dataset, Fields currentFields) throws IOException {
+    protected Tap<Properties, ?, ?> createTap(PipelineOptions pipelineOptions, Dataset dataset, Fields currentFields) throws IOException {
         boolean isSink = isSink(dataset);
 
         Fields declaredFields = declaredFields(dataset, currentFields);

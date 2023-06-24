@@ -88,6 +88,14 @@ public class URIs {
     }
 
     public static URI cleanFileUrls(URI uri) {
-        return uri.getScheme().equals("file") ? URIs.copyWithHost(uri, "") : uri.normalize();
+        return "file".equals(uri.getScheme()) ? URIs.copyWithHost(uri, "") : uri.normalize();
+    }
+
+    public static URI makeAbsolute(URI uri) {
+        if (uri.isAbsolute()) {
+            return uri;
+        }
+
+        return Paths.get(uri.getPath()).toAbsolutePath().toUri();
     }
 }

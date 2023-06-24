@@ -48,19 +48,19 @@ public class ManifestReader {
 
     public ManifestReader(Source source) {
         this.manifestURI = source.manifest();
-        this.uris = source.uris();
+        this.uris = clean(source.uris());
         this.numPartitions = source.partitions().size();
     }
 
     public ManifestReader(List<URI> uris) {
-        this.uris = uris;
+        this.uris = clean(uris);
         this.manifestURI = null;
         this.numPartitions = 0;
     }
 
     public List<URI> uris(Properties conf) throws IOException {
         if (manifestURI == null) {
-            return dedupe(uris);
+            return uris;
         }
 
         if (manifestUris != null) {
@@ -88,7 +88,7 @@ public class ManifestReader {
             throw new IllegalStateException("manifest: " + manifestURI + ", is empty");
         }
 
-        manifestUris = dedupe(found);
+        manifestUris = clean(found);
 
         return manifestUris;
     }
@@ -119,9 +119,10 @@ public class ManifestReader {
         return URI.create(commonPrefix);
     }
 
-    protected List<URI> dedupe(List<URI> uris) {
+    protected List<URI> clean(List<URI> uris) {
         List<URI> distinct = uris.stream()
                 .map(URIs::copyWithoutQuery)
+                .map(URIs::makeAbsolute)
                 .distinct()
                 .collect(Collectors.toList());
 

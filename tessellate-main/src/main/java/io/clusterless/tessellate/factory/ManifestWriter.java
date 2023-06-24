@@ -19,6 +19,7 @@ import com.github.hal4j.uritemplate.URITemplate;
 import io.clusterless.tessellate.model.Dataset;
 import io.clusterless.tessellate.model.Sink;
 import io.clusterless.tessellate.util.JSONUtil;
+import io.clusterless.tessellate.util.URIs;
 
 import java.io.IOException;
 import java.net.URI;
@@ -69,7 +70,7 @@ public class ManifestWriter {
     public ManifestWriter(URI manifestURI, String lot, URI uriPrefix) {
         this.manifestURI = manifestURI;
         this.lot = lot;
-        this.uriPrefix = uriPrefix;
+        this.uriPrefix = URIs.makeAbsolute(uriPrefix);
 
         if (this.lot == null) {
             throw new IllegalArgumentException("lot is required when manifest is set");
