@@ -5,8 +5,8 @@
     },
     "partitions": [
       "one",
-      "two->@two",
-      "three->@three|DateTime|yyyyMMdd"
+      "two+>@two",
+      "three+>@three|DateTime|yyyyMMdd"
     ]
   }
 }

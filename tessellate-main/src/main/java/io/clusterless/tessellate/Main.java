@@ -10,9 +10,9 @@ package io.clusterless.tessellate;
 
 import io.clusterless.tessellate.factory.TapFactories;
 import io.clusterless.tessellate.model.PipelineDef;
+import io.clusterless.tessellate.options.PipelineOptions;
+import io.clusterless.tessellate.options.PipelineOptionsMerge;
 import io.clusterless.tessellate.pipeline.Pipeline;
-import io.clusterless.tessellate.pipeline.PipelineOptions;
-import io.clusterless.tessellate.pipeline.PipelineOptionsMerge;
 import io.clusterless.tessellate.util.JSONUtil;
 import io.clusterless.tessellate.util.MetricsPrinter;
 import io.clusterless.tessellate.util.Verbosity;

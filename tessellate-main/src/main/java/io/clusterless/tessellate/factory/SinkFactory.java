@@ -11,7 +11,7 @@ package io.clusterless.tessellate.factory;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 import io.clusterless.tessellate.model.Sink;
-import io.clusterless.tessellate.pipeline.PipelineOptions;
+import io.clusterless.tessellate.options.PipelineOptions;
 
 import java.io.IOException;
 import java.util.Properties;

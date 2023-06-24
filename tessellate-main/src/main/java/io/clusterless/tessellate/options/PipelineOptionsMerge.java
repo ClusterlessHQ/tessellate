@@ -6,7 +6,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package io.clusterless.tessellate.pipeline;
+package io.clusterless.tessellate.options;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -88,7 +88,7 @@ public class PipelineOptionsMerge {
         return merge(jsonNode);
     }
 
-    protected PipelineDef merge(JsonNode jsonNode) {
+    public PipelineDef merge(JsonNode jsonNode) {
         // apply cli arguments
         builder.build((k, t) -> arguments().get(k), jsonNode);
 

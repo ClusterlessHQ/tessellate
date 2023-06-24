@@ -8,32 +8,40 @@
 
 package io.clusterless.tessellate.model;
 
-import cascading.tuple.Fields;
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.clusterless.tessellate.util.FieldsParser;
+import io.clusterless.tessellate.pipeline.Transforms;
 
-import java.util.Objects;
-
-public class Field implements Model {
-    @JsonIgnore
-    private Fields fields;
+/**
+ * <pre>
+ * ts->
+ * </pre>
+ */
+public class DiscardOp implements TransformOp, Model {
     private final String declaration;
+    private final Field field;
 
     @JsonCreator
-    public Field(String declaration) {
-        Objects.requireNonNull(declaration, "field may not be null");
-
+    public DiscardOp(String declaration) {
         this.declaration = declaration;
-        this.fields = FieldsParser.INSTANCE.parseSingleFields(this.declaration, null);
+
+        String[] split = this.declaration.split("->");
+        this.field = new Field(split[0]);
     }
 
-    public Fields fields() {
-        return fields;
+    public Field field() {
+        return field;
+    }
+
+    public String declaration() {
+        return declaration;
+    }
+
+    public String toString() {
+        return declaration;
     }
 
     @Override
-    public String toString() {
-        return declaration;
+    public Transforms transform() {
+        return Transforms.discard;
     }
 }

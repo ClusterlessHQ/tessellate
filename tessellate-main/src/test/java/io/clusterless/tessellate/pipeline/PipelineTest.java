@@ -14,6 +14,8 @@ import io.clusterless.tessellate.junit.PathForOutput;
 import io.clusterless.tessellate.junit.PathForResource;
 import io.clusterless.tessellate.junit.ResourceExtension;
 import io.clusterless.tessellate.model.*;
+import io.clusterless.tessellate.options.PipelineOptions;
+import io.clusterless.tessellate.options.PipelineOptionsMerge;
 import io.clusterless.tessellate.util.Format;
 import io.clusterless.tessellate.util.JSONUtil;
 import io.clusterless.tessellate.util.URIs;
@@ -143,6 +145,51 @@ public class PipelineTest {
     }
 
     @Test
+    void awsS3AccessLogWithTransforms(@PathForResource("/data/aws-s3-access-log.txt") URI input, @PathForOutput URI output) throws IOException {
+        PipelineOptions pipelineOptions = new PipelineOptions();
+
+        PipelineDef def = PipelineDef.builder()
+                .withName("test")
+                .withSource(Source.builder()
+                        .withInputs(List.of(input))
+                        .withSchema(Schema.builder()
+                                .withName("aws-s3-access-log")
+                                .build())
+                        .build())
+                .withTransform(new Transform(
+                        "time+>ymd|DateTime|yyyyMMdd", // copy: "time|Instant|dd/MMM/yyyy:HH:mm:ss Z"
+                        "httpStatus->httpStatusString|String",// rename: "httpStatus|Integer"
+                        "httpStatusString|Integer",// coerce: "httpStatusString|String"
+                        "requestID->",// discard: "httpStatusString|String"
+                        "200=>code|Integer" // insert
+                ))
+                .withSink(Sink.builder()
+                        .withOutput(output)
+                        .withSchema(Schema.builder()
+                                .withFormat(Format.tsv)
+                                .withEmbedsSchema(true)
+                                .build())
+                        .build())
+                .build();
+
+        PipelineOptionsMerge merger = new PipelineOptionsMerge(pipelineOptions);
+
+        PipelineDef merged = merger.merge(JSONUtil.valueToTree(def));
+
+        Pipeline pipeline = new Pipeline(pipelineOptions, merged);
+
+        pipeline.run();
+
+        CascadingTesting.validateEntries(
+                pipeline.flow().openSink(),
+                l -> assertEquals(4, l, "wrong length"), // headers are declared so aren't counted
+                l -> assertEquals(merged.source().schema().declared().size() + 1, l, "wrong size"),
+                l -> {
+                }
+        );
+    }
+
+    @Test
     void writeReadParquet(@PathForResource("/data/aws-s3-access-log.txt") URI input, @PathForOutput("intermediate") URI intermediate, @PathForOutput("output") URI output) throws IOException {
         PipelineOptions pipelineOptions = new PipelineOptions();
         PipelineOptionsMerge merger = new PipelineOptionsMerge(pipelineOptions);
@@ -229,9 +276,9 @@ public class PipelineTest {
                                 .build())
                         .withNamedPartitions(true)
                         .withPartitions(List.of(
-                                new Partition("time->year|DateTime|yyyy"), // DateTime can parse year, month, and day. Instant cannot,
-                                new Partition("time->month|DateTime|MM"),
-                                new Partition("time->day|DateTime|dd")
+                                new Partition("time+>year|DateTime|yyyy"), // DateTime can parse year, month, and day. Instant cannot,
+                                new Partition("time+>month|DateTime|MM"),
+                                new Partition("time+>day|DateTime|dd")
                         ))
                         .build())
                 .build();
@@ -347,9 +394,9 @@ public class PipelineTest {
                                 .build())
                         .withNamedPartitions(true)
                         .withPartitions(List.of(
-                                new Partition("time->year|DateTime|yyyy"), // DateTime can parse year, month, and day. Instant cannot,
-                                new Partition("time->month|DateTime|MM"),
-                                new Partition("time->day|DateTime|dd")
+                                new Partition("time+>year|DateTime|yyyy"), // DateTime can parse year, month, and day. Instant cannot,
+                                new Partition("time+>month|DateTime|MM"),
+                                new Partition("time+>day|DateTime|dd")
                         ))
                         .build())
                 .build();

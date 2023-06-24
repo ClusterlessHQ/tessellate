@@ -15,7 +15,7 @@
     "operation|string",
     "key|string|-",
     "requestURI|string",
-    "httpStatus|string",
+    "httpStatus|Integer",
     "errorCode|string|-",
     "bytesSent|Long|-",
     "objectSize|Long|-",
@@ -30,7 +30,7 @@
     "authenticationType|string|-",
     "hostHeader|string|-",
     "tlsVersion|string|-",
-    "accessPointArn|Long|-",
+    "accessPointArn|string|-",
     "aclRequired|string|-"
   ]
 }

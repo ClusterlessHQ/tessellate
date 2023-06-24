@@ -14,6 +14,8 @@ import io.clusterless.tessellate.junit.PathForResource;
 import io.clusterless.tessellate.junit.ResourceExtension;
 import io.clusterless.tessellate.junit.URLForOutput;
 import io.clusterless.tessellate.model.*;
+import io.clusterless.tessellate.options.PipelineOptions;
+import io.clusterless.tessellate.options.PipelineOptionsMerge;
 import io.clusterless.tessellate.util.Format;
 import io.clusterless.tessellate.util.JSONUtil;
 import io.clusterless.tessellate.util.URIs;
@@ -78,7 +80,7 @@ public class PipelineIntegrationTest {
     }
 
     @Test
-    void writeReadParquet(@PathForResource("/data/aws-s3-access-log.txt") URI input,
+    void writeReadParquet(@PathForResource("/data/aws-s3-access-log-integration.txt") URI input,
                           @URLForOutput(scheme = "s3", host = TEST_BUCKET, path = "intermediate") URI intermediate,
                           @URLForOutput(scheme = "s3", host = TEST_BUCKET, path = "output") URI output) throws IOException {
         PipelineOptions pipelineOptions = new PipelineOptions();
@@ -147,7 +149,7 @@ public class PipelineIntegrationTest {
 
     @Test
     void writeReadParquetPartitioned(
-            @PathForResource("/data/aws-s3-access-log.txt") URI input,
+            @PathForResource("/data/aws-s3-access-log-integration.txt") URI input,
             @URLForOutput(scheme = "s3", host = TEST_BUCKET, path = "intermediate") URI intermediate,
             @URLForOutput(scheme = "s3", host = TEST_BUCKET, path = "output") URI output) throws IOException {
         PipelineOptions pipelineOptions = new PipelineOptions();
@@ -169,9 +171,9 @@ public class PipelineIntegrationTest {
                                 .build())
                         .withNamedPartitions(true)
                         .withPartitions(List.of(
-                                new Partition("time->year|DateTime|yyyy"), // DateTime can parse year, month, and day. Instant cannot,
-                                new Partition("time->month|DateTime|MM"),
-                                new Partition("time->day|DateTime|dd")
+                                new Partition("time+>year|DateTime|yyyy"), // DateTime can parse year, month, and day. Instant cannot,
+                                new Partition("time+>month|DateTime|MM"),
+                                new Partition("time+>day|DateTime|dd")
                         ))
                         .build())
                 .build();
@@ -228,7 +230,7 @@ public class PipelineIntegrationTest {
 
     @Test
     void writeReadParquetPartitionedWithManifests(
-            @PathForResource("/data/aws-s3-access-log.txt") URI input,
+            @PathForResource("/data/aws-s3-access-log-integration.txt") URI input,
             @URLForOutput(scheme = "s3", host = TEST_BUCKET, path = "intermediateManifest") URI intermediateManifest,
             @URLForOutput(scheme = "s3", host = TEST_BUCKET, path = "intermediate") URI intermediate,
             @URLForOutput(scheme = "s3", host = TEST_BUCKET, path = "output") URI output
@@ -256,9 +258,9 @@ public class PipelineIntegrationTest {
                                 .build())
                         .withNamedPartitions(true)
                         .withPartitions(List.of(
-                                new Partition("time->year|DateTime|yyyy"), // DateTime can parse year, month, and day. Instant cannot,
-                                new Partition("time->month|DateTime|MM"),
-                                new Partition("time->day|DateTime|dd")
+                                new Partition("time+>year|DateTime|yyyy"), // DateTime can parse year, month, and day. Instant cannot,
+                                new Partition("time+>month|DateTime|MM"),
+                                new Partition("time+>day|DateTime|dd")
                         ))
                         .build())
                 .build();

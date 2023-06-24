@@ -10,7 +10,7 @@ package io.clusterless.tessellate.factory.hdfs;
 
 import cascading.tuple.Fields;
 import io.clusterless.tessellate.model.Dataset;
-import io.clusterless.tessellate.pipeline.PipelineOptions;
+import io.clusterless.tessellate.options.PipelineOptions;
 import io.clusterless.tessellate.util.Compression;
 import io.clusterless.tessellate.util.Protocol;
 import org.jetbrains.annotations.NotNull;

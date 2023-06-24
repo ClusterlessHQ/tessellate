@@ -12,19 +12,22 @@ import cascading.flow.Flow;
 import cascading.flow.local.LocalFlowConnector;
 import cascading.flow.local.LocalFlowProcess;
 import cascading.operation.Debug;
+import cascading.operation.Insert;
 import cascading.operation.regex.RegexParser;
 import cascading.pipe.Each;
 import cascading.pipe.Pipe;
 import cascading.pipe.assembly.Coerce;
 import cascading.pipe.assembly.Copy;
+import cascading.pipe.assembly.Discard;
+import cascading.pipe.assembly.Rename;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
+import cascading.tuple.coerce.Coercions;
 import io.clusterless.tessellate.factory.SinkFactory;
 import io.clusterless.tessellate.factory.SourceFactory;
 import io.clusterless.tessellate.factory.TapFactories;
-import io.clusterless.tessellate.model.Partition;
-import io.clusterless.tessellate.model.PipelineDef;
-import io.clusterless.tessellate.model.Schema;
+import io.clusterless.tessellate.model.*;
+import io.clusterless.tessellate.options.PipelineOptions;
 import io.clusterless.tessellate.util.Format;
 import io.clusterless.tessellate.util.Models;
 import org.slf4j.Logger;
@@ -94,19 +97,66 @@ public class Pipeline {
         if (sourceSchema.format() == Format.regex) {
             Fields declaredFields = Models.fieldAsFields(sourceSchema.declared(), String.class, Fields.ALL);
             pipe = new Each(pipe, new Fields("line"), new RegexParser(declaredFields, sourceSchema.pattern()), Fields.RESULTS);
-
+            LOG.info("parsing lines with regex: {}", sourceSchema.pattern());
             currentFields = declaredFields;
+        }
+
+        // todo: group like transforms together if there are no interdependencies
+        for (TransformOp transformOp : pipelineDef.transform().transformOps()) {
+            switch (transformOp.transform()) {
+                case insert:
+                    InsertOp insertOp = (InsertOp) transformOp;
+                    Fields insertFields = insertOp.field().fields();
+                    String value = insertOp.value() == null || insertOp.value().isEmpty() ? null : insertOp.value();
+                    Object literal = Coercions.coerce(value, insertFields.getType(0));
+                    LOG.info("transform insert: fields: {}, value: {}", insertFields, literal);
+                    pipe = new Each(pipe, new Insert(insertFields, literal), Fields.ALL);
+                    currentFields = currentFields.append(insertFields);
+                    break;
+                case coerce:
+                    CoerceOp coerceOp = (CoerceOp) transformOp;
+                    Fields coerceFields = coerceOp.field().fields();
+                    LOG.info("transform coerce: fields: {}", coerceFields);
+                    pipe = new Coerce(pipe, coerceFields);
+                    currentFields = currentFields.rename(coerceFields, coerceFields); // change the type information
+                    break;
+                case copy:
+                    CopyOp copyOp = (CopyOp) transformOp;
+                    Fields copyFromFields = copyOp.from().orElseThrow().fields();
+                    Fields copyToFields = copyOp.to().fields();
+                    LOG.info("transform copy: from: {}, to: {}", copyFromFields, copyToFields);
+                    pipe = new Copy(pipe, copyFromFields, copyToFields);
+                    currentFields = currentFields.append(copyToFields);
+                    break;
+                case rename:
+                    RenameOp renameOp = (RenameOp) transformOp;
+                    Fields renameFromFields = renameOp.from().orElseThrow().fields();
+                    Fields renameToFields = renameOp.to().fields();
+                    LOG.info("transform rename: from: {}, to: {}", renameFromFields, renameToFields);
+                    pipe = new Rename(pipe, renameFromFields, renameToFields);
+                    currentFields = currentFields.rename(renameFromFields, renameToFields);
+                    break;
+                case discard:
+                    DiscardOp discardOp = (DiscardOp) transformOp;
+                    Fields discardFields = discardOp.field().fields();
+                    LOG.info("transform discard: fields: {}", discardFields);
+                    pipe = new Discard(pipe, discardFields);
+                    currentFields = currentFields.subtract(discardFields);
+                    break;
+            }
         }
 
         Fields partitionFields = Fields.NONE;
 
         if (!pipelineDef.sink().partitions().isEmpty()) {
+            // todo: honor the -> and +> operators when declaring partitions
             for (Partition partition : pipelineDef().sink().partitions()) {
                 if (partition.from().isPresent()) {
                     pipe = new Copy(pipe, partition.from().get().fields(), partition.to().fields());
                     partitionFields = partitionFields.append(partition.to().fields());
                 } else {
                     pipe = new Coerce(pipe, partition.to().fields());
+                    // change the type information
                     partitionFields = partitionFields.rename(partition.to().fields(), partition.to().fields());
                 }
             }

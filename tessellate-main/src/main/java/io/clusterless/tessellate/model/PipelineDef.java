@@ -12,6 +12,9 @@ public class PipelineDef implements Model {
     private String name;
     private AWS aws = new AWS();
     private Source source = new Source();
+
+    private Transform transform = new Transform();
+
     private Sink sink = new Sink();
 
     public static Builder builder() {
@@ -30,15 +33,19 @@ public class PipelineDef implements Model {
         return source;
     }
 
+    public Transform transform() {
+        return transform;
+    }
+
     public Sink sink() {
         return sink;
     }
-
 
     public static final class Builder {
         private String name;
         private AWS aws = new AWS();
         private Source source = new Source();
+        private Transform transform = new Transform();
         private Sink sink = new Sink();
 
         private Builder() {
@@ -63,6 +70,11 @@ public class PipelineDef implements Model {
             return this;
         }
 
+        public Builder withTransform(Transform transform) {
+            this.transform = transform;
+            return this;
+        }
+
         public Builder withSink(Sink sink) {
             this.sink = sink;
             return this;
@@ -70,10 +82,11 @@ public class PipelineDef implements Model {
 
         public PipelineDef build() {
             PipelineDef pipelineDef = new PipelineDef();
-            pipelineDef.aws = this.aws;
-            pipelineDef.source = this.source;
             pipelineDef.name = this.name;
+            pipelineDef.aws = this.aws;
+            pipelineDef.transform = this.transform;
             pipelineDef.sink = this.sink;
+            pipelineDef.source = this.source;
             return pipelineDef;
         }
     }

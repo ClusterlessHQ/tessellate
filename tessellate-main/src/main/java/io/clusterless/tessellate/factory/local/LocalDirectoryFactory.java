@@ -26,7 +26,7 @@ import io.clusterless.tessellate.model.Dataset;
 import io.clusterless.tessellate.model.HasManifest;
 import io.clusterless.tessellate.model.Schema;
 import io.clusterless.tessellate.model.Sink;
-import io.clusterless.tessellate.pipeline.PipelineOptions;
+import io.clusterless.tessellate.options.PipelineOptions;
 import io.clusterless.tessellate.util.Compression;
 import io.clusterless.tessellate.util.Format;
 import io.clusterless.tessellate.util.JSONUtil;

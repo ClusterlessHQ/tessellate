@@ -6,7 +6,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package io.clusterless.tessellate.pipeline;
+package io.clusterless.tessellate.options;
 
 import picocli.CommandLine;
 

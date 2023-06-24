@@ -10,7 +10,7 @@ package io.clusterless.tessellate.factory;
 
 import cascading.tap.Tap;
 import io.clusterless.tessellate.model.Source;
-import io.clusterless.tessellate.pipeline.PipelineOptions;
+import io.clusterless.tessellate.options.PipelineOptions;
 
 import java.io.IOException;
 import java.util.Properties;

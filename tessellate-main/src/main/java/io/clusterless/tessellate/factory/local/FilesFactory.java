@@ -18,7 +18,7 @@ import io.clusterless.tessellate.factory.SourceFactory;
 import io.clusterless.tessellate.model.Dataset;
 import io.clusterless.tessellate.model.Sink;
 import io.clusterless.tessellate.model.Source;
-import io.clusterless.tessellate.pipeline.PipelineOptions;
+import io.clusterless.tessellate.options.PipelineOptions;
 import io.clusterless.tessellate.util.Models;
 
 import java.io.IOException;

@@ -9,25 +9,33 @@
 package io.clusterless.tessellate.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import io.clusterless.tessellate.pipeline.Transforms;
 import org.jetbrains.annotations.NotNull;
 
 /**
+ * <pre>
  * ts->ymd|DateTime|yyyyMMdd
+ * </pre>
  */
-public class Partition extends Translate {
+public class CopyOp extends Translate implements TransformOp {
     @JsonCreator
-    public Partition(String partition) {
+    public CopyOp(String partition) {
         super(partition);
     }
 
     @Override
     @NotNull
     protected String translate() {
-        return "\\+>";
+        return "[+]>";
     }
 
     @Override
     protected boolean requiresFrom() {
-        return false;
+        return true;
+    }
+
+    @Override
+    public Transforms transform() {
+        return Transforms.copy;
     }
 }

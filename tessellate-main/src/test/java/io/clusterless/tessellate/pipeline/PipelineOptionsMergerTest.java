@@ -11,6 +11,8 @@ package io.clusterless.tessellate.pipeline;
 import com.adelean.inject.resources.junit.jupiter.GivenTextResource;
 import com.adelean.inject.resources.junit.jupiter.TestWithResources;
 import io.clusterless.tessellate.model.PipelineDef;
+import io.clusterless.tessellate.options.PipelineOptions;
+import io.clusterless.tessellate.options.PipelineOptionsMerge;
 import io.clusterless.tessellate.util.JSONUtil;
 import org.junit.jupiter.api.Test;
 
