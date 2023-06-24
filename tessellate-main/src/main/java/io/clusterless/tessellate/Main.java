@@ -19,6 +19,8 @@ import io.clusterless.tessellate.util.Verbosity;
 import picocli.CommandLine;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.Callable;
 
 /**
@@ -47,7 +49,6 @@ public class Main implements Callable<Integer> {
 
     @CommandLine.Option(names = "--print-project", description = "show project template, will not run pipeline")
     protected boolean printProject = false;
-
 
     @CommandLine.Option(names = "--show-source", description = "show protocols, formats, or compression options")
     protected Show showSource;
@@ -124,6 +125,13 @@ public class Main implements Callable<Integer> {
 
     @Override
     public Integer call() throws IOException {
+        Path path = pipelineOptions.pipelinePath();
+
+        if (path != null && !Files.exists(path)) {
+            System.err.println("pipeline file does not exist: " + path);
+            return -1;
+        }
+
         PipelineOptionsMerge merge = new PipelineOptionsMerge(pipelineOptions);
 
         PipelineDef pipelineDef = merge.merge();
