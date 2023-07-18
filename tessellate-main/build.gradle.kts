@@ -16,21 +16,20 @@ plugins {
     java
     application
     `java-test-fixtures`
-    id("org.jreleaser") version "1.6.0"
+    id("org.jreleaser") version "1.7.0"
 }
 
 val versionProperties = Properties().apply {
     load(FileInputStream(File(rootProject.rootDir, "version.properties")))
 }
 
-val release = false;
+val buildRelease = false
 val buildNumber = System.getenv("GITHUB_RUN_NUMBER") ?: "dev"
 val wipReleases = "wip-${buildNumber}"
 
-version = if (release)
+version = if (buildRelease)
     "${versionProperties["release.major"]}-${versionProperties["release.minor"]}"
 else "${versionProperties["release.major"]}-${wipReleases}"
-
 
 repositories {
     mavenCentral()
@@ -203,6 +202,12 @@ application {
     mainClass.set("io.clusterless.tessellate.Main")
 }
 
+distributions {
+    main {
+        distributionBaseName.set("tessellate")
+    }
+}
+
 jreleaser {
     dryrun.set(false)
 
@@ -239,11 +244,43 @@ jreleaser {
     }
 
     distributions {
-        create("tess") {
+        create("tessellate") {
             distributionType.set(Distribution.DistributionType.JAVA_BINARY)
+            executable {
+                name.set("tess")
+            }
             artifact {
                 path.set(file("build/distributions/{{distributionName}}-{{projectVersion}}.zip"))
             }
+        }
+    }
+
+    packagers {
+        docker {
+            active.set(Active.ALWAYS)
+            repository {
+                repoOwner.set("clusterless")
+                name.set("tessellate")
+                tagName.set("{{projectVersion}}")
+            }
+
+            registries {
+                create("DEFAULT") {
+                    externalLogin.set(true)
+                    repositoryName.set("clusterless")
+                }
+            }
+
+            imageName("{{owner}}/{{distributionName}}:{{projectVersion}}")
+
+            if (buildRelease) {
+                imageName("{{owner}}/{{distributionName}}:{{projectVersionMajor}}")
+                imageName("{{owner}}/{{distributionName}}:{{projectVersionMajor}}.{{projectVersionMinor}}")
+                imageName("{{owner}}/{{distributionName}}:latest")
+            } else {
+                imageName("{{owner}}/{{distributionName}}:latest-wip")
+            }
+
         }
     }
 }
@@ -251,4 +288,6 @@ jreleaser {
 tasks.register("release") {
     dependsOn("distZip")
     dependsOn("jreleaserRelease")
+// disable until 1.8.0 is released
+//    dependsOn("jreleaserPublish")
 }
