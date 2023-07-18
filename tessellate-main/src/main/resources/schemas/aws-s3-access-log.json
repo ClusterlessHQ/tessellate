@@ -1,6 +1,7 @@
 {
   "name": "aws-s3-access-log",
   "documentation": [
+    "https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-s3-access-logs-to-identify-requests.html",
     "https://docs.aws.amazon.com/AmazonS3/latest/dev/LogFormat.html"
   ],
   "format": "regex",
