@@ -17,7 +17,7 @@ public class Source implements Dataset, Model, HasManifest {
     private List<URI> inputs = new ArrayList<>();
     private Schema schema = new Schema();
     private List<Partition> partitions = new ArrayList<>();
-    private boolean namedPartitions;
+    private boolean namedPartitions = true;
     private LineOptions lines = new LineOptions();
     private List<Field> select = new ArrayList<>();
 

@@ -27,7 +27,7 @@ import java.util.concurrent.Callable;
  *
  */
 @CommandLine.Command(
-        name = "tessellate",
+        name = "tess",
         mixinStandardHelpOptions = true,
         version = "1.0-wip"
 )
