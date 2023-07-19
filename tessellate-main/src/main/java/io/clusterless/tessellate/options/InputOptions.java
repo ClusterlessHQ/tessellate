@@ -17,6 +17,10 @@ import java.util.List;
 public class InputOptions implements AWSOptions {
     @CommandLine.Option(names = {"-i", "--input"}, description = "input uris")
     private List<URI> inputs = new LinkedList<>();
+    @CommandLine.Option(names = {"-m", "--input-manifest"}, description = "input manifest uri")
+    private URI inputManifest;
+    @CommandLine.Option(names = {"--input-lot"}, description = "input lot")
+    private String inputLot;
     @CommandLine.Option(names = {"--input-aws-endpoint"}, description = "aws endpoint")
     protected String awsEndpoint;
     @CommandLine.Option(names = {"--input-aws-region"}, description = "aws region")
@@ -31,6 +35,19 @@ public class InputOptions implements AWSOptions {
 
     public List<URI> inputs() {
         return inputs;
+    }
+
+    public URI inputManifest() {
+        return inputManifest;
+    }
+
+    public String inputLot() {
+        return inputLot;
+    }
+
+    public InputOptions setInputManifest(URI inputManifest) {
+        this.inputManifest = inputManifest;
+        return this;
     }
 
     @Override

@@ -31,11 +31,14 @@ import io.clusterless.tessellate.factory.TapFactories;
 import io.clusterless.tessellate.model.*;
 import io.clusterless.tessellate.options.PipelineOptions;
 import io.clusterless.tessellate.util.Format;
+import io.clusterless.tessellate.util.LiteralResolver;
 import io.clusterless.tessellate.util.Models;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -46,6 +49,7 @@ public class Pipeline {
     private final PipelineOptions pipelineOptions;
     private final PipelineDef pipelineDef;
     private Flow flow;
+    private Properties commonProperties = new Properties();
     private LocalFlowProcess localFlowProcess;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
@@ -65,7 +69,7 @@ public class Pipeline {
 
     public LocalFlowProcess flowProcess() {
         if (localFlowProcess == null) {
-            localFlowProcess = new LocalFlowProcess();
+            localFlowProcess = new LocalFlowProcess(commonProperties);
         }
         return localFlowProcess;
     }
@@ -83,7 +87,10 @@ public class Pipeline {
     }
 
     public void build() throws IOException {
-        SourceFactory sourceFactory = TapFactories.findSourceFactory(pipelineDef.source());
+        SourceFactory sourceFactory = TapFactories.findSourceFactory(pipelineOptions, pipelineDef.source());
+
+        sourceFactory.applyGlobalProperties(commonProperties);
+
         Tap<Properties, ?, ?> sourceTap = sourceFactory.getSource(pipelineOptions, pipelineDef.source());
 
         if (pipelineDef.source().schema().embedsSchema() || pipelineDef.source().schema().format().alwaysEmbedsSchema()) {
@@ -92,28 +99,40 @@ public class Pipeline {
 
         // get source fields here so that any partition fields will be captured
         Fields currentFields = sourceTap.getSourceFields();
+        logCurrentFields(currentFields);
 
         Pipe pipe = new Pipe("head");
 
         Schema sourceSchema = pipelineDef.source().schema();
         if (sourceSchema.format() == Format.regex) {
             Fields declaredFields = Models.fieldAsFields(sourceSchema.declared(), String.class, Fields.ALL);
-            pipe = new Each(pipe, new Fields("line"), new RegexParser(declaredFields, sourceSchema.pattern()), Fields.RESULTS);
+            pipe = new Each(pipe, new Fields("line"), new RegexParser(declaredFields, sourceSchema.pattern()), Fields.SWAP);
             LOG.info("parsing lines with regex: {}", sourceSchema.pattern());
-            currentFields = declaredFields;
+            currentFields = currentFields.subtract(new Fields("line")).append(declaredFields);
+            logCurrentFields(currentFields);
         }
 
         // todo: group like transforms together if there are no interdependencies
         for (TransformOp transformOp : pipelineDef.transform().transformOps()) {
             switch (transformOp.transform()) {
+                case eval:
+                    EvalInsertOp evalOp = (EvalInsertOp) transformOp;
+                    Fields evalFields = evalOp.field().fields();
+                    Object eval = evalOp.evaluate(getContext());
+                    LOG.info("transform eval: fields: {}, value: {}", evalFields, eval);
+                    pipe = new Each(pipe, new Insert(evalFields, eval), Fields.ALL);
+                    currentFields = currentFields.append(evalFields);
+                    logCurrentFields(currentFields);
+                    break;
                 case insert:
                     InsertOp insertOp = (InsertOp) transformOp;
                     Fields insertFields = insertOp.field().fields();
-                    String value = insertOp.value() == null || insertOp.value().isEmpty() ? null : insertOp.value();
+                    String value = insertOp.value() == null || ((String) insertOp.value()).isEmpty() ? null : insertOp.value();
                     Object literal = Coercions.coerce(value, insertFields.getType(0));
                     LOG.info("transform insert: fields: {}, value: {}", insertFields, literal);
                     pipe = new Each(pipe, new Insert(insertFields, literal), Fields.ALL);
                     currentFields = currentFields.append(insertFields);
+                    logCurrentFields(currentFields);
                     break;
                 case coerce:
                     CoerceOp coerceOp = (CoerceOp) transformOp;
@@ -121,6 +140,7 @@ public class Pipeline {
                     LOG.info("transform coerce: fields: {}", coerceFields);
                     pipe = new Coerce(pipe, coerceFields);
                     currentFields = currentFields.rename(coerceFields, coerceFields); // change the type information
+                    logCurrentFields(currentFields);
                     break;
                 case copy:
                     CopyOp copyOp = (CopyOp) transformOp;
@@ -129,6 +149,7 @@ public class Pipeline {
                     LOG.info("transform copy: from: {}, to: {}", copyFromFields, copyToFields);
                     pipe = new Copy(pipe, copyFromFields, copyToFields);
                     currentFields = currentFields.append(copyToFields);
+                    logCurrentFields(currentFields);
                     break;
                 case rename:
                     RenameOp renameOp = (RenameOp) transformOp;
@@ -137,6 +158,7 @@ public class Pipeline {
                     LOG.info("transform rename: from: {}, to: {}", renameFromFields, renameToFields);
                     pipe = new Rename(pipe, renameFromFields, renameToFields);
                     currentFields = currentFields.rename(renameFromFields, renameToFields);
+                    logCurrentFields(currentFields);
                     break;
                 case discard:
                     DiscardOp discardOp = (DiscardOp) transformOp;
@@ -144,6 +166,7 @@ public class Pipeline {
                     LOG.info("transform discard: fields: {}", discardFields);
                     pipe = new Discard(pipe, discardFields);
                     currentFields = currentFields.subtract(discardFields);
+                    logCurrentFields(currentFields);
                     break;
             }
         }
@@ -156,6 +179,8 @@ public class Pipeline {
                 if (partition.from().isPresent()) {
                     pipe = new Copy(pipe, partition.from().get().fields(), partition.to().fields());
                     partitionFields = partitionFields.append(partition.to().fields());
+                } else if (currentFields.contains(partition.to().fields())) {
+                    partitionFields = partitionFields.append(partition.to().fields());
                 } else {
                     pipe = new Coerce(pipe, partition.to().fields());
                     // change the type information
@@ -164,7 +189,7 @@ public class Pipeline {
             }
         }
 
-        LOG.info("coercing into partitions fields: {}", partitionFields);
+        LOG.info("sink partitions fields: {}", partitionFields);
 
         // watch the progress on the console
         if (pipelineOptions().debug()) {
@@ -175,13 +200,27 @@ public class Pipeline {
 
         SinkFactory sinkFactory = TapFactories.findSinkFactory(pipelineDef.sink());
 
+        sinkFactory.applyGlobalProperties(commonProperties);
+
         Tap<Properties, ?, ?> sinkTap = sinkFactory.getSink(pipelineOptions, pipelineDef.sink(), currentFields);
 
-        flow = new LocalFlowConnector().connect(flowDef()
+        flow = new LocalFlowConnector(commonProperties).connect(flowDef()
                 .setName("pipeline")
                 .addSource(pipe, sourceTap)
                 .addSink(pipe, sinkTap)
                 .addTail(pipe));
+    }
+
+    @NotNull
+    protected Map<String, Object> getContext() {
+        Map<String, Object> context = LiteralResolver.context();
+        context.put("source", pipelineDef.source());
+        context.put("sink", pipelineDef.sink());
+        return context;
+    }
+
+    private static void logCurrentFields(Fields currentFields) {
+        LOG.info("current fields: {}", currentFields);
     }
 
     public Integer run() throws IOException {

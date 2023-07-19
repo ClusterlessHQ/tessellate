@@ -69,6 +69,8 @@ Usage:
 
 - insert - insert a literal value into a field
   - `value=>intoField|type`
+- eval - evaluate an expression locally and insert into a field (relies on [MVEL](http://mvel.documentnode.com))
+  - `expression!>intoField|type`
 - coerce - transform a field to a new type
   - `field|newType`
 - copy - copy a field value to a new field

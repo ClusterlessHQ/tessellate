@@ -10,6 +10,7 @@ package io.clusterless.tessellate.pipeline;
 
 public enum Transforms {
     insert,
+    eval,
     coerce,
     copy,
     rename,

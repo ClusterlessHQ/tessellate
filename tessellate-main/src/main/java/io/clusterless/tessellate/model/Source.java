@@ -12,8 +12,9 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Source implements Dataset, Model, HasManifest {
+public class Source implements Dataset, Model {
     private URI manifest;
+    private String manifestLot;
     private List<URI> inputs = new ArrayList<>();
     private Schema schema = new Schema();
     private List<Partition> partitions = new ArrayList<>();
@@ -27,6 +28,10 @@ public class Source implements Dataset, Model, HasManifest {
 
     public URI manifest() {
         return manifest;
+    }
+
+    public String manifestLot() {
+        return manifestLot;
     }
 
     public List<URI> inputs() {
@@ -59,13 +64,13 @@ public class Source implements Dataset, Model, HasManifest {
         return lines;
     }
 
-
     public static final class Builder {
         private URI manifest;
+        private String manifestLot;
         private List<URI> inputs = new ArrayList<>();
         private Schema schema = new Schema();
         private List<Partition> partitions = new ArrayList<>();
-        private boolean namedPartitions;
+        private boolean namedPartitions = true;
         private LineOptions lines = new LineOptions();
         private List<Field> select = new ArrayList<>();
 
@@ -78,6 +83,11 @@ public class Source implements Dataset, Model, HasManifest {
 
         public Builder withManifest(URI manifest) {
             this.manifest = manifest;
+            return this;
+        }
+
+        public Builder withManifestLot(String manifestLot) {
+            this.manifestLot = manifestLot;
             return this;
         }
 
@@ -113,12 +123,13 @@ public class Source implements Dataset, Model, HasManifest {
 
         public Source build() {
             Source source = new Source();
-            source.schema = this.schema;
-            source.partitions = this.partitions;
-            source.inputs = this.inputs;
-            source.lines = this.lines;
-            source.select = this.select;
+            source.manifestLot = this.manifestLot;
             source.manifest = this.manifest;
+            source.lines = this.lines;
+            source.inputs = this.inputs;
+            source.schema = this.schema;
+            source.select = this.select;
+            source.partitions = this.partitions;
             source.namedPartitions = this.namedPartitions;
             return source;
         }

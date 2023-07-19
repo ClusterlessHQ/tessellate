@@ -48,8 +48,10 @@ public class Transform implements Model {
             transforms.add(new RenameOp(transform));
         } else if (transform.contains("+>")) {
             transforms.add(new CopyOp(transform));
-        } else if (transform.contains("=")) {
+        } else if (transform.contains("=>")) {
             transforms.add(new InsertOp(transform));
+        } else if (transform.contains("!>")) {
+            transforms.add(new EvalInsertOp(transform));
         } else {
             transforms.add(new CoerceOp(transform));
         }

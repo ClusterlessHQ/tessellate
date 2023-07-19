@@ -40,6 +40,7 @@ public class PipelineOptionsMerge {
     private static BuildSpec buildSpec = new BuildSpec()
             .putInto("inputs", "/source/inputs")
             .putInto("inputManifest", "/source/manifest")
+            .putInto("inputManifestLot", "/source/manifestLot")
             .putInto("output", "/sink/output")
             .putInto("outputManifest", "/sink/manifest")
             .putInto("outputManifestLot", "/sink/manifestLot");
@@ -57,7 +58,11 @@ public class PipelineOptionsMerge {
 
     static {
         argumentLookups.put("inputs", pipelineOptions -> nullOrNode(pipelineOptions.inputOptions().inputs()));
+        argumentLookups.put("inputManifest", pipelineOptions -> nullOrNode(pipelineOptions.inputOptions().inputManifest()));
+        argumentLookups.put("inputManifestLot", pipelineOptions -> nullOrNode(pipelineOptions.inputOptions().inputLot()));
         argumentLookups.put("output", pipelineOptions -> nullOrNode(pipelineOptions.outputOptions().output()));
+        argumentLookups.put("outputManifest", pipelineOptions -> nullOrNode(pipelineOptions.outputOptions().outputManifest()));
+        argumentLookups.put("outputManifestLot", pipelineOptions -> nullOrNode(pipelineOptions.outputOptions().outputLot()));
     }
 
     PipelineOptions pipelineOptions;
@@ -104,6 +109,10 @@ public class PipelineOptionsMerge {
     }
 
     private JsonNode resolve(Path path, JsonNode jsonNode) {
+        if (jsonNode.isNull()) {
+            return jsonNode;
+        }
+
         URI uri = JSONUtil.treeToValueSafe(jsonNode, URI.class);
 
         if (!(uri.getScheme() == null || uri.getScheme().equals("file"))) {

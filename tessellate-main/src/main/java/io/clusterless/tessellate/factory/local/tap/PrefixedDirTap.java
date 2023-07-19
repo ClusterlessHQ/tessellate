@@ -18,6 +18,7 @@ import cascading.tap.type.TapWith;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
 import java.util.Properties;
 
 public class PrefixedDirTap extends DirTap {
@@ -44,6 +45,15 @@ public class PrefixedDirTap extends DirTap {
     @Override
     protected String getOutputFileBasename() {
         return prefix;
+    }
+
+    @Override
+    protected PathMatcher getPathMatcher() {
+        // Hadoop FS writes _SUCCESS and .crc files, so we need to ignore them
+        return path -> {
+            String string = path.getFileName().toString();
+            return string.charAt(0) != '_' && string.charAt(0) != '.';
+        };
     }
 
     protected TapWith<Properties, InputStream, OutputStream> create(Scheme<Properties, InputStream, OutputStream, ?, ?> scheme, Path path, SinkMode sinkMode) {

@@ -15,12 +15,14 @@ import io.clusterless.tessellate.factory.hdfs.TextFSFactory;
 import io.clusterless.tessellate.factory.local.LocalDirectoryFactory;
 import io.clusterless.tessellate.model.Sink;
 import io.clusterless.tessellate.model.Source;
+import io.clusterless.tessellate.options.PipelineOptions;
 import io.clusterless.tessellate.util.Compression;
 import io.clusterless.tessellate.util.Format;
 import io.clusterless.tessellate.util.Protocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -60,7 +62,17 @@ public class TapFactories {
         }
     }
 
-    public static SourceFactory findSourceFactory(Source sourceModel) {
+    public static SourceFactory findSourceFactory(PipelineOptions pipelineOptions, Source sourceModel) throws IOException {
+        if (sourceModel.manifest() != null) {
+            LOG.info("reading manifest: {}", sourceModel.manifest());
+
+            ManifestReader manifestReader = ManifestReader.from(sourceModel);
+
+            List<URI> uris = manifestReader.uris(pipelineOptions);
+
+            sourceModel.uris().addAll(uris);
+        }
+
         List<URI> inputUris = sourceModel.uris();
         Format format = sourceModel.schema().format();
         Compression compression = sourceModel.schema().compression();

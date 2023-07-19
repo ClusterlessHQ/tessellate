@@ -85,6 +85,8 @@ dependencies {
     implementation("org.apache.hadoop:hadoop-common:$hadoop3Version")
     implementation("org.apache.hadoop:hadoop-aws:$hadoop3Version")
 
+    implementation("org.mvel:mvel2:2.5.0.Final")
+
     // required by hadoop in java 9+
     implementation("javax.xml.bind:jaxb-api:2.3.0")
 

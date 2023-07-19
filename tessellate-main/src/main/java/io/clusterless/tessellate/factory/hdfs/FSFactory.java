@@ -19,7 +19,6 @@ import cascading.tap.local.hadoop.LocalHfsAdaptor;
 import cascading.tap.partition.Partition;
 import cascading.tuple.Fields;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import io.clusterless.tessellate.factory.ManifestReader;
 import io.clusterless.tessellate.factory.ManifestWriter;
 import io.clusterless.tessellate.factory.Observed;
 import io.clusterless.tessellate.factory.hdfs.fs.ObserveLocalFileSystem;
@@ -30,6 +29,7 @@ import io.clusterless.tessellate.model.Sink;
 import io.clusterless.tessellate.options.AWSOptions;
 import io.clusterless.tessellate.options.PipelineOptions;
 import io.clusterless.tessellate.util.Property;
+import io.clusterless.tessellate.util.URIs;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.s3a.Constants;
 import org.apache.hadoop.fs.s3a.S3AFileSystem;
@@ -67,22 +67,25 @@ public abstract class FSFactory extends FilesFactory {
 
         Fields declaredFields = declaredFields(dataset, currentFields);
 
-        Properties local = initLocalProperties(pipelineOptions, dataset, declaredFields);
+        Properties local = getProperties(pipelineOptions, dataset, declaredFields);
 
-        ManifestReader manifestReader = ManifestReader.from(dataset);
+        List<URI> uris = dataset.uris();
 
-        List<URI> uris = manifestReader.uris(local);
+        URI commonRoot = uris.get(0);
 
-        URI commonRoot = manifestReader.findCommonRoot(local);
+        // uri is likely a directory or single file, let the Hfs tap handle it
+        if (!isSink && dataset.manifest() != null) {
+            commonRoot = URIs.findCommonPrefix(uris, dataset.partitions().size());
+        }
 
-        LOG.info("{}: handing uris: {}, with common: {}", logPrefix(isSink), uris.size(), commonRoot);
+        LOG.info("{}: handling uris: {}, with common: {}", logPrefix(isSink), uris.size(), commonRoot);
 
-        Scheme scheme = createScheme(pipelineOptions, dataset, declaredFields);
+        Scheme scheme = createScheme(dataset, declaredFields);
 
         Tap tap;
 
         if (isSink) {
-            tap = createSinkTap(local, scheme, commonRoot, uris, ((Sink) dataset).manifest());
+            tap = createSinkTap(local, scheme, commonRoot, uris, dataset.manifest());
         } else {
             tap = createSourceTap(local, scheme, commonRoot, uris);
         }
@@ -113,8 +116,33 @@ public abstract class FSFactory extends FilesFactory {
         return isSink ? "writing" : "reading";
     }
 
-    @NotNull
-    protected Properties initLocalProperties(PipelineOptions pipelineOptions, Dataset dataset, Fields declaredFields) {
+    @Override
+    public void applyGlobalProperties(Properties properties) {
+        properties.setProperty("mapred.output.direct." + S3AFileSystem.class.getSimpleName(), "true");
+        properties.setProperty("mapreduce.input.fileinputformat.input.dir.recursive", "true");
+
+        // intercept all writes against the s3a: and file: filesystem
+        properties.setProperty("mapred.output.direct." + ObserveS3AFileSystem.class.getSimpleName(), "true");
+        properties.setProperty("fs.s3a.impl", ObserveS3AFileSystem.class.getName());
+        properties.setProperty("fs.s3.impl", ObserveS3AFileSystem.class.getName());
+        properties.setProperty("mapred.output.direct." + ObserveLocalFileSystem.class.getSimpleName(), "true");
+        properties.setProperty("fs.file.impl", ObserveLocalFileSystem.class.getName());
+
+        properties.setProperty(Constants.AWS_CREDENTIALS_PROVIDER, getAWSCredentialProviders());
+    }
+
+    protected Properties getProperties(PipelineOptions pipelineOptions, Dataset dataset, Fields declaredFields) {
+        Properties local = new Properties();
+
+        // covers case when reading manifest
+        applyGlobalProperties(local);
+
+        local = applyAWSProperties(pipelineOptions, local, isSink(dataset));
+
+        return applySinkProperties(dataset, declaredFields, local);
+    }
+
+    protected Properties applySinkProperties(Dataset dataset, Fields declaredFields, Properties local) {
         String prefix = PART_NAME_DEFAULT;
 
         // hdfs always treat paths as directories, so we need to provide a prefix for the part files
@@ -122,42 +150,31 @@ public abstract class FSFactory extends FilesFactory {
             prefix = getPartFileName((Sink) dataset, declaredFields);
         }
 
-        Properties local = new Properties();
-
-        local.setProperty("mapred.output.direct." + S3AFileSystem.class.getSimpleName(), "true");
         local.setProperty("cascading.tapcollector.partname", String.format("%%s%%s%s-%%05d-%%05d", prefix));
-        local.setProperty("mapreduce.input.fileinputformat.input.dir.recursive", "true");
 
-        // intercept all writes against the s3a: and file: filesystem
-        local.setProperty("mapred.output.direct." + ObserveS3AFileSystem.class.getSimpleName(), "true");
-        local.setProperty("fs.s3a.impl", ObserveS3AFileSystem.class.getName());
-        local.setProperty("fs.s3.impl", ObserveS3AFileSystem.class.getName());
-        local.setProperty("mapred.output.direct." + ObserveLocalFileSystem.class.getSimpleName(), "true");
-        local.setProperty("fs.file.impl", ObserveLocalFileSystem.class.getName());
-
-        return applyAWSProperties(pipelineOptions, dataset, local);
+        return local;
     }
 
-    protected abstract Scheme createScheme(PipelineOptions pipelineOptions, Dataset dataset, Fields declaredFields);
+    protected abstract Scheme createScheme(Dataset dataset, Fields declaredFields);
 
-    protected Properties applyAWSProperties(PipelineOptions pipelineOptions, Dataset dataset, Properties local) {
-        AWSOptions overrideAWSOptions = isSink(dataset) ? pipelineOptions.outputOptions() : pipelineOptions.inputOptions();
+    protected Properties applyAWSProperties(PipelineOptions pipelineOptions, Properties properties, boolean isSink) {
+        AWSOptions overrideAWSOptions = isSink ? pipelineOptions.outputOptions() : pipelineOptions.inputOptions();
         List<AWSOptions> awsOptions = List.of(overrideAWSOptions, pipelineOptions);
 
         Optional<AWSOptions> hasAssumedRoleARN = awsOptions.stream()
                 .filter(AWSOptions::hasAWSAssumedRoleARN)
                 .findFirst();
 
-        hasAssumedRoleARN.ifPresent(o -> local.setProperty(Constants.ASSUMED_ROLE_ARN, o.awsAssumedRoleARN()));
+        hasAssumedRoleARN.ifPresent(o -> properties.setProperty(Constants.ASSUMED_ROLE_ARN, o.awsAssumedRoleARN()));
 
-        Property.setIfNotNullFromSystem(local, Constants.ASSUMED_ROLE_ARN);
+        Property.setIfNotNullFromSystem(properties, Constants.ASSUMED_ROLE_ARN);
 
-        if (local.containsKey(Constants.ASSUMED_ROLE_ARN)) {
-            local.setProperty(Constants.ASSUMED_ROLE_SESSION_NAME, "role-session-" + System.currentTimeMillis());
-            local.setProperty(Constants.AWS_CREDENTIALS_PROVIDER, AssumedRoleCredentialProvider.class.getName());
-            local.setProperty(Constants.ASSUMED_ROLE_CREDENTIALS_PROVIDER, getAWSCredentialProviders());
+        if (properties.containsKey(Constants.ASSUMED_ROLE_ARN)) {
+            properties.setProperty(Constants.ASSUMED_ROLE_SESSION_NAME, "role-session-" + System.currentTimeMillis());
+            properties.setProperty(Constants.AWS_CREDENTIALS_PROVIDER, AssumedRoleCredentialProvider.class.getName());
+            properties.setProperty(Constants.ASSUMED_ROLE_CREDENTIALS_PROVIDER, getAWSCredentialProviders());
         } else {
-            local.setProperty(Constants.AWS_CREDENTIALS_PROVIDER, getAWSCredentialProviders());
+            properties.setProperty(Constants.AWS_CREDENTIALS_PROVIDER, getAWSCredentialProviders());
         }
 
         Optional<String> hasAWSEndpoint = awsOptions.stream()
@@ -165,14 +182,14 @@ public abstract class FSFactory extends FilesFactory {
                 .map(AWSOptions::awsEndpoint)
                 .findFirst();
 
-        Property.setIfNotNullFromEnvThenSystem(local, "AWS_S3_ENDPOINT", Constants.ENDPOINT, hasAWSEndpoint.orElse(null));
-        Property.setIfNotNullFromEnvThenSystem(local, "AWS_ACCESS_KEY_ID", Constants.ACCESS_KEY);
-        Property.setIfNotNullFromEnvThenSystem(local, "AWS_SECRET_ACCESS_KEY", Constants.SECRET_KEY);
-        Property.setIfNotNullFromSystem(local, Constants.SESSION_TOKEN);
-        Property.setIfNotNullFromSystem(local, Constants.PROXY_HOST);
-        Property.setIfNotNullFromSystem(local, Constants.PROXY_PORT);
+        Property.setIfNotNullFromEnvThenSystem(properties, "AWS_S3_ENDPOINT", Constants.ENDPOINT, hasAWSEndpoint.orElse(null));
+        Property.setIfNotNullFromEnvThenSystem(properties, "AWS_ACCESS_KEY_ID", Constants.ACCESS_KEY);
+        Property.setIfNotNullFromEnvThenSystem(properties, "AWS_SECRET_ACCESS_KEY", Constants.SECRET_KEY);
+        Property.setIfNotNullFromSystem(properties, Constants.SESSION_TOKEN);
+        Property.setIfNotNullFromSystem(properties, Constants.PROXY_HOST);
+        Property.setIfNotNullFromSystem(properties, Constants.PROXY_PORT);
 
-        return local;
+        return properties;
     }
 
     @NotNull
@@ -234,6 +251,8 @@ public abstract class FSFactory extends FilesFactory {
 
         list.addFirst(DefaultAWSCredentialsProviderChain.class);
 
-        return list.stream().map(Class::getName).collect(Collectors.joining(","));
+        return list.stream()
+                .map(Class::getName)
+                .collect(Collectors.joining(","));
     }
 }

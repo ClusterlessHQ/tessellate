@@ -12,6 +12,8 @@ import java.net.URI;
 import java.util.List;
 
 public interface Dataset {
+    URI manifest();
+
     Schema schema();
 
     List<URI> uris();

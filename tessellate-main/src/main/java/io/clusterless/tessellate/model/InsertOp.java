@@ -11,10 +11,11 @@ package io.clusterless.tessellate.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.clusterless.tessellate.pipeline.Transforms;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * <pre>
- * value=field|type
+ * value=>field|type
  * </pre>
  */
 public class InsertOp implements TransformOp, Model {
@@ -27,14 +28,19 @@ public class InsertOp implements TransformOp, Model {
     @JsonCreator
     public InsertOp(String declaration) {
         this.declaration = declaration;
-        String[] split = declaration.split("=>");
+        String[] split = declaration.split(translate());
 
         if (split.length != 2) {
-            throw new IllegalArgumentException("invalid insert declaration, expects 'value=field`, got: " + declaration);
+            throw new IllegalArgumentException("invalid " + transform().name() + " declaration, expects 'value" + translate() + "field`, got: " + declaration);
         }
 
         this.field = new Field(split[1]);
         this.value = split[0];
+    }
+
+    @NotNull
+    protected String translate() {
+        return "=>";
     }
 
     public String declaration() {

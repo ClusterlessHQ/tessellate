@@ -8,6 +8,7 @@
 
 package io.clusterless.tessellate.factory.hdfs;
 
+import cascading.nested.json.hadoop3.JSONTextLine;
 import cascading.scheme.Scheme;
 import cascading.scheme.hadoop.TextDelimited;
 import cascading.scheme.hadoop.TextLine;
@@ -15,7 +16,6 @@ import cascading.tuple.Fields;
 import io.clusterless.tessellate.factory.TapFactory;
 import io.clusterless.tessellate.model.Dataset;
 import io.clusterless.tessellate.model.Schema;
-import io.clusterless.tessellate.options.PipelineOptions;
 import io.clusterless.tessellate.util.Compression;
 import io.clusterless.tessellate.util.Format;
 
@@ -30,7 +30,7 @@ public class TextFSFactory extends LinesFSFactory {
     }
 
     @Override
-    protected Scheme createScheme(PipelineOptions pipelineOptions, Dataset dataset, Fields declaredFields) {
+    protected Scheme createScheme(Dataset dataset, Fields declaredFields) {
         Schema schema = dataset.schema();
         TextLine.Compress compress = schema.compression() == Compression.none ? TextLine.Compress.DISABLE : TextLine.Compress.ENABLE;
 
@@ -42,6 +42,8 @@ public class TextFSFactory extends LinesFSFactory {
                 return new TextDelimited(declaredFields, compress, schema.embedsSchema(), ",", "\"");
             case tsv:
                 return new TextDelimited(declaredFields, compress, schema.embedsSchema(), "\t", "\"");
+            case json:
+                return new JSONTextLine(declaredFields, compress);
         }
     }
 }

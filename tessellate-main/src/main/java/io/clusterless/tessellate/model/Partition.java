@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * ts->ymd|DateTime|yyyyMMdd
+ * ts+>ymd|DateTime|yyyyMMdd
  */
 public class Partition extends Translate {
     @JsonCreator
@@ -23,7 +23,7 @@ public class Partition extends Translate {
     @Override
     @NotNull
     protected String translate() {
-        return "\\+>";
+        return "[+]>";
     }
 
     @Override

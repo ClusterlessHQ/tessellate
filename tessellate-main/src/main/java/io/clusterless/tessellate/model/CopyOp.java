@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * <pre>
- * ts->ymd|DateTime|yyyyMMdd
+ * ts+>ymd|DateTime|yyyyMMdd
  * </pre>
  */
 public class CopyOp extends Translate implements TransformOp {

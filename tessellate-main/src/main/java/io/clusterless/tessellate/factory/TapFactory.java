@@ -12,9 +12,13 @@ import io.clusterless.tessellate.util.Compression;
 import io.clusterless.tessellate.util.Format;
 import io.clusterless.tessellate.util.Protocol;
 
+import java.util.Properties;
 import java.util.Set;
 
 public interface TapFactory {
+    default void applyGlobalProperties(Properties properties) {
+    }
+
     Set<Protocol> getProtocols();
 
     Set<Format> getFormats();

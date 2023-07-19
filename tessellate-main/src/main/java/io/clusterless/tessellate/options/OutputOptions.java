@@ -15,6 +15,10 @@ import java.net.URI;
 public class OutputOptions implements AWSOptions {
     @CommandLine.Option(names = {"-o", "--output"}, description = "output uris")
     private URI output;
+    @CommandLine.Option(names = {"-t", "--output-manifest"}, description = "output manifest uri template")
+    private String outputManifest;
+    @CommandLine.Option(names = {"-l", "--output-lot"}, description = "output lot")
+    private String outputLot;
     @CommandLine.Option(names = {"--output-aws-endpoint"}, description = "aws endpoint")
     protected String awsEndpoint;
     @CommandLine.Option(names = {"--output-aws-region"}, description = "aws region")
@@ -28,6 +32,24 @@ public class OutputOptions implements AWSOptions {
 
     public OutputOptions setOutput(URI output) {
         this.output = output;
+        return this;
+    }
+
+    public String outputManifest() {
+        return outputManifest;
+    }
+
+    public OutputOptions setOutputManifest(String outputManifest) {
+        this.outputManifest = outputManifest;
+        return this;
+    }
+
+    public String outputLot() {
+        return outputLot;
+    }
+
+    public OutputOptions setOutputLot(String outputLot) {
+        this.outputLot = outputLot;
         return this;
     }
 

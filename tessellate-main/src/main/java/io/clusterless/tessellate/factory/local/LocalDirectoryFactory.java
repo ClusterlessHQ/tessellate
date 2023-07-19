@@ -23,7 +23,6 @@ import cascading.tuple.Fields;
 import io.clusterless.tessellate.factory.TapFactory;
 import io.clusterless.tessellate.factory.local.tap.PrefixedDirTap;
 import io.clusterless.tessellate.model.Dataset;
-import io.clusterless.tessellate.model.HasManifest;
 import io.clusterless.tessellate.model.Schema;
 import io.clusterless.tessellate.model.Sink;
 import io.clusterless.tessellate.options.PipelineOptions;
@@ -73,10 +72,6 @@ public class LocalDirectoryFactory extends FilesFactory {
         boolean isSink = isSink(dataset);
 
         Fields declaredFields = declaredFields(dataset, currentFields);
-
-        if (dataset instanceof HasManifest && ((HasManifest) dataset).manifest() != null) {
-            throw new IllegalStateException("manifests not supported for local sinks/sources");
-        }
 
         List<URI> uris = dataset.uris();
 

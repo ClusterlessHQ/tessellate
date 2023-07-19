@@ -12,7 +12,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Sink implements Dataset, Model, HasManifest {
+public class Sink implements Dataset, Model {
     private URI manifest;
     private String manifestLot;
     private URI output;

@@ -14,7 +14,6 @@ import cascading.scheme.hadoop.TextLine;
 import cascading.tuple.Fields;
 import io.clusterless.tessellate.factory.TapFactory;
 import io.clusterless.tessellate.model.Dataset;
-import io.clusterless.tessellate.options.PipelineOptions;
 import io.clusterless.tessellate.util.Compression;
 import io.clusterless.tessellate.util.Format;
 import io.clusterless.tessellate.util.JSONUtil;
@@ -30,7 +29,7 @@ public class JSONFSFactory extends LinesFSFactory {
     }
 
     @Override
-    protected Scheme createScheme(PipelineOptions pipelineOptions, Dataset dataset, Fields declaredFields) {
+    protected Scheme createScheme(Dataset dataset, Fields declaredFields) {
         if (dataset.schema().compression() == Compression.none) {
             return new JSONTextLine(JSONUtil.DATA_MAPPER, declaredFields);
         } else {

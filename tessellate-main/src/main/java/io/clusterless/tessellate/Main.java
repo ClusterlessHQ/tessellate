@@ -29,7 +29,8 @@ import java.util.concurrent.Callable;
 @CommandLine.Command(
         name = "tess",
         mixinStandardHelpOptions = true,
-        version = "1.0-wip"
+        version = "1.0-wip",
+        sortOptions = false
 )
 public class Main implements Callable<Integer> {
     enum Show {

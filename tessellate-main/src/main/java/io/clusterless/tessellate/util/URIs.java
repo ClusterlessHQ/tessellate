@@ -8,15 +8,19 @@
 
 package io.clusterless.tessellate.util;
 
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.StringJoiner;
-import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class URIs {
-    private static Pattern pattern = Pattern.compile("(\\{\\{(?!\\{)(.*)}}(?!}))");
-
     public static URI copyWithoutQuery(URI uri) {
         try {
             return new URI(uri.getScheme(), uri.getAuthority(), uri.getPath(), null, null);
@@ -78,6 +82,10 @@ public class URIs {
 
         String[] split = path.substring(1).split("/");
 
+        if (split.length == trim) {
+            return copyWithPath(uri, "/");
+        }
+
         StringJoiner joiner = new StringJoiner("/", "/", "/");
 
         for (int i = 0; i < split.length - trim; i++) {
@@ -97,5 +105,21 @@ public class URIs {
         }
 
         return Paths.get(uri.getPath()).toAbsolutePath().toUri();
+    }
+
+    @NotNull
+    public static URI findCommonPrefix(List<URI> uris, int numPartitions) {
+        Set<String> roots = uris.stream()
+                .map(u -> trim(u, numPartitions))
+                .map(Objects::toString)
+                .collect(Collectors.toSet());
+
+        String commonPrefix = StringUtils.getCommonPrefix(roots.toArray(new String[0]));
+
+        if (commonPrefix.isEmpty()) {
+            throw new IllegalArgumentException("to many unique roots, got: " + roots);
+        }
+
+        return URI.create(commonPrefix);
     }
 }

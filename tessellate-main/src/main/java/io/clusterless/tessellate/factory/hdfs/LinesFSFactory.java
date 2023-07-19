@@ -13,7 +13,6 @@ import io.clusterless.tessellate.model.Dataset;
 import io.clusterless.tessellate.options.PipelineOptions;
 import io.clusterless.tessellate.util.Compression;
 import io.clusterless.tessellate.util.Protocol;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Properties;
 import java.util.Set;
@@ -30,8 +29,8 @@ public abstract class LinesFSFactory extends FSFactory {
     }
 
     @Override
-    protected @NotNull Properties initLocalProperties(PipelineOptions pipelineOptions, Dataset dataset, Fields declaredFields) {
-        Properties properties = super.initLocalProperties(pipelineOptions, dataset, declaredFields);
+    public Properties getProperties(PipelineOptions pipelineOptions, Dataset dataset, Fields declaredFields) {
+        Properties properties = super.getProperties(pipelineOptions, dataset, declaredFields);
 
         switch (dataset.schema().compression()) {
             case none:
