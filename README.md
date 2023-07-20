@@ -7,6 +7,10 @@ This project is under active development and many features are considered alpha.
 Please do play around with this project in order to provide early feedback, but do expect things to change until we hit
 1.0 release.
 
+All final and WIP releases can be found here:
+
+- https://github.com/ClusterlessHQ/tessellate/releases
+
 ## About
 
 A primary activity of any data-engineering effort is to format and organize data for different access patterns.
@@ -22,14 +26,62 @@ Tessellate may be used from the command line, but also natively supports the
 
 ## Features
 
-### Supported formats
+### Pipeline definition
+
+Tessellate pipelines are defined in JSON files.
+
+For a copy of a template pipeline JSON file, run:
+
+```shell
+tess --print-pipeline > pipeline.json
+```
+
+Some command line options are merged at runtime with the pipeline JSON file. Command line options take precedence over
+the pipeline JSON file.
+
+Overriding command line options include
+
+- `--inputs`
+- `--input-manifest`
+- `--input-manifest-lot`
+- `--output`
+- `--output-manifest`
+- `--output-manifest-lot`
+
+In order to embed system properties, environment variables, or other provided intrinsic values, [MVEL
+templates](http://mvel.documentnode.com) are supported.
+
+Current context values supported are:
+
+- Environment variables
+- System properties
+- Pipeline source properties
+- Pipeline sink properties
+
+For example:
+
+- `@{env['USER']}` - resolve an environment variable
+- `@{sys['user.name']}` - resolve a system property
+- `@{sink.manifestLot}` - resolve a sink property from the pipeline JSON definition
+
+Used in a transform to embed the current `lot` value into the output:
+
+```json
+{
+  "transform": [
+    "@{source.manifestLot}=>lot|string"
+  ]
+}
+```
+
+### Supported data formats
 
 - `text/regex` - lines of text parsed by regex
 - `csv` - with or without headers
 - `tsv` - with or without headers
 - [Apache Parquet](https://parquet.apache.org)
 
-The regex support is based on regex groups. Groups are matched by ordinal with the declared fields in the schema.
+Regex support is based on regex groups. Groups are matched by ordinal with the declared fields in the schema.
 
 Provided named formats include:
 
@@ -49,7 +101,7 @@ Usage:
 }
 ```
 
-### Supported locations/protocols
+### Supported data locations/protocols
 
 - `file://`
 - `s3://`
@@ -69,8 +121,6 @@ Usage:
 
 - insert - insert a literal value into a field
   - `value=>intoField|type`
-- eval - evaluate an expression locally and insert into a field (relies on [MVEL](http://mvel.documentnode.com))
-  - `expression!>intoField|type`
 - coerce - transform a field to a new type
   - `field|newType`
 - copy - copy a field value to a new field
@@ -102,7 +152,7 @@ Usage:
 
 So that the Cascading WIP releases can be retrieved, to `gradle.properties` add:
 
-```
+```properties
 githubUsername=[your github username]
 githubPassword=[your github password]
 ```
@@ -111,10 +161,14 @@ githubPassword=[your github password]
 
 ## To Run
 
-> ./tessellate-main/build/install/tess/bin/tess --help
+```shell
+./tessellate-main/build/install/tess/bin/tess --help
+```
 
 To print a project file template:
 
-> tess --print-project
+```shell
+tess --print-pipeline
+```
 
 Documentation coming soon, but see the tests for usage. 

@@ -165,6 +165,14 @@ public class JSONUtil {
         }
     }
 
+    public static <T> T stringToValue(String value, Class<T> type) {
+        try {
+            return CONFIG_READER.readValue(value, type);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     public static <T> T treeToValue(JsonNode n, Class<T> type) throws JsonProcessingException {
         return CONFIG_READER.treeToValue(n, type);
     }

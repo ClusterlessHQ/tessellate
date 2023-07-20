@@ -14,7 +14,6 @@ import java.util.function.Function;
 
 public enum Transforms {
     insert("=>", "^.+[=]>.+$", InsertOp::new),
-    eval("!>", "^.+[!]>.+$", EvalInsertOp::new),
     copy("+>", "^.+[+]>.+$", CopyOp::new),
     rename("->", "^.+[-]>.+$", RenameOp::new),
     discard("->", "^.+[-]>$", DiscardOp::new),

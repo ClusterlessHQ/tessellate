@@ -48,8 +48,8 @@ public class Main implements Callable<Integer> {
     @CommandLine.Mixin
     protected PipelineOptions pipelineOptions = new PipelineOptions();
 
-    @CommandLine.Option(names = "--print-project", description = "show project template, will not run pipeline")
-    protected boolean printProject = false;
+    @CommandLine.Option(names = "--print-pipeline", description = "show pipeline template, will not run pipeline")
+    protected boolean printPipeline = false;
 
     @CommandLine.Option(names = "--show-source", description = "show protocols, formats, or compression options")
     protected Show showSource;
@@ -137,7 +137,7 @@ public class Main implements Callable<Integer> {
 
         PipelineDef pipelineDef = merge.merge();
 
-        if (printProject) {
+        if (printPipeline) {
             System.out.println(JSONUtil.writeAsStringSafePretty(pipelineDef));
             return 0;
         }

@@ -19,7 +19,7 @@ public class InputOptions implements AWSOptions {
     private List<URI> inputs = new LinkedList<>();
     @CommandLine.Option(names = {"-m", "--input-manifest"}, description = "input manifest uri")
     private URI inputManifest;
-    @CommandLine.Option(names = {"--input-lot"}, description = "input lot")
+    @CommandLine.Option(names = {"--input-manifest-lot"}, description = "input lot")
     private String inputLot;
     @CommandLine.Option(names = {"--input-aws-endpoint"}, description = "aws endpoint")
     protected String awsEndpoint;

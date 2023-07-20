@@ -10,6 +10,7 @@ package io.clusterless.tessellate.pipeline;
 
 import com.adelean.inject.resources.junit.jupiter.GivenTextResource;
 import com.adelean.inject.resources.junit.jupiter.TestWithResources;
+import io.clusterless.tessellate.model.InsertOp;
 import io.clusterless.tessellate.model.PipelineDef;
 import io.clusterless.tessellate.options.PipelineOptions;
 import io.clusterless.tessellate.options.PipelineOptionsMerge;
@@ -39,6 +40,8 @@ public class PipelineOptionsMergerTest {
 
         assertEquals(inputs, merged.source().inputs());
         assertEquals(output, merged.sink().output());
+
+        assertEquals("1689820455", ((InsertOp) merged.transform().transformOps().get(5)).value());
     }
 
     @Test

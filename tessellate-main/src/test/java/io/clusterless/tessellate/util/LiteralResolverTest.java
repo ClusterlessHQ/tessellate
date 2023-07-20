@@ -15,6 +15,7 @@ public class LiteralResolverTest {
     @Test
     void resolveEnv() {
         Assertions.assertEquals(System.getenv("USER"), LiteralResolver.resolve("env.USER", String.class));
+        Assertions.assertEquals(System.getenv("USER"), LiteralResolver.resolve("env['USER']", String.class));
         Assertions.assertEquals(System.getProperty("user.name"), LiteralResolver.resolve("sys['user.name']", String.class));
     }
 }

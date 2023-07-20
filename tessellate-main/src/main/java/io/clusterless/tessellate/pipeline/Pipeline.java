@@ -115,15 +115,6 @@ public class Pipeline {
         // todo: group like transforms together if there are no interdependencies
         for (TransformOp transformOp : pipelineDef.transform().transformOps()) {
             switch (transformOp.transform()) {
-                case eval:
-                    EvalInsertOp evalOp = (EvalInsertOp) transformOp;
-                    Fields evalFields = evalOp.field().fields();
-                    Object eval = evalOp.evaluate(getContext());
-                    LOG.info("transform eval: fields: {}, value: {}", evalFields, eval);
-                    pipe = new Each(pipe, new Insert(evalFields, eval), Fields.ALL);
-                    currentFields = currentFields.append(evalFields);
-                    logCurrentFields(currentFields);
-                    break;
                 case insert:
                     InsertOp insertOp = (InsertOp) transformOp;
                     Fields insertFields = insertOp.field().fields();

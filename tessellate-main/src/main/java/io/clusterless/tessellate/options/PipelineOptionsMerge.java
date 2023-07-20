@@ -16,6 +16,9 @@ import heretical.pointer.operation.json.JSONBuilder;
 import heretical.pointer.path.NestedPointer;
 import io.clusterless.tessellate.model.PipelineDef;
 import io.clusterless.tessellate.util.JSONUtil;
+import io.clusterless.tessellate.util.LiteralResolver;
+import org.jetbrains.annotations.NotNull;
+import org.mvel2.templates.TemplateRuntime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -130,9 +133,22 @@ public class PipelineOptionsMerge {
         loadAndMerge(pipelineDef, "/source");
         loadAndMerge(pipelineDef, "/sink");
 
-        LOG.info("pipeline: {}", JSONUtil.writeAsStringSafe(pipelineDef));
+        String mergedPipelineDef = JSONUtil.writeAsStringSafe(pipelineDef);
+        Map<String, Object> context = getContext(mergedPipelineDef);
+        String resolved = TemplateRuntime.eval(mergedPipelineDef, context).toString();
+        LOG.info("pipeline: {}", resolved);
 
-        return JSONUtil.treeToValueSafe(pipelineDef, PipelineDef.class);
+        return JSONUtil.stringToValue(resolved, PipelineDef.class);
+    }
+
+    @NotNull
+    private static Map<String, Object> getContext(String mergedPipelineDef) {
+        Map<String, Object> context = LiteralResolver.context();
+        Map map = JSONUtil.stringToValue(mergedPipelineDef, Map.class);
+
+        context.put("source", map.get("source"));
+        context.put("sink", map.get("sink"));
+        return context;
     }
 
     private void loadAndMerge(JsonNode jsonNode, String target) {

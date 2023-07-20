@@ -55,6 +55,6 @@ public class PipelineParseTest {
         assertInstanceOf(CopyOp.class, transform.transformOps().get(2));
         assertInstanceOf(DiscardOp.class, transform.transformOps().get(3));
         assertInstanceOf(InsertOp.class, transform.transformOps().get(4));
-        assertInstanceOf(EvalInsertOp.class, transform.transformOps().get(5));
+        assertInstanceOf(InsertOp.class, transform.transformOps().get(5));
     }
 }
