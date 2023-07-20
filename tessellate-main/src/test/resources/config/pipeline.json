@@ -23,6 +23,7 @@
     "two->@two",
     "three+>@three|DateTime|yyyyMMdd",
     "four->",
-    "five=>_five"
+    "five=>_five",
+    "1689820455!>six|DateTime|yyyyMMdd"
   ]
 }

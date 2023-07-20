@@ -49,11 +49,12 @@ public class PipelineParseTest {
 
         Transform transform = pipeline.transform();
 
-        assertEquals(5, transform.transformOps().size());
+        assertEquals(6, transform.transformOps().size());
         assertInstanceOf(CoerceOp.class, transform.transformOps().get(0));
         assertInstanceOf(RenameOp.class, transform.transformOps().get(1));
         assertInstanceOf(CopyOp.class, transform.transformOps().get(2));
         assertInstanceOf(DiscardOp.class, transform.transformOps().get(3));
         assertInstanceOf(InsertOp.class, transform.transformOps().get(4));
+        assertInstanceOf(EvalInsertOp.class, transform.transformOps().get(5));
     }
 }

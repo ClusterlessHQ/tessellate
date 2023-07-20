@@ -11,6 +11,7 @@ package io.clusterless.tessellate.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.JsonValue;
+import io.clusterless.tessellate.pipeline.Transforms;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,19 +42,11 @@ public class Transform implements Model {
 
     @JsonSetter
     public void addTransform(String transform) {
-        // this needs to be more robust
-        if (transform.endsWith("->")) {
-            transforms.add(new DiscardOp(transform));
-        } else if (transform.contains("->")) {
-            transforms.add(new RenameOp(transform));
-        } else if (transform.contains("+>")) {
-            transforms.add(new CopyOp(transform));
-        } else if (transform.contains("=>")) {
-            transforms.add(new InsertOp(transform));
-        } else if (transform.contains("!>")) {
-            transforms.add(new EvalInsertOp(transform));
-        } else {
-            transforms.add(new CoerceOp(transform));
+        for (Transforms value : Transforms.values()) {
+            if (value.matches(transform)) {
+                transforms.add(value.transform(transform));
+                return;
+            }
         }
     }
 
