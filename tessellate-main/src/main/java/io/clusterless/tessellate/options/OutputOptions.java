@@ -15,8 +15,8 @@ import java.net.URI;
 public class OutputOptions implements AWSOptions {
     @CommandLine.Option(names = {"-o", "--output"}, description = "output uris")
     private URI output;
-    @CommandLine.Option(names = {"-t", "--output-manifest"}, description = "output manifest uri template")
-    private String outputManifest;
+    @CommandLine.Option(names = {"-t", "--output-manifest-template"}, description = "output manifest uri template")
+    private String outputManifestTemplate;
     @CommandLine.Option(names = {"-l", "--output-manifest-lot"}, description = "output lot")
     private String outputLot;
     @CommandLine.Option(names = {"--output-aws-endpoint"}, description = "aws endpoint")
@@ -35,12 +35,12 @@ public class OutputOptions implements AWSOptions {
         return this;
     }
 
-    public String outputManifest() {
-        return outputManifest;
+    public String outputManifestTemplate() {
+        return outputManifestTemplate;
     }
 
-    public OutputOptions setOutputManifest(String outputManifest) {
-        this.outputManifest = outputManifest;
+    public OutputOptions setOutputManifestTemplate(String outputManifestTemplate) {
+        this.outputManifestTemplate = outputManifestTemplate;
         return this;
     }
 

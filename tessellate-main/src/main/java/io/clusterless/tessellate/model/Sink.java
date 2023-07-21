@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Sink implements Dataset, Model {
-    private URI manifest;
+    private String manifestTemplate;
     private String manifestLot;
     private URI output;
     private Schema schema = new Schema();
@@ -30,9 +30,8 @@ public class Sink implements Dataset, Model {
         return output;
     }
 
-    @Override
-    public URI manifest() {
-        return manifest;
+    public String manifestTemplate() {
+        return manifestTemplate;
     }
 
     public String manifestLot() {
@@ -41,6 +40,11 @@ public class Sink implements Dataset, Model {
 
     public Schema schema() {
         return schema;
+    }
+
+    @Override
+    public boolean hasManifest() {
+        return manifestTemplate() != null;
     }
 
     @Override
@@ -61,7 +65,7 @@ public class Sink implements Dataset, Model {
     }
 
     public static final class Builder {
-        private URI manifest;
+        private String manifestTemplate;
         private String manifestLot;
         private URI output;
         private Schema schema = new Schema();
@@ -76,8 +80,8 @@ public class Sink implements Dataset, Model {
             return new Builder();
         }
 
-        public Builder withManifest(URI manifest) {
-            this.manifest = manifest;
+        public Builder withManifestTemplate(String manifestTemplate) {
+            this.manifestTemplate = manifestTemplate;
             return this;
         }
 
@@ -113,12 +117,12 @@ public class Sink implements Dataset, Model {
 
         public Sink build() {
             Sink sink = new Sink();
-            sink.namedPartitions = this.namedPartitions;
-            sink.manifest = this.manifest;
-            sink.manifestLot = this.manifestLot;
             sink.schema = this.schema;
+            sink.namedPartitions = this.namedPartitions;
             sink.filename = this.filename;
             sink.output = this.output;
+            sink.manifestLot = this.manifestLot;
+            sink.manifestTemplate = this.manifestTemplate;
             sink.partitions = this.partitions;
             return sink;
         }

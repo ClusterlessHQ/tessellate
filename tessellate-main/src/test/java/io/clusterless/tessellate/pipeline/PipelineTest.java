@@ -438,7 +438,7 @@ public class PipelineTest {
                         .build())
                 .withSink(Sink.builder()
                         .withOutput(intermediate)
-                        .withManifest(intermediateManifest)
+                        .withManifestTemplate(intermediateManifest.toString())
                         .withManifestLot("20211112PT5M000")
                         .withSchema(Schema.builder()
                                 .withFormat(Format.parquet)

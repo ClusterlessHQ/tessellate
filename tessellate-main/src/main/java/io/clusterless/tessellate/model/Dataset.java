@@ -8,13 +8,16 @@
 
 package io.clusterless.tessellate.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.net.URI;
 import java.util.List;
 
 public interface Dataset {
-    URI manifest();
-
     Schema schema();
+
+    @JsonIgnore
+    boolean hasManifest();
 
     List<URI> uris();
 

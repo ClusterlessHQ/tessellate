@@ -30,6 +30,11 @@ public class Source implements Dataset, Model {
         return manifest;
     }
 
+    @Override
+    public boolean hasManifest() {
+        return manifest() != null;
+    }
+
     public String manifestLot() {
         return manifestLot;
     }

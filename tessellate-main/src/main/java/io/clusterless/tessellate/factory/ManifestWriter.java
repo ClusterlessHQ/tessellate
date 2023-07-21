@@ -39,37 +39,33 @@ public class ManifestWriter {
             // do nothing
         }
     };
-
     public static ManifestWriter from(Dataset dataset, URI uriPrefix) {
         if (!(dataset instanceof Sink)) {
             return NULL;
         }
         Sink sink = (Sink) dataset;
 
-        if (sink.manifest() == null) {
+        if (!sink.hasManifest()) {
             return NULL;
         }
 
         return new ManifestWriter(sink, uriPrefix);
     }
 
-    private final URI manifestURI;
+    private final URITemplate template;
     private final String lot;
     private final URI uriPrefix;
 
     private ManifestWriter() {
-        this.manifestURI = null;
+        this.template = null;
         this.lot = null;
         this.uriPrefix = null;
     }
 
     public ManifestWriter(Sink dataset, URI uriPrefix) {
-        this(dataset.manifest(), dataset.manifestLot(), uriPrefix);
-    }
-
-    public ManifestWriter(URI manifestURI, String lot, URI uriPrefix) {
-        this.manifestURI = manifestURI;
-        this.lot = lot;
+        String manifestTemplate = dataset.manifestTemplate();
+        this.template = new URITemplate(URLDecoder.decode(manifestTemplate, StandardCharsets.UTF_8));
+        this.lot = dataset.manifestLot();
         this.uriPrefix = URIs.makeAbsolute(uriPrefix);
 
         if (this.lot == null) {
@@ -78,8 +74,6 @@ public class ManifestWriter {
     }
 
     public void writeSuccess(Properties conf) throws IOException {
-        URITemplate template = new URITemplate(URLDecoder.decode(manifestURI.toString(), StandardCharsets.UTF_8));
-
         URI complete = template
                 .expand("lot", lot)
                 .expand("state", "complete")

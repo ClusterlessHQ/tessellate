@@ -79,7 +79,7 @@ public abstract class FSFactory extends FilesFactory {
         URI commonRoot = uris.get(0);
 
         // uri is likely a directory or single file, let the Hfs tap handle it
-        if (!isSink && dataset.manifest() != null) {
+        if (!isSink && dataset.hasManifest()) {
             commonRoot = URIs.findCommonPrefix(uris, dataset.partitions().size());
         }
 
@@ -90,7 +90,7 @@ public abstract class FSFactory extends FilesFactory {
         Tap tap;
 
         if (isSink) {
-            tap = createSinkTap(local, scheme, commonRoot, uris, dataset.manifest());
+            tap = createSinkTap(local, scheme, commonRoot, uris);
         } else {
             tap = createSourceTap(local, scheme, commonRoot, uris);
         }
@@ -117,7 +117,7 @@ public abstract class FSFactory extends FilesFactory {
     }
 
     @NotNull
-    private static Hfs createSourceTap(Properties local, Scheme scheme, URI commonURI, List<URI> uris) {
+    private Hfs createSourceTap(Properties local, Scheme scheme, URI commonURI, List<URI> uris) {
         Observed.INSTANCE.reads(commonURI);
 
         String[] identifiers = uris.stream()
@@ -148,7 +148,7 @@ public abstract class FSFactory extends FilesFactory {
     }
 
     @NotNull
-    private static Hfs createSinkTap(Properties local, Scheme scheme, URI commonURI, List<URI> uris, URI manifest) {
+    private Hfs createSinkTap(Properties local, Scheme scheme, URI commonURI, List<URI> uris) {
         if (uris.size() > 1) {
             throw new IllegalArgumentException("cannot write to multiple uris, got: " + uris.stream().limit(10));
         }

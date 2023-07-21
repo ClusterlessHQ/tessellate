@@ -46,7 +46,7 @@ public class PipelineOptionsMerge {
             .putInto("inputManifest", "/source/manifest")
             .putInto("inputManifestLot", "/source/manifestLot")
             .putInto("output", "/sink/output")
-            .putInto("outputManifest", "/sink/manifest")
+            .putInto("outputManifestTemplate", "/sink/manifestTemplate")
             .putInto("outputManifestLot", "/sink/manifestLot");
     private static JSONBuilder builder = new JSONBuilder(buildSpec);
 
@@ -54,8 +54,7 @@ public class PipelineOptionsMerge {
     private static List<NestedPointer<JsonNode, ArrayNode>> uris = List.of(
             COMPILER.nested("/source/inputs/*"),
             COMPILER.nested("/source/manifest"),
-            COMPILER.nested("/sink/output"),
-            COMPILER.nested("/sink/manifest")
+            COMPILER.nested("/sink/output")
     );
 
     private static final Map<Comparable, Function<PipelineOptions, JsonNode>> argumentLookups = new HashMap<>();
@@ -65,7 +64,7 @@ public class PipelineOptionsMerge {
         argumentLookups.put("inputManifest", pipelineOptions -> nullOrNode(pipelineOptions.inputOptions().inputManifest()));
         argumentLookups.put("inputManifestLot", pipelineOptions -> nullOrNode(pipelineOptions.inputOptions().inputLot()));
         argumentLookups.put("output", pipelineOptions -> nullOrNode(pipelineOptions.outputOptions().output()));
-        argumentLookups.put("outputManifest", pipelineOptions -> nullOrNode(pipelineOptions.outputOptions().outputManifest()));
+        argumentLookups.put("outputManifestTemplate", pipelineOptions -> nullOrNode(pipelineOptions.outputOptions().outputManifestTemplate()));
         argumentLookups.put("outputManifestLot", pipelineOptions -> nullOrNode(pipelineOptions.outputOptions().outputLot()));
     }
 
