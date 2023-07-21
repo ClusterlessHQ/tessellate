@@ -10,26 +10,31 @@ package io.clusterless.tessellate.util;
 
 import org.mvel2.MVEL;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public class LiteralResolver {
-    private static Map<String, Object> context = new HashMap<>();
 
-    static {
-        context.put("env", System.getenv());
-        context.put("sys", System.getProperties());
+    public static MVELContext context() {
+        return new MVELContext();
     }
 
-    public static Map<String, Object> context() {
-        return new HashMap<>(context);
+    public static MVELContext context(Map<String, Object> source, Map<String, Object> sink) {
+        return new MVELContext(source, sink);
+    }
+
+    public static String resolve(String expression) {
+        return resolve(expression, context(), String.class);
     }
 
     public static <T> T resolve(String expression, Class<T> type) {
-        return resolve(expression, context, type);
+        return resolve(expression, context(), type);
     }
 
-    public static <T> T resolve(String expression, Map<String, Object> context, Class<T> type) {
+    public static <T> T resolve(String expression, MVELContext context, Class<T> type) {
         return MVEL.eval(expression, context, type);
+    }
+
+    public static String resolve(String expression, MVELContext context) {
+        return MVEL.eval(expression, context, String.class);
     }
 }

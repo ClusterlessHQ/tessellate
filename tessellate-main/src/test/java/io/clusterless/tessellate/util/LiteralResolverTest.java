@@ -8,14 +8,20 @@
 
 package io.clusterless.tessellate.util;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static io.clusterless.tessellate.util.LiteralResolver.resolve;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class LiteralResolverTest {
     @Test
     void resolveEnv() {
-        Assertions.assertEquals(System.getenv("USER"), LiteralResolver.resolve("env.USER", String.class));
-        Assertions.assertEquals(System.getenv("USER"), LiteralResolver.resolve("env['USER']", String.class));
-        Assertions.assertEquals(System.getProperty("user.name"), LiteralResolver.resolve("sys['user.name']", String.class));
+        MVELContext context = LiteralResolver.context();
+        assertEquals(System.getenv("USER"), resolve("env.USER", context));
+        assertEquals(System.getenv("USER"), resolve("env['USER']", context));
+        assertEquals(System.getProperty("user.name"), resolve("sys['user.name']", context));
+
+        assertEquals(context.rnd64(), resolve("rnd64", context));
+        assertEquals(context.currentTimeISO8601(), resolve("currentTimeISO8601", context));
     }
 }

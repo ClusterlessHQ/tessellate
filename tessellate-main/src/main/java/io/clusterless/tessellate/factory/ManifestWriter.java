@@ -94,7 +94,11 @@ public class ManifestWriter {
         manifest.put("uriType", "identifier");
         manifest.put("uris", Observed.INSTANCE.writes(uriPrefix));
 
-        try (TupleEntryCollector tupleEntryCollector = openForWrite(conf, complete)) {
+        Properties properties = new Properties(conf);
+
+        properties.put("cascading.tapcollector.partname", "manifest-data.json");
+
+        try (TupleEntryCollector tupleEntryCollector = openForWrite(properties, complete)) {
             tupleEntryCollector.add(new Tuple(JSONUtil.valueToTree(manifest)));
         }
     }

@@ -48,37 +48,11 @@ Overriding command line options include
 - `--output-manifest`
 - `--output-manifest-lot`
 
-In order to embed system properties, environment variables, or other provided intrinsic values, [MVEL
-templates](http://mvel.documentnode.com) are supported.
-
-Current context values supported are:
-
-- Environment variables
-- System properties
-- Pipeline source properties
-- Pipeline sink properties
-
-For example:
-
-- `@{env['USER']}` - resolve an environment variable
-- `@{sys['user.name']}` - resolve a system property
-- `@{sink.manifestLot}` - resolve a sink property from the pipeline JSON definition
-
-Used in a transform to embed the current `lot` value into the output:
-
-```json
-{
-  "transform": [
-    "@{source.manifestLot}=>lot|string"
-  ]
-}
-```
-
 ### Supported data formats
 
-- `text/regex` - lines of text parsed by regex
-- `csv` - with or without headers
-- `tsv` - with or without headers
+- text/regex - lines of text parsed by regex
+- csv - with or without headers
+- tsv - with or without headers
 - [Apache Parquet](https://parquet.apache.org)
 
 Regex support is based on regex groups. Groups are matched by ordinal with the declared fields in the schema.
@@ -148,27 +122,89 @@ Usage:
   instant format, e.g. `2011-12-03T10:15:30Z`
 - `json` - canonical type is `com.fasterxml.jackson.databind.JsonNode`, supports nested objects and arrays
 
-## To Build
+## Pipeline Template expressions
+
+In order to embed system properties, environment variables, or other provided intrinsic values, [MVEL
+templates](http://mvel.documentnode.com) are supported in the pipeline JSON file.
+
+Provided intrinsic values include:
+
+- `env[...]` - Environment variables
+- `sys[...]` - System properties
+- `source.*` - Pipeline source properties
+- `sink.*` - Pipeline sink properties
+- `pid` - `ProcessHandle.current().pid()`
+- `rnd32` - `Math.abs(random.nextInt())` always returns the same value
+- `rnd64` - `Math.abs(random.nextLong())` always returns the same value
+- `rnd32Next` - `Math.abs(random.nextInt())` never returns the same value
+- `rnd64Next` - `Math.abs(random.nextLong)` never returns the same value
+- `hostAddress` - `localHost.getHostAddress()`
+- `hostName` - `localHost.getCanonicalHostName()`
+- `currentTimeMillis` - `now.toEpochMilli()`
+- `currentTimeISO8601` - `now.toString()` at millis precision
+- `currentTimeYear` - `utc.getYear()`
+- `currentTimeMonth` - `utc.getMonthValue()` zero padded
+- `currentTimeDay` - `utc.getDayOfMonth()` zero padded
+- `currentTimeHour` -  `utc.getHour()` zero padded
+- `currentTimeMinute` - `utc.getMinute()` zero padded
+- `currentTimeSecond` - `utc.getSecond()` zero padded
+
+Where:
+
+- `Random random = new Random()`
+- `InetAddress localHost = InetAddress.getLocalHost()`
+- `Instant now = Instant.now()`
+- `ZonedDateTime utc = now.atZone(ZoneId.of("UTC"))`
+
+For example:
+
+- `@{env['USER']}` - resolve an environment variable
+- `@{sys['user.name']}` - resolve a system property
+- `@{sink.manifestLot}` - resolve a sink property from the pipeline JSON definition
+
+Used in a transform to embed the current `lot` value into the output:
+
+```json
+{
+  "transform": [
+    "@{source.manifestLot}=>lot|string"
+  ]
+}
+```
+
+Or create a filename that prevents collisions but simplifies duplicate removal:
+
+```json
+{
+  "filename": {
+    "prefix": "access",
+    "includeGuid": true,
+    "providedGuid": "@{sink.manifestLot}-@{currentTimeMillis}",
+    "includeFieldsHash": true
+  }
+}
+```
+
+Will result in a filename similar to `access-1717f2ea-20230717PT5M250-1689896792672-00000-00000-m-00000.gz`.
+
+## Building
 
 So that the Cascading WIP releases can be retrieved, to `gradle.properties` add:
 
 ```properties
 githubUsername=[your github username]
-githubPassword=[your github password]
+githubPassword=[your github personal access token]
 ```
 
-> ./gradlew installDist
-
-## To Run
+See creating a personal access
+token [here](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
 
 ```shell
-./tessellate-main/build/install/tess/bin/tess --help
+./gradlew installDist
 ```
 
-To print a project file template:
-
 ```shell
-tess --print-pipeline
+./tessellate-main/build/install/tessellate/bin/tess --help
 ```
 
 Documentation coming soon, but see the tests for usage. 

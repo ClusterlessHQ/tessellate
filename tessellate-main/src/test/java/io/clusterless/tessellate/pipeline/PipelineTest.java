@@ -26,9 +26,14 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *
@@ -55,6 +60,11 @@ public class PipelineTest {
                                 .withFormat(Format.tsv)
                                 .withEmbedsSchema(false)
                                 .build())
+                        .withFilename(Filename.builder()
+                                .withPrefix("test")
+                                .withIncludeGuid(true)
+                                .withProvidedGuid("guid")
+                                .build())
                         .build())
                 .build();
 
@@ -69,6 +79,8 @@ public class PipelineTest {
                 l -> {
                 }
         );
+
+        assertFilenameParts(output, "test-", "-guid", ".tsv", 1);
     }
 
     @Test
@@ -90,6 +102,11 @@ public class PipelineTest {
                                 .withFormat(Format.tsv)
                                 .withEmbedsSchema(true)
                                 .build())
+                        .withFilename(Filename.builder()
+                                .withPrefix("test")
+                                .withIncludeGuid(true)
+                                .withProvidedGuid("guid")
+                                .build())
                         .build())
                 .build();
 
@@ -104,6 +121,8 @@ public class PipelineTest {
                 l -> {
                 }
         );
+
+        assertFilenameParts(output, "test-", "-guid", ".tsv", 1);
     }
 
     @Test
@@ -124,6 +143,11 @@ public class PipelineTest {
                                 .withFormat(Format.tsv)
                                 .withEmbedsSchema(true)
                                 .build())
+                        .withFilename(Filename.builder()
+                                .withPrefix("test")
+                                .withIncludeGuid(true)
+                                .withProvidedGuid("guid")
+                                .build())
                         .build())
                 .build();
 
@@ -142,6 +166,8 @@ public class PipelineTest {
                 l -> {
                 }
         );
+
+        assertFilenameParts(output, "test-", "-guid", ".tsv", 1);
     }
 
     @Test
@@ -169,6 +195,11 @@ public class PipelineTest {
                                 .withFormat(Format.tsv)
                                 .withEmbedsSchema(true)
                                 .build())
+                        .withFilename(Filename.builder()
+                                .withPrefix("test")
+                                .withIncludeGuid(true)
+                                .withProvidedGuid("guid")
+                                .build())
                         .build())
                 .build();
 
@@ -187,6 +218,8 @@ public class PipelineTest {
                 l -> {
                 }
         );
+
+        assertFilenameParts(output, "test-", "-guid", ".tsv", 1);
     }
 
     @Test
@@ -207,6 +240,11 @@ public class PipelineTest {
                         .withSchema(Schema.builder()
                                 .withFormat(Format.parquet)
                                 .withEmbedsSchema(true)
+                                .build())
+                        .withFilename(Filename.builder()
+                                .withPrefix("test")
+                                .withIncludeGuid(true)
+                                .withProvidedGuid("guid")
                                 .build())
                         .build())
                 .build();
@@ -239,6 +277,11 @@ public class PipelineTest {
                                 .withFormat(Format.csv)
                                 .withEmbedsSchema(true)
                                 .build())
+                        .withFilename(Filename.builder()
+                                .withPrefix("test")
+                                .withIncludeGuid(true)
+                                .withProvidedGuid("guid")
+                                .build())
                         .build())
                 .build();
 
@@ -253,6 +296,8 @@ public class PipelineTest {
                 l -> {
                 }
         );
+
+        assertFilenameParts(intermediate, "test-", "-guid", ".parquet", 1);
     }
 
     @Test
@@ -280,6 +325,11 @@ public class PipelineTest {
                                 new Partition("time+>month|DateTime|MM"),
                                 new Partition("time+>day|DateTime|dd")
                         ))
+                        .withFilename(Filename.builder()
+                                .withPrefix("test")
+                                .withIncludeGuid(true)
+                                .withProvidedGuid("guid")
+                                .build())
                         .build())
                 .build();
 
@@ -295,6 +345,8 @@ public class PipelineTest {
                 l -> {
                 }
         );
+
+        assertFilenameParts(intermediate, "test-", "-guid", ".parquet", 3);
 
         PipelineDef readAsParquet = PipelineDef.builder()
                 .withName("read")
@@ -398,6 +450,11 @@ public class PipelineTest {
                                 new Partition("time+>month|DateTime|MM"),
                                 new Partition("time+>day|DateTime|dd")
                         ))
+                        .withFilename(Filename.builder()
+                                .withPrefix("test")
+                                .withIncludeGuid(true)
+                                .withProvidedGuid("guid")
+                                .build())
                         .build())
                 .build();
 
@@ -413,6 +470,8 @@ public class PipelineTest {
                 l -> {
                 }
         );
+
+        assertFilenameParts(intermediate, "test-", "-guid", ".parquet", 3);
 
         URI resolvedIntermediateManifest = new URITemplate(URLDecoder.decode(intermediateManifest.toString(), StandardCharsets.UTF_8))
                 .expand("lot", "20211112PT5M000")
@@ -455,5 +514,20 @@ public class PipelineTest {
                 l -> {
                 }
         );
+    }
+
+    private static void assertFilenameParts(URI output, String prefix, String guid, String extension, int fileCount) throws IOException {
+        final int[] count = {0};
+        try (Stream<Path> pathStream = Files.find(Paths.get(output), 10, (path, attr) -> !path.toString().startsWith(".") && path.toString().endsWith(extension))) {
+            pathStream
+                    .forEach(path -> {
+                        count[0]++;
+                        String filename = path.getFileName().toString();
+                        assertTrue(filename.startsWith(prefix), "wrong filename: " + filename);
+                        assertTrue(filename.contains(guid), "wrong filename: " + filename);
+                    });
+        }
+
+        assertEquals(fileCount, count[0], "wrong number of files");
     }
 }

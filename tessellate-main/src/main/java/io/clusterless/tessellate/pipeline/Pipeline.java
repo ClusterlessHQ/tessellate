@@ -31,14 +31,11 @@ import io.clusterless.tessellate.factory.TapFactories;
 import io.clusterless.tessellate.model.*;
 import io.clusterless.tessellate.options.PipelineOptions;
 import io.clusterless.tessellate.util.Format;
-import io.clusterless.tessellate.util.LiteralResolver;
 import io.clusterless.tessellate.util.Models;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -200,14 +197,6 @@ public class Pipeline {
                 .addSource(pipe, sourceTap)
                 .addSink(pipe, sinkTap)
                 .addTail(pipe));
-    }
-
-    @NotNull
-    protected Map<String, Object> getContext() {
-        Map<String, Object> context = LiteralResolver.context();
-        context.put("source", pipelineDef.source());
-        context.put("sink", pipelineDef.sink());
-        return context;
     }
 
     private static void logCurrentFields(Fields currentFields) {

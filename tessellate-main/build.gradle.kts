@@ -67,7 +67,7 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:1.4.8")
     implementation("ch.qos.logback:logback-core:1.4.8")
 
-    val cascading = "4.6.0-wip-8"
+    val cascading = "4.6.0-wip-9"
     implementation("net.wensel:cascading-core:$cascading")
     implementation("net.wensel:cascading-nested-json:$cascading")
     implementation("net.wensel:cascading-local:$cascading")

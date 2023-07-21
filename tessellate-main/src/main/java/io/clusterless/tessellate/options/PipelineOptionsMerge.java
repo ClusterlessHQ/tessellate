@@ -17,6 +17,7 @@ import heretical.pointer.path.NestedPointer;
 import io.clusterless.tessellate.model.PipelineDef;
 import io.clusterless.tessellate.util.JSONUtil;
 import io.clusterless.tessellate.util.LiteralResolver;
+import io.clusterless.tessellate.util.MVELContext;
 import org.jetbrains.annotations.NotNull;
 import org.mvel2.templates.TemplateRuntime;
 import org.slf4j.Logger;
@@ -134,7 +135,7 @@ public class PipelineOptionsMerge {
         loadAndMerge(pipelineDef, "/sink");
 
         String mergedPipelineDef = JSONUtil.writeAsStringSafe(pipelineDef);
-        Map<String, Object> context = getContext(mergedPipelineDef);
+        MVELContext context = getContext(mergedPipelineDef);
         String resolved = TemplateRuntime.eval(mergedPipelineDef, context).toString();
         LOG.info("pipeline: {}", resolved);
 
@@ -142,12 +143,10 @@ public class PipelineOptionsMerge {
     }
 
     @NotNull
-    private static Map<String, Object> getContext(String mergedPipelineDef) {
-        Map<String, Object> context = LiteralResolver.context();
+    private static MVELContext getContext(String mergedPipelineDef) {
         Map map = JSONUtil.stringToValue(mergedPipelineDef, Map.class);
+        MVELContext context = LiteralResolver.context((Map<String, Object>) map.get("source"), (Map<String, Object>) map.get("source"));
 
-        context.put("source", map.get("source"));
-        context.put("sink", map.get("sink"));
         return context;
     }
 
