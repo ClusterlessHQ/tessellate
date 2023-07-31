@@ -68,6 +68,10 @@ public class TapFactories {
 
             ManifestReader manifestReader = ManifestReader.from(sourceModel);
 
+            if (manifestReader.isEmptyManifest()) {
+                throw new ManifestEmptyException("manifest is empty: " + sourceModel.manifest());
+            }
+
             List<URI> uris = manifestReader.uris(pipelineOptions);
 
             sourceModel.uris().addAll(uris);

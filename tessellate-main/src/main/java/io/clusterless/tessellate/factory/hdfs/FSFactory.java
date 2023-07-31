@@ -109,7 +109,7 @@ public abstract class FSFactory extends FilesFactory {
             public boolean commitResource(Properties conf) throws IOException {
                 boolean result = super.commitResource(conf);
 
-                manifestWriter.writeSuccess(conf);
+                manifestWriter.writeManifest(conf);
 
                 return result;
             }

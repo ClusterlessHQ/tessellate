@@ -100,6 +100,10 @@ public class URIs {
     }
 
     public static URI makeAbsolute(URI uri) {
+        if (uri == null) {
+            return null;
+        }
+
         if (uri.isAbsolute()) {
             return uri;
         }

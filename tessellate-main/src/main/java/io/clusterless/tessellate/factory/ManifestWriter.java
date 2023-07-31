@@ -28,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * s3://test-clusterless-manifest-086903124729-us-west-2/datasets/name=ingress-python-example-copy/version=20230101/lot={lot}/state={state}{/attempt*}/manifest.json
@@ -35,10 +36,11 @@ import java.util.Properties;
 public class ManifestWriter {
     public static ManifestWriter NULL = new ManifestWriter() {
         @Override
-        public void writeSuccess(Properties conf) {
+        public void writeManifest(Properties conf) {
             // do nothing
         }
     };
+
     public static ManifestWriter from(Dataset dataset, URI uriPrefix) {
         if (!(dataset instanceof Sink)) {
             return NULL;
@@ -73,20 +75,30 @@ public class ManifestWriter {
         }
     }
 
-    public void writeSuccess(Properties conf) throws IOException {
+    public void writeManifest(Properties conf) throws IOException {
+        Set<URI> writes = Observed.INSTANCE.writes(uriPrefix);
+
+        if (writes.isEmpty()) {
+            writeManifest(conf, "empty", writes);
+        } else {
+            writeManifest(conf, "complete", writes);
+        }
+    }
+
+    private void writeManifest(Properties conf, String state, Set<URI> writes) throws IOException {
         URI complete = template
                 .expand("lot", lot)
-                .expand("state", "complete")
+                .expand("state", state)
                 .discard("attempt")
                 .toURI();
 
         Map<String, Object> manifest = new LinkedHashMap<>();
 
-        manifest.put("state", "complete");
+        manifest.put("state", state);
         manifest.put("comment", null);
         manifest.put("lotId", lot);
         manifest.put("uriType", "identifier");
-        manifest.put("uris", Observed.INSTANCE.writes(uriPrefix));
+        manifest.put("uris", writes);
 
         Properties properties = new Properties(conf);
 

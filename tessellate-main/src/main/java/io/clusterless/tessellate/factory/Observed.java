@@ -35,6 +35,9 @@ public class Observed {
     }
 
     public Set<URI> writes(URI prefix) {
+        if (prefix == null) {
+            return new LinkedHashSet<>();
+        }
         return writes.computeIfAbsent(URIs.cleanFileUrls(prefix).toString(), k -> new LinkedHashSet<>());
     }
 

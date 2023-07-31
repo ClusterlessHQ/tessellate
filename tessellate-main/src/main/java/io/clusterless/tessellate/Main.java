@@ -153,6 +153,10 @@ public class Main implements Callable<Integer> {
 
             pipeline.build();
 
+            if (pipeline.state() == Pipeline.State.EMPTY_MANIFEST) {
+                return 0;
+            }
+
             return pipeline.run();
         } finally {
             metrics.stop();

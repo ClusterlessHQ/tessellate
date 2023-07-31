@@ -15,7 +15,6 @@ import cascading.tuple.TupleEntryIterator;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.clusterless.tessellate.model.Field;
 import io.clusterless.tessellate.model.Schema;
-import io.clusterless.tessellate.model.Sink;
 import io.clusterless.tessellate.model.Source;
 import io.clusterless.tessellate.options.PipelineOptions;
 import io.clusterless.tessellate.util.Format;
@@ -36,10 +35,6 @@ public class ManifestReader {
     private static final Logger LOG = LoggerFactory.getLogger(ManifestReader.class);
     public static final int SHOW_DUPLICATES = 20;
 
-    public static ManifestReader from(Sink sink) {
-        return new ManifestReader(sink.uris());
-    }
-
     public static ManifestReader from(Source source) {
         return new ManifestReader(source);
     }
@@ -53,9 +48,8 @@ public class ManifestReader {
         this.uris = clean(source.uris());
     }
 
-    public ManifestReader(List<URI> uris) {
-        this.uris = clean(uris);
-        this.manifestURI = null;
+    public boolean isEmptyManifest() {
+        return manifestURI == null ? uris.isEmpty() : manifestURI.toString().contains("state=empty");
     }
 
     public List<URI> uris(PipelineOptions pipelineOptions) throws IOException {
@@ -84,9 +78,9 @@ public class ManifestReader {
 
         LOG.info("found uris: {}, in manifest: {}", found.size(), manifestURI);
 
-        if (found.isEmpty()) {
-            throw new IllegalStateException("manifest: " + manifestURI + ", is empty");
-        }
+//        if (found.isEmpty()) {
+//            throw new IllegalStateException("manifest: " + manifestURI + ", is empty");
+//        }
 
         manifestUris = clean(found);
 

@@ -25,9 +25,7 @@ import cascading.pipe.assembly.Rename;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 import cascading.tuple.coerce.Coercions;
-import io.clusterless.tessellate.factory.SinkFactory;
-import io.clusterless.tessellate.factory.SourceFactory;
-import io.clusterless.tessellate.factory.TapFactories;
+import io.clusterless.tessellate.factory.*;
 import io.clusterless.tessellate.model.*;
 import io.clusterless.tessellate.options.PipelineOptions;
 import io.clusterless.tessellate.util.Format;
@@ -43,8 +41,17 @@ import static cascading.flow.FlowDef.flowDef;
 
 public class Pipeline {
     private static final Logger LOG = LoggerFactory.getLogger(Pipeline.class);
+
+    public enum State {
+        NONE,
+        EMPTY_MANIFEST,
+        READY,
+        COMPLETE
+    }
+
     private final PipelineOptions pipelineOptions;
     private final PipelineDef pipelineDef;
+    private State state = State.NONE;
     private Flow flow;
     private Properties commonProperties = new Properties();
     private LocalFlowProcess localFlowProcess;
@@ -71,6 +78,10 @@ public class Pipeline {
         return localFlowProcess;
     }
 
+    public State state() {
+        return state;
+    }
+
     public Flow flow() {
         return flow;
     }
@@ -84,7 +95,22 @@ public class Pipeline {
     }
 
     public void build() throws IOException {
-        SourceFactory sourceFactory = TapFactories.findSourceFactory(pipelineOptions, pipelineDef.source());
+        SourceFactory sourceFactory;
+        try {
+            sourceFactory = TapFactories.findSourceFactory(pipelineOptions, pipelineDef.source());
+        } catch (ManifestEmptyException e) {
+            SinkFactory sinkFactory = TapFactories.findSinkFactory(pipelineDef.sink());
+
+            sinkFactory.applyGlobalProperties(commonProperties);
+
+            ManifestWriter manifestWriter = ManifestWriter.from(pipelineDef.sink(), null);
+
+            manifestWriter.writeManifest(commonProperties);
+
+            state = State.EMPTY_MANIFEST;
+
+            return;
+        }
 
         sourceFactory.applyGlobalProperties(commonProperties);
 
@@ -197,6 +223,8 @@ public class Pipeline {
                 .addSource(pipe, sourceTap)
                 .addSink(pipe, sinkTap)
                 .addTail(pipe));
+
+        state = State.READY;
     }
 
     private static void logCurrentFields(Fields currentFields) {
@@ -205,11 +233,16 @@ public class Pipeline {
 
     public Integer run() throws IOException {
 
-        if (flow == null) {
+        if (state == State.NONE) {
             build();
         }
 
+        if (state != State.READY) {
+            throw new IllegalStateException("pipeline is not ready to run");
+        }
+
         running.set(true);
+
         try {
             try {
                 flow.complete();
@@ -219,6 +252,8 @@ public class Pipeline {
         } finally {
             running.set(false);
         }
+
+        state = State.COMPLETE;
 
         return 0;
     }
