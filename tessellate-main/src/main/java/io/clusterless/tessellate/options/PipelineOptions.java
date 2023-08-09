@@ -39,6 +39,9 @@ public class PipelineOptions implements AWSOptions {
     @CommandLine.Option(names = {"--aws-assumed-role-arn"}, description = "aws assumed role arn")
     protected String assumedRoleARN;
 
+    @CommandLine.Mixin
+    protected PrintOptions printOptions = new PrintOptions();
+
     public Path pipelinePath() {
         return pipelinePath;
     }
@@ -68,5 +71,9 @@ public class PipelineOptions implements AWSOptions {
     @Override
     public String awsAssumedRoleARN() {
         return assumedRoleARN;
+    }
+
+    public PrintOptions printOptions() {
+        return printOptions;
     }
 }

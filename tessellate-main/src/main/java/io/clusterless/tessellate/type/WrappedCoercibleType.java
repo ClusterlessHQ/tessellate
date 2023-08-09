@@ -32,6 +32,10 @@ public class WrappedCoercibleType<Canonical> implements CoercibleType<Canonical>
         this.function = function;
     }
 
+    public CoercibleType<Canonical> wrappedCoercibleType() {
+        return coercibleType;
+    }
+
     @Override
     public Class<Canonical> getCanonicalType() {
         return coercibleType.getCanonicalType();

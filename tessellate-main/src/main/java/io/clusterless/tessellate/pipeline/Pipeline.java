@@ -28,6 +28,8 @@ import cascading.tuple.coerce.Coercions;
 import io.clusterless.tessellate.factory.*;
 import io.clusterless.tessellate.model.*;
 import io.clusterless.tessellate.options.PipelineOptions;
+import io.clusterless.tessellate.options.PrintOptions;
+import io.clusterless.tessellate.printer.SchemaPrinter;
 import io.clusterless.tessellate.util.Format;
 import io.clusterless.tessellate.util.Models;
 import org.slf4j.Logger;
@@ -232,13 +234,21 @@ public class Pipeline {
     }
 
     public Integer run() throws IOException {
-
         if (state == State.NONE) {
             build();
         }
 
         if (state != State.READY) {
             throw new IllegalStateException("pipeline is not ready to run");
+        }
+
+        if (pipelineOptions().printOptions().printOutputSchema()) {
+            Tap tap = flow.getSink();
+            PrintOptions.PrintFormat printFormat = pipelineOptions().printOptions().printFormat();
+            SchemaPrinter schemaPrinter = new SchemaPrinter(tap, printFormat);
+
+            schemaPrinter.print(System.out);
+            return 0;
         }
 
         running.set(true);
