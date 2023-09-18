@@ -91,7 +91,9 @@ Usage:
   - `field-hash` is a hash of the schema: field names, and field types
   - `guid` is a random UUID or a provided value
 
-### Supported single field transforms
+### Supported operations
+
+#### Transforms
 
 - insert - insert a literal value into a field
   - `value=>intoField|type`
@@ -104,6 +106,11 @@ Usage:
 - discard - remove a field
   - `field->`
 
+#### Functions
+
+- tsid - create a unique long id
+  - `!tsid{node:...,nodeCount:...,signed:true/false,epoch:...}+>intoField|type`
+
 ### Supported types
 
 - `String`
@@ -115,7 +122,7 @@ Usage:
 - `Float`
 - `double` - `null` coerced to `0`
 - `Double`
-- `boolean` - `null` coerced to `0`
+- `boolean` - `null` coerced to `false`
 - `Boolean`
 - `DateTime|format` - canonical type is `Long`, format defaults to `yyyy-MM-dd HH:mm:ss.SSSSSS z`
 - `Instant|format` - canonical type is `java.time.Instant`, supports nanos precision, format defaults to ISO-8601

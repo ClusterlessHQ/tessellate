@@ -6,7 +6,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package io.clusterless.tessellate.util;
+package io.clusterless.tessellate.parser;
 
 import cascading.nested.json.JSONCoercibleType;
 import cascading.tuple.Fields;
@@ -16,6 +16,7 @@ import cascading.tuple.type.DateType;
 import cascading.tuple.type.InstantType;
 import io.clusterless.tessellate.temporal.IntervalUnits;
 import io.clusterless.tessellate.type.WrappedCoercibleType;
+import io.clusterless.tessellate.util.JSONUtil;
 
 import java.lang.reflect.Type;
 import java.time.ZoneId;
@@ -71,26 +72,23 @@ public class FieldsParser {
             return Fields.NONE;
         }
 
-        String[] split = value.split("\\|", 2);
+        Field parsed = FieldParser.parseField(value);
 
-        Comparable<?> field = parseInt(split[0]);
-
-        if (split.length == 1) {
-            return defaultType == null ? new Fields(field) : new Fields(field, defaultType);
+        Comparable<?> name = parsed.fieldRef.asComparable();
+        if (parsed.fieldType().isEmpty()) {
+            return defaultType == null ? new Fields(name) : new Fields(name, defaultType);
         }
 
-        return new Fields(field, resolveType(split[1]));
+        return new Fields(name, resolveType(parsed.fieldType().get()));
     }
 
-    protected Type resolveType(String typeName) {
+    protected Type resolveType(FieldType fieldType) {
         Type type = null;
 
-        String[] split = typeName.split("\\|");
+        String typeName = fieldType.name().name();
 
-        typeName = split[0];
-
-        String first = split.length >= 2 ? split[1] : null;
-        String second = split.length >= 3 ? split[2] : null;
+        String first = fieldType.param().map(FieldTypeParam::param1).orElse(null);
+        String second = fieldType.param().map(FieldTypeParam::param2).orElse(null);
 
         if (typeName.equalsIgnoreCase("string")) {
             type = String.class;

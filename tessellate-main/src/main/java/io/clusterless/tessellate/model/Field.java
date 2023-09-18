@@ -11,7 +11,7 @@ package io.clusterless.tessellate.model;
 import cascading.tuple.Fields;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.clusterless.tessellate.util.FieldsParser;
+import io.clusterless.tessellate.parser.FieldsParser;
 
 import java.util.Objects;
 

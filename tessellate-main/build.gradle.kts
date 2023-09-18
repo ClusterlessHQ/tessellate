@@ -104,6 +104,8 @@ dependencies {
     implementation("org.fusesource.jansi:jansi:2.4.0")
     implementation("com.github.hal4j:uritemplate:1.3.1")
 
+    implementation("org.jparsec:jparsec:3.1")
+
     testImplementation("net.wensel:cascading-core:$cascading:tests")
 
     // https://github.com/hosuaby/inject-resources
