@@ -14,15 +14,20 @@ import cascading.tuple.coerce.Coercions;
 import cascading.tuple.type.CoercibleType;
 import cascading.tuple.type.DateType;
 import cascading.tuple.type.InstantType;
+import io.clusterless.tessellate.parser.ast.Field;
+import io.clusterless.tessellate.parser.ast.FieldType;
+import io.clusterless.tessellate.parser.ast.FieldTypeParam;
 import io.clusterless.tessellate.temporal.IntervalUnits;
 import io.clusterless.tessellate.type.WrappedCoercibleType;
 import io.clusterless.tessellate.util.JSONUtil;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Type;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
+import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
@@ -74,7 +79,22 @@ public class FieldsParser {
 
         Field parsed = FieldParser.parseField(value);
 
-        Comparable<?> name = parsed.fieldRef.asComparable();
+        return asFields(parsed, defaultType);
+    }
+
+    public Fields asFields(List<Field> fields) {
+        return fields.stream()
+                .map(this::asFields)
+                .reduce(Fields.NONE, Fields::append);
+    }
+
+    @NotNull
+    public Fields asFields(Field parsed) {
+        return asFields(parsed, null);
+    }
+
+    public Fields asFields(Field parsed, Type defaultType) {
+        Comparable<?> name = parsed.fieldRef().asComparable();
         if (parsed.fieldType().isEmpty()) {
             return defaultType == null ? new Fields(name) : new Fields(name, defaultType);
         }

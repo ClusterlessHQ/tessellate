@@ -15,7 +15,10 @@ import cascading.tuple.type.InstantType;
 import com.adelean.inject.resources.junit.jupiter.GivenTextResource;
 import com.adelean.inject.resources.junit.jupiter.TestWithResources;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.clusterless.tessellate.model.*;
+import io.clusterless.tessellate.model.Partition;
+import io.clusterless.tessellate.model.PipelineDef;
+import io.clusterless.tessellate.model.Transform;
+import io.clusterless.tessellate.parser.ast.Op;
 import io.clusterless.tessellate.temporal.IntervalDateTimeFormatter;
 import io.clusterless.tessellate.type.WrappedCoercibleType;
 import io.clusterless.tessellate.util.JSONUtil;
@@ -25,7 +28,6 @@ import java.util.List;
 import java.util.TimeZone;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 @TestWithResources
 public class PipelineParseTest {
@@ -49,12 +51,12 @@ public class PipelineParseTest {
 
         Transform transform = pipeline.transform();
 
-        assertEquals(6, transform.transformOps().size());
-        assertInstanceOf(CoerceOp.class, transform.transformOps().get(0));
-        assertInstanceOf(RenameOp.class, transform.transformOps().get(1));
-        assertInstanceOf(CopyOp.class, transform.transformOps().get(2));
-        assertInstanceOf(DiscardOp.class, transform.transformOps().get(3));
-        assertInstanceOf(InsertOp.class, transform.transformOps().get(4));
-        assertInstanceOf(InsertOp.class, transform.transformOps().get(5));
+        assertEquals(6, transform.statements().size());
+        assertEquals(new Op(), transform.statements().get(0).op());
+        assertEquals(new Op("->"), transform.statements().get(1).op());
+        assertEquals(new Op("+>"), transform.statements().get(2).op());
+        assertEquals(new Op("->"), transform.statements().get(3).op());
+        assertEquals(new Op("=>"), transform.statements().get(4).op());
+        assertEquals(new Op("=>"), transform.statements().get(5).op());
     }
 }

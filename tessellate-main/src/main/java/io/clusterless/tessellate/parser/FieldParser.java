@@ -8,14 +8,12 @@
 
 package io.clusterless.tessellate.parser;
 
+import io.clusterless.tessellate.parser.ast.*;
 import org.jparsec.Parser;
 import org.jparsec.Parsers;
 import org.jparsec.Scanners;
-import org.jparsec.error.ParserException;
 import org.jparsec.pattern.CharPredicate;
 import org.jparsec.pattern.CharPredicates;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,7 +22,6 @@ import static org.jparsec.pattern.CharPredicates.*;
 
 
 public class FieldParser {
-    private static final Logger LOG = LoggerFactory.getLogger(FieldParser.class);
     private static final CharPredicate FIELD_NAME_EXTRA = CharPredicates.among("~@#$%^&_");
     private static final CharPredicate PARAM_EXTRA = CharPredicates.not(among("|+")); // | delimits params, + delimits fields
     private static final Parser<FieldName> FIELD_NAME =
@@ -77,30 +74,18 @@ public class FieldParser {
     private static final Parser<FieldType> types =
             Parsers.sequence(typeName, typeParam, FieldType::new);
 
-    private static final Parser<Field> fullFieldDeclaration =
+    public static final Parser<Field> fullFieldDeclaration =
             Parsers.sequence(Parsers.or(FIELD_NAME, FIELD_ORDINAL), types.asOptional(), Field::new);
 
     private static final Parser<Void> FIELD_DELIM = Parsers.sequence(Scanners.many(IS_WHITESPACE), Scanners.isChar('+'), Scanners.many(IS_WHITESPACE));
-    private static final Parser<List<Field>> fieldList =
+    public static final Parser<List<Field>> fieldList =
             fullFieldDeclaration.sepBy(FIELD_DELIM);
 
     public static Field parseField(String field) {
-        try {
-            return fullFieldDeclaration.parse(field, Parser.Mode.DEBUG);
-        } catch (ParserException e) {
-            LOG.error("unable to parse: {}, got: {}, tree: {}", field, e.getMessage(), e.getParseTree());
-
-            throw new RuntimeException(e);
-        }
+        return BaseParser.parse(fullFieldDeclaration, field);
     }
 
     public static List<Field> parseFieldList(String field) {
-        try {
-            return fieldList.parse(field, Parser.Mode.DEBUG);
-        } catch (ParserException e) {
-            LOG.error("unable to parse: {}, got: {}, tree: {}", field, e.getMessage(), e.getParseTree());
-
-            throw new RuntimeException(e);
-        }
+        return BaseParser.parse(fieldList, field);
     }
 }

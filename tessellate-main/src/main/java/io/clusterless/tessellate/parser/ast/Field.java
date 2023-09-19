@@ -6,7 +6,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package io.clusterless.tessellate.parser;
+package io.clusterless.tessellate.parser.ast;
+
+import io.clusterless.tessellate.parser.Printer;
 
 import java.util.Optional;
 
@@ -29,10 +31,6 @@ public class Field {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("Field{");
-        sb.append("fieldRef=").append(fieldRef);
-        sb.append(", fieldType=").append(fieldType);
-        sb.append('}');
-        return sb.toString();
+        return Printer.withParams(fieldRef.asComparable(), fieldType);
     }
 }

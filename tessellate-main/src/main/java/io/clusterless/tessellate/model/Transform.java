@@ -11,7 +11,8 @@ package io.clusterless.tessellate.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.JsonValue;
-import io.clusterless.tessellate.pipeline.Transforms;
+import io.clusterless.tessellate.parser.StatementParser;
+import io.clusterless.tessellate.parser.ast.Statement;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +27,7 @@ import java.util.stream.Collectors;
  * - insert - value=ymd|DateTime|yyyyMMdd
  */
 public class Transform implements Model {
-    private List<TransformOp> transforms = new ArrayList<>();
+    private List<Statement> statements = new ArrayList<>();
 
     public Transform(String... transforms) {
         this(List.of(transforms));
@@ -34,28 +35,23 @@ public class Transform implements Model {
 
     @JsonCreator
     public Transform(List<String> transforms) {
-        transforms.forEach(this::addTransform);
+        transforms.forEach(this::addStatement);
     }
 
     public Transform() {
     }
 
     @JsonSetter
-    public void addTransform(String transform) {
-        for (Transforms value : Transforms.values()) {
-            if (value.matches(transform)) {
-                transforms.add(value.transform(transform));
-                return;
-            }
-        }
+    public void addStatement(String statement) {
+        statements.add(StatementParser.parse(statement));
     }
 
-    public List<TransformOp> transformOps() {
-        return transforms;
+    public List<Statement> statements() {
+        return statements;
     }
 
     @JsonValue
-    public List<String> transforms() {
-        return transforms.stream().map(Object::toString).collect(Collectors.toList());
+    public List<String> statementsToString() {
+        return statements.stream().map(Object::toString).collect(Collectors.toList());
     }
 }

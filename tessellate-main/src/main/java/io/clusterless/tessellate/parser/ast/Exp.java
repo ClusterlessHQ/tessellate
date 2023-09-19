@@ -6,10 +6,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package io.clusterless.tessellate.model;
+package io.clusterless.tessellate.parser.ast;
 
-import io.clusterless.tessellate.pipeline.Transforms;
-
-public interface TransformOp {
-    Transforms transform();
+public interface Exp {
 }

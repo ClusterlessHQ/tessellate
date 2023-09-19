@@ -14,21 +14,20 @@ import cascading.flow.local.LocalFlowConnector;
 import cascading.flow.local.LocalFlowProcess;
 import cascading.flow.stream.duct.DuctException;
 import cascading.operation.Debug;
-import cascading.operation.Insert;
 import cascading.operation.regex.RegexParser;
 import cascading.pipe.Each;
 import cascading.pipe.Pipe;
 import cascading.pipe.assembly.Coerce;
 import cascading.pipe.assembly.Copy;
-import cascading.pipe.assembly.Discard;
-import cascading.pipe.assembly.Rename;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
-import cascading.tuple.coerce.Coercions;
 import io.clusterless.tessellate.factory.*;
-import io.clusterless.tessellate.model.*;
+import io.clusterless.tessellate.model.Partition;
+import io.clusterless.tessellate.model.PipelineDef;
+import io.clusterless.tessellate.model.Schema;
 import io.clusterless.tessellate.options.PipelineOptions;
 import io.clusterless.tessellate.options.PrintOptions;
+import io.clusterless.tessellate.parser.ast.Statement;
 import io.clusterless.tessellate.printer.SchemaPrinter;
 import io.clusterless.tessellate.util.Format;
 import io.clusterless.tessellate.util.Models;
@@ -123,68 +122,23 @@ public class Pipeline {
         }
 
         // get source fields here so that any partition fields will be captured
-        Fields currentFields = sourceTap.getSourceFields();
-        logCurrentFields(currentFields);
+        PipelineContext context = new PipelineContext(LOG, sourceTap.getSourceFields(), new Pipe("head"));
 
-        Pipe pipe = new Pipe("head");
+        logCurrentFields(context.currentFields);
 
         Schema sourceSchema = pipelineDef.source().schema();
         if (sourceSchema.format() == Format.regex) {
             Fields declaredFields = Models.fieldAsFields(sourceSchema.declared(), String.class, Fields.ALL);
-            pipe = new Each(pipe, new Fields("line"), new RegexParser(declaredFields, sourceSchema.pattern()), Fields.SWAP);
+            Pipe pipe = new Each(context.pipe, new Fields("line"), new RegexParser(declaredFields, sourceSchema.pattern()), Fields.SWAP);
             LOG.info("parsing lines with regex: {}", sourceSchema.pattern());
-            currentFields = currentFields.subtract(new Fields("line")).append(declaredFields);
+            Fields currentFields = context.currentFields.subtract(new Fields("line")).append(declaredFields);
             logCurrentFields(currentFields);
+            context.update(currentFields, pipe);
         }
 
         // todo: group like transforms together if there are no interdependencies
-        for (TransformOp transformOp : pipelineDef.transform().transformOps()) {
-            switch (transformOp.transform()) {
-                case insert:
-                    InsertOp insertOp = (InsertOp) transformOp;
-                    Fields insertFields = insertOp.field().fields();
-                    String value = insertOp.value() == null || ((String) insertOp.value()).isEmpty() ? null : insertOp.value();
-                    Object literal = Coercions.coerce(value, insertFields.getType(0));
-                    LOG.info("transform insert: fields: {}, value: {}", insertFields, literal);
-                    pipe = new Each(pipe, new Insert(insertFields, literal), Fields.ALL);
-                    currentFields = currentFields.append(insertFields);
-                    logCurrentFields(currentFields);
-                    break;
-                case coerce:
-                    CoerceOp coerceOp = (CoerceOp) transformOp;
-                    Fields coerceFields = coerceOp.field().fields();
-                    LOG.info("transform coerce: fields: {}", coerceFields);
-                    pipe = new Coerce(pipe, coerceFields);
-                    currentFields = currentFields.rename(coerceFields, coerceFields); // change the type information
-                    logCurrentFields(currentFields);
-                    break;
-                case copy:
-                    CopyOp copyOp = (CopyOp) transformOp;
-                    Fields copyFromFields = copyOp.from().orElseThrow().fields();
-                    Fields copyToFields = copyOp.to().fields();
-                    LOG.info("transform copy: from: {}, to: {}", copyFromFields, copyToFields);
-                    pipe = new Copy(pipe, copyFromFields, copyToFields);
-                    currentFields = currentFields.append(copyToFields);
-                    logCurrentFields(currentFields);
-                    break;
-                case rename:
-                    RenameOp renameOp = (RenameOp) transformOp;
-                    Fields renameFromFields = renameOp.from().orElseThrow().fields();
-                    Fields renameToFields = renameOp.to().fields();
-                    LOG.info("transform rename: from: {}, to: {}", renameFromFields, renameToFields);
-                    pipe = new Rename(pipe, renameFromFields, renameToFields);
-                    currentFields = currentFields.rename(renameFromFields, renameToFields);
-                    logCurrentFields(currentFields);
-                    break;
-                case discard:
-                    DiscardOp discardOp = (DiscardOp) transformOp;
-                    Fields discardFields = discardOp.field().fields();
-                    LOG.info("transform discard: fields: {}", discardFields);
-                    pipe = new Discard(pipe, discardFields);
-                    currentFields = currentFields.subtract(discardFields);
-                    logCurrentFields(currentFields);
-                    break;
-            }
+        for (Statement statement : pipelineDef.transform().statements()) {
+            context = new Transformer(statement).resolve(context);
         }
 
         Fields partitionFields = Fields.NONE;
@@ -193,14 +147,16 @@ public class Pipeline {
             // todo: honor the -> and +> operators when declaring partitions
             for (Partition partition : pipelineDef().sink().partitions()) {
                 if (partition.from().isPresent()) {
-                    pipe = new Copy(pipe, partition.from().get().fields(), partition.to().fields());
+                    Pipe pipe = new Copy(context.pipe, partition.from().get().fields(), partition.to().fields());
                     partitionFields = partitionFields.append(partition.to().fields());
-                } else if (currentFields.contains(partition.to().fields())) {
+                    context.update(context.currentFields, pipe);
+                } else if (context.currentFields.contains(partition.to().fields())) {
                     partitionFields = partitionFields.append(partition.to().fields());
                 } else {
-                    pipe = new Coerce(pipe, partition.to().fields());
+                    Pipe pipe = new Coerce(context.pipe, partition.to().fields());
                     // change the type information
                     partitionFields = partitionFields.rename(partition.to().fields(), partition.to().fields());
+                    context.update(context.currentFields, pipe);
                 }
             }
         }
@@ -209,22 +165,22 @@ public class Pipeline {
 
         // watch the progress on the console
         if (pipelineOptions().debug()) {
-            pipe = new Each(pipe, new Debug(true));
+            context.update(context.currentFields, new Each(context.pipe, new Debug(true)));
         }
 
-        LOG.info("sinking into fields: {}", currentFields);
+        LOG.info("sinking into fields: {}", context.currentFields);
 
         SinkFactory sinkFactory = TapFactories.findSinkFactory(pipelineDef.sink());
 
         sinkFactory.applyGlobalProperties(commonProperties);
 
-        Tap<Properties, ?, ?> sinkTap = sinkFactory.getSink(pipelineOptions, pipelineDef.sink(), currentFields);
+        Tap<Properties, ?, ?> sinkTap = sinkFactory.getSink(pipelineOptions, pipelineDef.sink(), context.currentFields);
 
         flow = new LocalFlowConnector(commonProperties).connect(flowDef()
                 .setName("pipeline")
-                .addSource(pipe, sourceTap)
-                .addSink(pipe, sinkTap)
-                .addTail(pipe));
+                .addSource(context.pipe, sourceTap)
+                .addSink(context.pipe, sinkTap)
+                .addTail(context.pipe));
 
         state = State.READY;
     }

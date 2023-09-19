@@ -6,11 +6,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package io.clusterless.tessellate.parser;
+package io.clusterless.tessellate.parser.ast;
 
-public interface FieldRef {
+public interface Statement {
 
-    boolean isOrdinal();
+    Op op();
 
-    Comparable<?> asComparable();
+    default boolean isOperation() {
+        return this instanceof Operation;
+    }
 }

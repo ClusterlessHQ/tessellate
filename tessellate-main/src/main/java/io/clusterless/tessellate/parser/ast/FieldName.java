@@ -6,26 +6,22 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package io.clusterless.tessellate.parser;
+package io.clusterless.tessellate.parser.ast;
 
 import java.util.Objects;
 
-public class FieldTypeName {
+public class FieldName implements FieldRef {
     String name;
 
-    public FieldTypeName(CharSequence name) {
+    public FieldName(CharSequence name) {
         this.name = name.toString();
-    }
-
-    public String name() {
-        return name;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        FieldTypeName fieldName = (FieldTypeName) o;
+        FieldName fieldName = (FieldName) o;
         return Objects.equals(name, fieldName.name);
     }
 
@@ -40,5 +36,15 @@ public class FieldTypeName {
         sb.append("name='").append(name).append('\'');
         sb.append('}');
         return sb.toString();
+    }
+
+    @Override
+    public boolean isOrdinal() {
+        return false;
+    }
+
+    @Override
+    public Comparable<?> asComparable() {
+        return name;
     }
 }

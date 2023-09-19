@@ -10,10 +10,10 @@ package io.clusterless.tessellate.pipeline;
 
 import com.adelean.inject.resources.junit.jupiter.GivenTextResource;
 import com.adelean.inject.resources.junit.jupiter.TestWithResources;
-import io.clusterless.tessellate.model.InsertOp;
 import io.clusterless.tessellate.model.PipelineDef;
 import io.clusterless.tessellate.options.PipelineOptions;
 import io.clusterless.tessellate.options.PipelineOptionsMerge;
+import io.clusterless.tessellate.parser.ast.Assignment;
 import io.clusterless.tessellate.util.JSONUtil;
 import org.junit.jupiter.api.Test;
 
@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @TestWithResources
 public class PipelineOptionsMergerTest {
     @Test
-    void usingOptions(@GivenTextResource("/config/pipeline.json") String pipelineJson) throws IOException {
+    void usingOptions(@GivenTextResource("/config/pipeline-mvel.json") String pipelineJson) throws IOException {
         List<URI> inputs = List.of(URI.create("s3://foo/input"));
         URI output = URI.create("s3://foo/output");
 
@@ -41,7 +41,7 @@ public class PipelineOptionsMergerTest {
         assertEquals(inputs, merged.source().inputs());
         assertEquals(output, merged.sink().output());
 
-        assertEquals("1689820455", ((InsertOp) merged.transform().transformOps().get(5)).value());
+        assertEquals("1689820455", ((Assignment) merged.transform().statements().get(5)).literal());
     }
 
     @Test

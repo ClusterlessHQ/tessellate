@@ -119,6 +119,8 @@ dependencies {
     testImplementation("uk.org.webcompere:system-stubs-jupiter:$systemStubs")
     testImplementation("org.mockito:mockito-inline:5.1.1")
 
+    testImplementation("org.assertj:assertj-core:3.24.2")
+
 //     https://mvnrepository.com/artifact/software.amazon.awssdk
     val awsSdk2 = "2.20.69"
     integrationTestImplementation("software.amazon.awssdk:s3:$awsSdk2")

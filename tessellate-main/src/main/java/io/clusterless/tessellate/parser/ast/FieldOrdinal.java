@@ -6,7 +6,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package io.clusterless.tessellate.parser;
+package io.clusterless.tessellate.parser.ast;
 
 public class FieldOrdinal implements FieldRef {
     Integer ordinal;
