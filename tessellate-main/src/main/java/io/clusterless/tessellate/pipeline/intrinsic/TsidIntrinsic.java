@@ -40,7 +40,7 @@ public class TsidIntrinsic extends IntrinsicBuilder {
         Integer nodeCount = intrinsic.params().getInteger(NODE_COUNT);
         Integer node = intrinsic.params().getInteger(NODE, s -> {
             requireParam(nodeCount, "nodeCount param required when providing a string node value");
-            return SIP.hashString(s, StandardCharsets.UTF_8).asInt() % nodeCount;
+            return Math.abs(SIP.hashString(s, StandardCharsets.UTF_8).asInt()) % nodeCount;
         });
 
         Long epoch = intrinsic.params().getLong(EPOCH);
