@@ -8,9 +8,12 @@
 
 package io.clusterless.tessellate.parser;
 
-import io.clusterless.tessellate.parser.ast.Intrinsic;
-import io.clusterless.tessellate.parser.ast.Operation;
+import io.clusterless.tessellate.parser.ast.*;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -50,6 +53,10 @@ public class StatementParserTest {
 
     @Test
     void transforms() {
+        Field field = new Field(new FieldName("time_ymd"), Optional.of(new FieldType(new FieldTypeName("DateTime"), Optional.of(new FieldTypeParam("yyyyMMdd", Optional.empty())))));
+        List<Field> results = ((UnaryOperation) StatementParser.parse("time   +>   time_ymd|DateTime|yyyyMMdd")).results();
+        assertThat(results).hasSize(1).map(Objects::toString).contains(field.toString());
+
         assertNotNull(StatementParser.parse("one"));
         assertNotNull(StatementParser.parse("one|string"));
         assertNotNull(StatementParser.parse("two->@two"));

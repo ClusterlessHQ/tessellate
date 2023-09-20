@@ -8,8 +8,6 @@
 
 package io.clusterless.tessellate.parser.ast;
 
-import java.util.Objects;
-
 public class FieldName implements FieldRef {
     String name;
 
@@ -18,24 +16,8 @@ public class FieldName implements FieldRef {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        FieldName fieldName = (FieldName) o;
-        return Objects.equals(name, fieldName.name);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(name);
-    }
-
-    @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("FieldName{");
-        sb.append("name='").append(name).append('\'');
-        sb.append('}');
-        return sb.toString();
+        return name;
     }
 
     @Override

@@ -27,9 +27,6 @@ public class FieldOrdinal implements FieldRef {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("FieldOrdinal{");
-        sb.append("ordinal=").append(ordinal);
-        sb.append('}');
-        return sb.toString();
+        return ordinal.toString();
     }
 }

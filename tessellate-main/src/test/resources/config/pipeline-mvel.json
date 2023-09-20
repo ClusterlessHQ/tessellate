@@ -24,6 +24,7 @@
     "three+>@three|DateTime|yyyyMMdd",
     "four->",
     "five=>_five",
-    "@{1689820455}=>six|DateTime|yyyyMMdd"
+    "@{1689820455}=>six|DateTime|yyyyMMdd",
+    "seven +> _seven|DateTime|yyyyMMdd"
   ]
 }

@@ -14,6 +14,7 @@ import io.clusterless.tessellate.model.PipelineDef;
 import io.clusterless.tessellate.options.PipelineOptions;
 import io.clusterless.tessellate.options.PipelineOptionsMerge;
 import io.clusterless.tessellate.parser.ast.Assignment;
+import io.clusterless.tessellate.parser.ast.UnaryOperation;
 import io.clusterless.tessellate.util.JSONUtil;
 import org.junit.jupiter.api.Test;
 
@@ -42,6 +43,7 @@ public class PipelineOptionsMergerTest {
         assertEquals(output, merged.sink().output());
 
         assertEquals("1689820455", ((Assignment) merged.transform().statements().get(5)).literal());
+        assertEquals("_seven", ((UnaryOperation) merged.transform().statements().get(6)).results().get(0).fieldRef().asComparable());
     }
 
     @Test
