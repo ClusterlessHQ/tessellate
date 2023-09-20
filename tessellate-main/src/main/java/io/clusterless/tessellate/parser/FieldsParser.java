@@ -83,8 +83,12 @@ public class FieldsParser {
     }
 
     public Fields asFields(List<Field> fields) {
+        return asFields(fields, null);
+    }
+
+    public Fields asFields(List<Field> fields, Type defaultType) {
         return fields.stream()
-                .map(this::asFields)
+                .map(f -> asFields(f, defaultType))
                 .reduce(Fields.NONE, Fields::append);
     }
 

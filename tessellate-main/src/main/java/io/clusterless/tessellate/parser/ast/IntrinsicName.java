@@ -15,11 +15,12 @@ public class IntrinsicName {
         this.name = name;
     }
 
+    public String name() {
+        return name;
+    }
+
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("IntrinsicName{");
-        sb.append("name='").append(name).append('\'');
-        sb.append('}');
-        return sb.toString();
+        return name;
     }
 }

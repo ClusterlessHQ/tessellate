@@ -8,8 +8,11 @@
 
 package io.clusterless.tessellate.parser.ast;
 
+import io.clusterless.tessellate.parser.Printer;
+
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 public class IntrinsicParams {
     Map<String, String> params;
@@ -22,11 +25,50 @@ public class IntrinsicParams {
         return params;
     }
 
+    public String getString(String param) {
+        return params.get(param);
+    }
+
+    public Boolean getBoolean(String param) {
+        String value = params.get(param);
+
+        if (value == null) {
+            return null;
+        }
+
+        return Boolean.parseBoolean(value);
+    }
+
+    public Integer getInteger(String param, Function<String, Integer> otherwise) {
+        try {
+            return getInteger(param);
+        } catch (NumberFormatException e) {
+            return otherwise.apply(getString(param));
+        }
+    }
+
+    public Integer getInteger(String param) {
+        String value = params.get(param);
+
+        if (value == null) {
+            return null;
+        }
+
+        return Integer.parseInt(value);
+    }
+
+    public Long getLong(String param) {
+        String value = params.get(param);
+
+        if (value == null) {
+            return null;
+        }
+
+        return Long.parseLong(value);
+    }
+
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("IntrinsicParams{");
-        sb.append("params=").append(params);
-        sb.append('}');
-        return sb.toString();
+        return Printer.params(params);
     }
 }

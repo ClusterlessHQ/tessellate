@@ -11,6 +11,7 @@ package io.clusterless.tessellate.parser;
 import io.clusterless.tessellate.parser.ast.Field;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class Printer {
@@ -32,5 +33,11 @@ public class Printer {
         }
 
         return literal;
+    }
+
+    public static String params(Map<String, String> params) {
+        return params.entrySet().stream()
+                .map(e -> e.getKey() + ":" + literal(e.getValue()))
+                .collect(Collectors.joining(", "));
     }
 }

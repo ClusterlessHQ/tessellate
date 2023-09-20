@@ -19,20 +19,19 @@ import cascading.tuple.Fields;
 import cascading.tuple.coerce.Coercions;
 import io.clusterless.tessellate.parser.FieldsParser;
 import io.clusterless.tessellate.parser.ast.*;
+import io.clusterless.tessellate.pipeline.intrinsic.IntrinsicBuilder;
 
 import java.util.List;
 
 public class Transformer {
-    private final FieldsParser fieldsParser;
-    Statement statement;
+    private final FieldsParser fieldsParser = FieldsParser.INSTANCE;
+    private final Statement statement;
 
     public Transformer(Statement statement) {
         this.statement = statement;
-        fieldsParser = FieldsParser.INSTANCE;
     }
 
     PipelineContext resolve(PipelineContext context) {
-
         switch (statement.op().op()) {
             case "":
                 return handleCoerce(context);
@@ -55,7 +54,10 @@ public class Transformer {
         Operation operation = (Operation) statement;
 
         if (operation.exp() != null) {
-            throw new UnsupportedOperationException("unsupported: " + operation);
+            IntrinsicBuilder.Result result = create(context, operation);
+            Pipe pipe = new Each(context.pipe, result.arguments(), result.function(), Fields.REPLACE);
+            Fields currentFields = context.currentFields.subtract(result.arguments()).append(result.results());
+            return context.update(currentFields, pipe);
         }
 
         Fields fromFields = fieldsParser.asFields(operation.arguments());
@@ -77,16 +79,20 @@ public class Transformer {
     private PipelineContext copyAndEval(PipelineContext context) {
         Operation operation = (Operation) statement;
 
-        if (operation.exp() != null) {
-            throw new UnsupportedOperationException("unsupported: " + operation);
-        }
+        if (operation.exp() == null) {
+            Fields fromFields = fieldsParser.asFields(operation.arguments());
+            Fields toFields = fieldsParser.asFields(operation.results());
 
-        Fields fromFields = fieldsParser.asFields(operation.arguments());
-        Fields toFields = fieldsParser.asFields(operation.results());
-        context.log.info("transform copy: from: {}, to: {}", fromFields, toFields);
-        Pipe pipe = new Copy(context.pipe, fromFields, toFields);
-        Fields currentFields = context.currentFields.append(toFields);
-        return context.update(currentFields, pipe);
+            context.log.info("transform copy: from: {}, to: {}", fromFields, toFields);
+            Pipe pipe = new Copy(context.pipe, fromFields, toFields);
+            Fields currentFields = context.currentFields.append(toFields);
+            return context.update(currentFields, pipe);
+        } else {
+            IntrinsicBuilder.Result result = create(context, operation);
+            Pipe pipe = new Each(context.pipe, result.arguments(), result.function(), Fields.ALL);
+            Fields currentFields = context.currentFields.append(result.results());
+            return context.update(currentFields, pipe);
+        }
     }
 
     private PipelineContext handleCoerce(PipelineContext context) {
@@ -101,12 +107,32 @@ public class Transformer {
 
     private PipelineContext handleAssignment(PipelineContext context) {
         String value = ((Assignment) statement).literal();
-        Fields insertFields = fieldsParser.asFields(((Assignment) statement).result(), null);
-        Object literal = Coercions.coerce(value, insertFields.getType(0));
-        context.log.info("transform insert: fields: {}, value: {}", insertFields, literal);
-        Pipe pipe = new Each(context.pipe, new Insert(insertFields, literal), Fields.ALL);
-        Fields currentFields = context.currentFields.append(insertFields);
+        Fields toFields = fieldsParser.asFields(((Assignment) statement).result(), null);
+        Object literal = Coercions.coerce(value, toFields.getType(0));
+        context.log.info("transform insert: fields: {}, value: {}", toFields, literal);
+        Pipe pipe = new Each(context.pipe, new Insert(toFields, literal), Fields.ALL);
+        Fields currentFields = context.currentFields.append(toFields);
 
         return context.update(currentFields, pipe);
+    }
+
+    private IntrinsicBuilder.Result create(PipelineContext context, Operation operation) {
+        if (operation.exp() instanceof Intrinsic) {
+            Intrinsic intrinsic = operation.exp();
+
+            IntrinsicBuilder intrinsicBuilder = Intrinsics.builders().get(intrinsic.name().name());
+
+            if (intrinsicBuilder == null) {
+                throw new IllegalArgumentException("unknown intrinsic function: " + intrinsic.name());
+            }
+
+            IntrinsicBuilder.Result result = intrinsicBuilder.create(operation);
+
+            context.log.info("transform {}: from: {}, to: {}, having: {}", intrinsicBuilder.name(), result.arguments(), result.results(), ((Intrinsic) operation.exp()).params());
+
+            return result;
+        }
+
+        throw new IllegalStateException("no builder found for: " + operation);
     }
 }

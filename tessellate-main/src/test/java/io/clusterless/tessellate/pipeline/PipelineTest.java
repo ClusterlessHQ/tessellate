@@ -183,6 +183,7 @@ public class PipelineTest {
                                 .build())
                         .build())
                 .withTransform(new Transform(
+                        "^tsid{node:1,nodeCount:256} +> id|long",
                         "time+>ymd|DateTime|yyyyMMdd", // copy: "time|Instant|dd/MMM/yyyy:HH:mm:ss Z"
                         "httpStatus->httpStatusString|String",// rename: "httpStatus|Integer"
                         "httpStatusString|Integer",// coerce: "httpStatusString|String"
@@ -214,7 +215,7 @@ public class PipelineTest {
         CascadingTesting.validateEntries(
                 pipeline.flow().openSink(),
                 l -> assertEquals(4, l, "wrong length"), // headers are declared so aren't counted
-                l -> assertEquals(merged.source().schema().declared().size() + 1, l, "wrong size"),
+                l -> assertEquals(merged.source().schema().declared().size() + 1 + 1, l, "wrong size"),
                 l -> {
                 }
         );

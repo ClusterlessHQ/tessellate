@@ -27,10 +27,6 @@ public class Intrinsic implements Exp {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("Intrinsic{");
-        sb.append("name=").append(name);
-        sb.append(", params=").append(params);
-        sb.append('}');
-        return sb.toString();
+        return "^" + name + "{" + params() + "}";
     }
 }

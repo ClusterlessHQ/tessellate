@@ -60,8 +60,8 @@ Regex support is based on regex groups. Groups are matched by ordinal with the d
 Provided named formats include:
 
 - AWS S3 Access Logs
-  - named: `aws-s3-access-log`
-  - https://docs.aws.amazon.com/AmazonS3/latest/dev/LogFormat.html
+    - named: `aws-s3-access-log`
+    - https://docs.aws.amazon.com/AmazonS3/latest/dev/LogFormat.html
 
 Usage:
 
@@ -84,32 +84,48 @@ Usage:
 ### Supported path and filename patterns
 
 - Path partitioning - data can be partitioned by intrinsic values in the data set.
-  - partitioning can be named, e.g. `year=2023/month=01/day=01`, or
-  - unnamed, e.g. `2023/01/01`
+    - partitioning can be named, e.g. `year=2023/month=01/day=01`, or
+    - unnamed, e.g. `2023/01/01`
 - Filename metadata - `[prefix]-[field-hash]-[guid].parquet`
-  - `prefix` is `part` by default
-  - `field-hash` is a hash of the schema: field names, and field types
-  - `guid` is a random UUID or a provided value
+    - `prefix` is `part` by default
+    - `field-hash` is a hash of the schema: field names, and field types
+    - `guid` is a random UUID or a provided value
 
 ### Supported operations
 
 #### Transforms
 
 - insert - insert a literal value into a field
-  - `value=>intoField|type`
+    - `value => intoField|type`
 - coerce - transform a field to a new type
-  - `field|newType`
+    - `field|newType`
 - copy - copy a field value to a new field
-  - `fromField+>toField|type`
+    - `fromField +> toField|type`
 - rename - rename a field, optionally coercing its type
-  - `fromField->toField|type`
+    - `fromField -> toField|type`
 - discard - remove a field
-  - `field->`
+    - `field ->`
 
-#### Functions
+#### Intrinsic Functions
 
-- tsid - create a unique long id
-  - `!tsid{node:...,nodeCount:...,signed:true/false,epoch:...}+>intoField|type`
+- `tsid` - create a unique id as a long or string (using https://github.com/f4b6a3/tsid-creator)
+    - `^tsid{node:...,nodeCount:...,epoch:...,format:...,counterToZero:...} +> intoField|type`
+        - `type` must be `string` or `long`, defaults to `long`. When `string`, the `format` is honored.
+        - Params:
+        - `node` - the node id, defaults to a random int.
+            - if a string is provided, it is hashed to an int
+                - SIP_HASHER.hashString(s, StandardCharsets.UTF_8).asInt() % nodeCount;
+        - `nodeCount` - the number of nodes, defaults to `1024`
+        - `epoch` - the epoch, defaults to `Instant.parse("2020-01-01T00:00:00.000Z").toEpochMilli()`
+        - `format` - the format, defaults to `null`. Example: `K%S` where `%S` is a placeholder.
+            - Placeholders:
+            - `%S`: canonical string in upper case
+            - `%s`: canonical string in lower case
+            - `%X`: hexadecimal in upper case
+            - `%x`: hexadecimal in lower case
+            - `%d`: base-10
+            - `%z`: base-62
+        - `counterToZero` - resets the counter portion when the millisecond changes, defaults to `false`
 
 ### Supported types
 

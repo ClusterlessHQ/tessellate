@@ -106,6 +106,8 @@ dependencies {
 
     implementation("org.jparsec:jparsec:3.1")
 
+    implementation("com.github.f4b6a3:tsid-creator:5.2.5")
+
     testImplementation("net.wensel:cascading-core:$cascading:tests")
 
     // https://github.com/hosuaby/inject-resources
