@@ -16,6 +16,7 @@ import io.clusterless.tessellate.pipeline.Pipeline;
 import io.clusterless.tessellate.util.JSONUtil;
 import io.clusterless.tessellate.util.MetricsPrinter;
 import io.clusterless.tessellate.util.Verbosity;
+import io.clusterless.tessellate.util.VersionProvider;
 import picocli.CommandLine;
 
 import java.io.IOException;
@@ -29,7 +30,7 @@ import java.util.concurrent.Callable;
 @CommandLine.Command(
         name = "tess",
         mixinStandardHelpOptions = true,
-        version = "1.0-wip",
+        versionProvider = VersionProvider.class,
         sortOptions = false
 )
 public class Main implements Callable<Integer> {

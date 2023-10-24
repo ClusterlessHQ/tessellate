@@ -16,7 +16,7 @@ plugins {
     java
     application
     `java-test-fixtures`
-    id("org.jreleaser") version "1.7.0"
+    id("org.jreleaser") version "1.8.0"
 }
 
 val versionProperties = Properties().apply {
@@ -195,6 +195,13 @@ testing {
 configurations["integrationTestRuntimeOnly"].extendsFrom(configurations.runtimeOnly.get())
 configurations["integrationTestImplementation"].extendsFrom(configurations.testImplementation.get())
 
+tasks.named<ProcessResources>("processResources") {
+    doFirst {
+        file("${buildDir}/resources/main/version.properties")
+                .writeText("release.full=${version}")
+    }
+}
+
 tasks.named("check") {
     dependsOn(testing.suites.named("integrationTest"))
 }
@@ -264,8 +271,13 @@ jreleaser {
     }
 
     packagers {
-        docker {
+        brew {
             active.set(Active.ALWAYS)
+            repository.active.set(Active.ALWAYS)
+        }
+
+        docker {
+            active.set(Active.NEVER)
             repository {
                 repoOwner.set("clusterless")
                 name.set("tessellate")
@@ -296,6 +308,6 @@ jreleaser {
 tasks.register("release") {
     dependsOn("distZip")
     dependsOn("jreleaserRelease")
-// disable until 1.8.0 is released
-//    dependsOn("jreleaserPublish")
+    dependsOn("jreleaserPackage")
+    dependsOn("jreleaserPublish")
 }
