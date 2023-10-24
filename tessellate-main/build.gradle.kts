@@ -58,6 +58,10 @@ var integrationTestImplementation = configurations.create("integrationTestImplem
 val jupiter = "5.9.1"
 
 dependencies {
+
+    val commons = "0.7"
+    implementation("io.clusterless:clusterless-commons-core:$commons")
+
     implementation("com.google.guava:guava:31.1-jre")
 
     implementation("org.jetbrains:annotations:24.0.0")
