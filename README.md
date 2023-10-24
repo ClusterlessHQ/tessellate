@@ -7,7 +7,15 @@ This project is under active development and many features are considered alpha.
 Please do play around with this project in order to provide early feedback, but do expect things to change until we hit
 1.0 release.
 
-All final and WIP releases can be found here:
+All tessellate releases are available via [Homebrew](https://brew.sh):
+
+```shell
+brew tap clusterlesshq/tap
+brew install tessellate
+tess --version
+```
+
+Alternatively, you can download the latest releases from GitHub:
 
 - https://github.com/ClusterlessHQ/tessellate/releases
 
