@@ -18,8 +18,8 @@ import io.clusterless.tessellate.model.Schema;
 import io.clusterless.tessellate.model.Source;
 import io.clusterless.tessellate.options.PipelineOptions;
 import io.clusterless.tessellate.util.Format;
-import io.clusterless.tessellate.util.JSONUtil;
 import io.clusterless.tessellate.util.URIs;
+import io.clusterless.tessellate.util.json.JSONUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -8,6 +8,8 @@
 
 package io.clusterless.tessellate.model;
 
+import io.clusterless.tessellate.util.json.JsonSimpleView;
+
 public class PipelineDef implements Model {
     private String name;
     private AWS aws = new AWS();
@@ -29,14 +31,17 @@ public class PipelineDef implements Model {
         return aws;
     }
 
+    @JsonSimpleView
     public Source source() {
         return source;
     }
 
+    @JsonSimpleView
     public Transform transform() {
         return transform;
     }
 
+    @JsonSimpleView
     public Sink sink() {
         return sink;
     }

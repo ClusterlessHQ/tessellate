@@ -122,7 +122,13 @@ public class Pipeline {
         }
 
         // get source fields here so that any partition fields will be captured
-        PipelineContext context = new PipelineContext(LOG, sourceTap.getSourceFields(), new Pipe("head"));
+        Fields sourceFields = sourceTap.getSourceFields();
+
+        if (!sourceFields.hasTypes()) {
+            sourceFields = sourceFields.applyTypeToAll(String.class);
+        }
+
+        PipelineContext context = new PipelineContext(LOG, sourceFields, new Pipe("head"));
 
         logCurrentFields(context.currentFields);
 

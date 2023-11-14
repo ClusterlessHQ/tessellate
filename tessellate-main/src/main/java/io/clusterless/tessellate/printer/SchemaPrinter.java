@@ -17,7 +17,7 @@ import cascading.tuple.type.CoercibleType;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.clusterless.tessellate.options.PrintOptions;
 import io.clusterless.tessellate.type.WrappedCoercibleType;
-import io.clusterless.tessellate.util.JSONUtil;
+import io.clusterless.tessellate.util.json.JSONUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -15,8 +15,8 @@ import io.clusterless.tessellate.factory.TapFactory;
 import io.clusterless.tessellate.model.Dataset;
 import io.clusterless.tessellate.util.Compression;
 import io.clusterless.tessellate.util.Format;
-import io.clusterless.tessellate.util.JSONUtil;
 import io.clusterless.tessellate.util.Protocol;
+import io.clusterless.tessellate.util.json.JSONUtil;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.jetbrains.annotations.NotNull;
 

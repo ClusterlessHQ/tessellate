@@ -21,7 +21,7 @@ import io.clusterless.tessellate.model.PipelineDef;
 import io.clusterless.tessellate.model.Transform;
 import io.clusterless.tessellate.parser.ast.Op;
 import io.clusterless.tessellate.type.WrappedCoercibleType;
-import io.clusterless.tessellate.util.JSONUtil;
+import io.clusterless.tessellate.util.json.JSONUtil;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

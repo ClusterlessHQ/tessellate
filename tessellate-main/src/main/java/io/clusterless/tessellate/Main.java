@@ -13,10 +13,10 @@ import io.clusterless.tessellate.model.PipelineDef;
 import io.clusterless.tessellate.options.PipelineOptions;
 import io.clusterless.tessellate.options.PipelineOptionsMerge;
 import io.clusterless.tessellate.pipeline.Pipeline;
-import io.clusterless.tessellate.util.JSONUtil;
 import io.clusterless.tessellate.util.MetricsPrinter;
 import io.clusterless.tessellate.util.Verbosity;
 import io.clusterless.tessellate.util.VersionProvider;
+import io.clusterless.tessellate.util.json.JSONUtil;
 import picocli.CommandLine;
 
 import java.io.IOException;
@@ -34,7 +34,7 @@ import java.util.concurrent.Callable;
         sortOptions = false
 )
 public class Main implements Callable<Integer> {
-    enum Show {
+    public enum Show {
         formats,
         protocols,
         compression
@@ -49,13 +49,38 @@ public class Main implements Callable<Integer> {
     @CommandLine.Mixin
     protected PipelineOptions pipelineOptions = new PipelineOptions();
 
-    @CommandLine.Option(names = "--print-pipeline", description = "show pipeline template, will not run pipeline")
-    protected boolean printPipeline = false;
+    public enum PrintScope {
+        simple,
+        all
+    }
 
-    @CommandLine.Option(names = "--show-source", description = "show protocols, formats, or compression options")
+    @CommandLine.Option(
+            names = "--print-pipeline",
+            arity = "0..1",
+            description = {
+                    "show pipeline template, will not run pipeline",
+                    "Optional values: ${COMPLETION-CANDIDATES}"
+            },
+            fallbackValue = "simple"
+    )
+    protected PrintScope printPipeline;
+
+    @CommandLine.Option(
+            names = "--show-source",
+            description = {
+                    "show protocols, formats, or compression options",
+                    "Possible values: ${COMPLETION-CANDIDATES}"
+            }
+    )
     protected Show showSource;
 
-    @CommandLine.Option(names = "--show-sink", description = "show protocols, formats or compression options")
+    @CommandLine.Option(
+            names = "--show-sink",
+            description = {
+                    "Show protocols, formats or compression options",
+                    "Possible values: ${COMPLETION-CANDIDATES}"
+            }
+    )
     protected Show showSink;
 
     public static void main(String[] args) {
@@ -138,8 +163,15 @@ public class Main implements Callable<Integer> {
 
         PipelineDef pipelineDef = merge.merge();
 
-        if (printPipeline) {
-            System.out.println(JSONUtil.writeAsStringSafePretty(pipelineDef));
+        if (printPipeline != null) {
+            switch (printPipeline) {
+                case all:
+                    System.out.println(JSONUtil.writeAsStringSafePretty(pipelineDef));
+                    break;
+                case simple:
+                    System.out.println(JSONUtil.writeRWAsPrettyStringSafe(pipelineDef));
+                    break;
+            }
             return 0;
         }
 

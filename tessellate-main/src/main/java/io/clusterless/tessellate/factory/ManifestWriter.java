@@ -18,8 +18,8 @@ import cascading.tuple.TupleEntryCollector;
 import com.github.hal4j.uritemplate.URITemplate;
 import io.clusterless.tessellate.model.Dataset;
 import io.clusterless.tessellate.model.Sink;
-import io.clusterless.tessellate.util.JSONUtil;
 import io.clusterless.tessellate.util.URIs;
+import io.clusterless.tessellate.util.json.JSONUtil;
 
 import java.io.IOException;
 import java.net.URI;

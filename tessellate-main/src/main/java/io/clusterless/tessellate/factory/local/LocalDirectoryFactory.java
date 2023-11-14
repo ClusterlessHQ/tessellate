@@ -28,8 +28,8 @@ import io.clusterless.tessellate.model.Sink;
 import io.clusterless.tessellate.options.PipelineOptions;
 import io.clusterless.tessellate.util.Compression;
 import io.clusterless.tessellate.util.Format;
-import io.clusterless.tessellate.util.JSONUtil;
 import io.clusterless.tessellate.util.Protocol;
+import io.clusterless.tessellate.util.json.JSONUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.InputStream;

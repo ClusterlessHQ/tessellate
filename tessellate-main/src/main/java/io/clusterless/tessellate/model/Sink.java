@@ -8,6 +8,8 @@
 
 package io.clusterless.tessellate.model;
 
+import io.clusterless.tessellate.util.json.JsonSimpleView;
+
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,8 +17,11 @@ import java.util.List;
 public class Sink implements Dataset, Model {
     private String manifestTemplate;
     private String manifestLot;
+    @JsonSimpleView
     private URI output;
+    @JsonSimpleView
     private Schema schema = new Schema();
+    @JsonSimpleView
     private List<Partition> partitions = new ArrayList<>();
     private boolean namedPartitions = true;
 

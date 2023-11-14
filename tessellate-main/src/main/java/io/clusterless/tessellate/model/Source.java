@@ -8,6 +8,9 @@
 
 package io.clusterless.tessellate.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.clusterless.tessellate.util.json.JsonSimpleView;
+
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,11 +18,16 @@ import java.util.List;
 public class Source implements Dataset, Model {
     private URI manifest;
     private String manifestLot;
+    @JsonSimpleView
     private List<URI> inputs = new ArrayList<>();
+    @JsonSimpleView
     private Schema schema = new Schema();
+    @JsonSimpleView
     private List<Partition> partitions = new ArrayList<>();
     private boolean namedPartitions = true;
     private LineOptions lines = new LineOptions();
+
+    @JsonIgnore
     private List<Field> select = new ArrayList<>();
 
     public static Builder builder() {

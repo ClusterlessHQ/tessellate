@@ -10,6 +10,7 @@ package io.clusterless.tessellate.model;
 
 import io.clusterless.tessellate.util.Compression;
 import io.clusterless.tessellate.util.Format;
+import io.clusterless.tessellate.util.json.JsonSimpleView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,9 +18,13 @@ import java.util.List;
 public class Schema implements Model {
     private String name;
     private List<String> documentation = new ArrayList<>();
+    @JsonSimpleView
     private List<Field> declared = new ArrayList<>();
+    @JsonSimpleView
     private Format format;
+    @JsonSimpleView
     private Compression compression = Compression.none;
+    @JsonSimpleView
     private boolean embedsSchema = false;
     private String pattern;
 

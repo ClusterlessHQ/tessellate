@@ -19,7 +19,7 @@ import io.clusterless.tessellate.parser.ast.Field;
 import io.clusterless.tessellate.parser.ast.FieldType;
 import io.clusterless.tessellate.parser.ast.FieldTypeParam;
 import io.clusterless.tessellate.type.WrappedCoercibleType;
-import io.clusterless.tessellate.util.JSONUtil;
+import io.clusterless.tessellate.util.json.JSONUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Type;

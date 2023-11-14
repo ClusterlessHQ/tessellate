@@ -6,7 +6,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package io.clusterless.tessellate.util;
+package io.clusterless.tessellate.util.json;
 
 import cascading.nested.json.JSONCoercibleType;
 import com.fasterxml.jackson.core.JsonParser;
@@ -30,11 +30,7 @@ public class JSONUtil {
     public static final ObjectReader CONFIG_READER;
 
     static {
-        CONFIG_MAPPER = new ObjectMapper();
-
-        CONFIG_MAPPER
-                .registerModule(new JavaTimeModule())
-                .registerModule(new Jdk8Module());
+        CONFIG_MAPPER = createObjectMapper();
 
         // prevents json object from being created with duplicate names at the same level
         CONFIG_MAPPER.setConfig(CONFIG_MAPPER.getDeserializationConfig()
@@ -72,6 +68,12 @@ public class JSONUtil {
         TYPE = new JSONCoercibleType(DATA_MAPPER);
     }
 
+    private static ObjectMapper createObjectMapper() {
+        return new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .registerModule(new Jdk8Module());
+    }
+
     public static final ObjectWriter CONFIG_WRITER = CONFIG_MAPPER.writer();
 
     public static final ObjectWriter CONFIG_WRITER_PRETTY = CONFIG_MAPPER.writerWithDefaultPrettyPrinter();
@@ -79,6 +81,25 @@ public class JSONUtil {
     public static String writeAsStringSafe(Object object) {
         try {
             return CONFIG_WRITER.writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public static String writeRWAsPrettyStringSafe(Object object) {
+        return writeViewAsPrettyStringSafe(object, Views.Simple.class);
+    }
+
+    public static String writePartitionedAsPrettyStringSafe(Object object) {
+        return writeViewAsPrettyStringSafe(object, Views.Partitioned.class);
+    }
+
+    private static String writeViewAsPrettyStringSafe(Object object, Class<?> view) {
+        try {
+            return createObjectMapper()
+                    .disable(MapperFeature.DEFAULT_VIEW_INCLUSION)
+                    .writerWithDefaultPrettyPrinter()
+                    .withView(view).writeValueAsString(object);
         } catch (JsonProcessingException e) {
             throw new UncheckedIOException(e);
         }

@@ -15,7 +15,7 @@ import io.clusterless.tessellate.options.PipelineOptions;
 import io.clusterless.tessellate.options.PipelineOptionsMerge;
 import io.clusterless.tessellate.parser.ast.Assignment;
 import io.clusterless.tessellate.parser.ast.UnaryOperation;
-import io.clusterless.tessellate.util.JSONUtil;
+import io.clusterless.tessellate.util.json.JSONUtil;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
