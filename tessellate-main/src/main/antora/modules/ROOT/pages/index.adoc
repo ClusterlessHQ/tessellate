@@ -1,0 +1,57 @@
+= Tessellate
+
+Tessellate is a command line tool for reading and writing data to/from multiple locations and across multiple formats.
+
+This project is under active development and many features are considered alpha.
+
+== About
+
+A primary activity of any data-engineering effort is to format and organize data for different access patterns.
+
+For example, logs frequently arrive as lines of text, but are often best consumed as structured data. And different
+stakeholders may have different needs of the log data, so it must be organized (partitioned) in different ways that
+support those needs.
+
+Tessellate was designed to support data engineers and data scientists in their efforts to automate managing data for use
+by different platforms and tools.
+
+== Overview
+
+Tessellate is a command line interface (cli).
+
+[source,console]
+.Show Help
+----
+tess -h
+----
+
+It expects a simple xref:reference:pipeline.adoc[JSON formatted pipeline] file to
+xref:reference:source-sink.adoc[declare sources, sinks] and any xref:reference:transforms.adoc[transforms] to perform.
+
+It can read or write files locally, or from HDFS or AWS S3.
+
+It also supports most text formats and Apache Parquet natively.
+
+And during writing, it will efficiently partition data into different paths based on input or derived data availble
+in the pipeline.
+
+== Use
+
+Tessellate may be used from the command line, or in a container.
+
+It also natively supports the https://github.com/ClusterlessHQ/clusterless[Clusterless] workload model.
+
+Other uses include:
+
+- Data inspection from a terminal
+- Host log processing (push rotated logs to HDFS or the cloud)
+- For cloud processing arriving data (like AWS Fargate or ECS via AWS Batch)
+- As a serverless function (like AWS Lambda) [we plan to publish artifacts in Maven for inclusion in Lambda functions]
+
+== Cascading
+
+Tessellate uses https://cascading.wensel.net/[Cascading] under the hood for all of its processing.
+
+Historically, Cascading has been used to run large and complex Apache Hadoop and Tez applications, but it also supports
+a local execution without Hadoop runtime dependencies. This makes it very suitable for local processing, or in a cloud
+environment on AWS ECS/Fargate or AWS Lambda.

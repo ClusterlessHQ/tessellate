@@ -1,0 +1,107 @@
+= Source and Sink
+
+Pipelines read data from sources and write data to sinks.
+
+Each source or sink has a format and protocol.
+
+And the data may be partitioned by values in the data set in order to allow interleaving of data from new data sets into
+existing data sets.
+
+This can significantly improve the performance of queries on the data.
+
+== Formats
+
+Every source and sink supports its own set of formats.
+
+[source,console]
+----
+tess --show-source=formats
+----
+
+text/regex:: Lines of text parsed by regex (like Apache or S3 log files).
+csv:: With or without headers.
+tsv:: With or without headers.
+parquet:: [Apache Parquet](https://parquet.apache.org)
+
+== Protocols
+
+Every source and sink supports its own set of protocols.
+
+[source,console]
+----
+tess --show-source=protocols
+----
+
+`file://`:: Read/write local files.
+`s3://`:: Read/write files in AWS S3.
+`hdfs://`:: Read/write files on Apache Hadoop HDF filesystem.
+
+== Compression
+
+Every source and sink supports its own set of compression formats.
+
+[source,console]
+----
+tess --show-source=compression
+----
+
+Som common formats supported are:
+
+* none
+* gzip
+* lz4
+* bzip2
+* brotli
+* snappy
+
+== Partitioning
+
+Partition be performed with data from on the values read or created in the pipeline.
+
+Path partitioning:: Data can be partitioned by intrinsic values in the data set.
+named partitions::: e.g. `year=2023/month=01/day=01`, or
+unnamed partitions::: e.g. `2023/01/01`
+
+Partitions, when declared in the pipeline file, can be simple, or represent a transform.
+
+Simple:: `<field_name>` becomes `/<field_name>=<field_value>/`
+Transform:: `<field_name>+><partition_name>|<field_type>` becomes `/<partition_name>=<transformed_value>/`
+
+Note the `+>` operator.
+
+Consider the following example, where `time` is either a `long` timestamp, or an `Instant`.
+
+* `time+>year|DateTime|yyyy`
+* `time+>month|DateTime|MM`
+* `time+>day|DateTime|dd`
+
+The above produces a path like `/year=2023/month=01/day=01/`.
+
+== File naming
+
+Workload processes can fail. And when they do, it is important not to overwrite existing files. It is also important to
+find the files that were created and written before the failure.
+
+The following metadata can help disambiguate files across processing runs, and also to help detect schema changes.
+
+Filename metadata:: `[prefix]-[field-hash]-[guid].parquet`
+`prefix`::: The value `part` by default.
+`field-hash`::: A hash of the schema: field names, and field types, so that schema changes can be detected.
+`guid`::: A random UUID or a provided value.
+
+The JSON model for this metadata is:
+
+[source,console]
+----
+ "filename" : {
+      "prefix" : null, <1>
+      "includeGuid" : false, <2>
+      "providedGuid" : null, <3>
+      "includeFieldsHash" : false <4>
+    }
+----
+
+<1> The prefix to use for the filename. Defaults to `part`.
+<2> Whether to include a random UUID in the filename. Defaults to `false`.
+<3> A provided UUID to use in the filename. Defaults to using a random UUID.
+<4> Whether to include a hash of the schema (field name + type) in the filename. Defaults to `false`.

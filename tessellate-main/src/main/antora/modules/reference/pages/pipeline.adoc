@@ -1,0 +1,51 @@
+= Pipeline
+
+`tess` expects a JSON formatted "pipeline" file that declares the xref:source-sink.adoc[sources, sinks], and
+xref:transforms.adoc[transforms] to be run.
+
+[source,console]
+.Print Pipeline Template
+----
+tess --print-pipeline
+----
+
+[source,json]
+----
+{
+  "source" : {
+    "inputs" : [ ], <1>
+    "schema" : {
+      "declared" : [ ], <2>
+      "format" : null, <3>
+      "compression" : "none", <4>
+      "embedsSchema" : false <5>
+    },
+    "partitions" : [ ] <6>
+  },
+  "transform" : [ ], <7>
+  "sink" : {
+    "output" : null, <8>
+    "schema" : {
+      "declared" : [ ], <9>
+      "format" : null, <10>
+      "compression" : "none", <11>
+      "embedsSchema" : false <12>
+    },
+    "partitions" : [ ] <13>
+  }
+}
+----
+
+<1> URLs to read from, required
+<2> Schema fields to declare, required if not embedded or type information should be declared
+<3> Format type
+<4> Compression type
+<5> Whether the schema is embedded in the files (has headers)
+<6> Partitions to parse into fields
+<7> Transforms to apply to the data
+<8> URL to write to, required
+<9> Schema fields to declare, by default all fields are written
+<10> Format type
+<11> Compression type
+<12> Whether the schema should be embedded in the files (add headers)
+<13> Partitions to write out

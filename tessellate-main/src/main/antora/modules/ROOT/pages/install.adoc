@@ -1,0 +1,14 @@
+= Installation
+
+All tessellate releases are available via [Homebrew](https://brew.sh):
+
+[source,console]
+----
+brew tap clusterlesshq/tap
+brew install tessellate
+tess --version
+----
+
+Or, you can download the latest releases from GitHub:
+
+- https://github.com/ClusterlessHQ/tessellate/releases

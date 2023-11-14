@@ -1,0 +1,13 @@
+= Getting Help
+
+We use a discussion board to support users.
+
+- https://github.com/orgs/ClusterlessHQ/discussions
+
+If you find bugs or would like to suggest features or additional documentation, please use the discussion board to make suggestions, we can then convert that into an issue for the appropriate project.
+
+== Support
+
+For ongoing corporate support, reach out to:
+
+- https://chris.wensel.net/

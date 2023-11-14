@@ -1,0 +1,101 @@
+= Transforms
+
+== Fields
+
+Input and output files/objects (also referred to as sources and sinks) are made of both rows and columns. Or tuples and fields.
+
+A tuple has a set of fields, and a field has an optional xref:types.adoc[type] (and any associated metadata).
+
+Data files, or objects, have paths and names. Field values can be parsed from the paths and embedded in the tuple stream
+as fields. This is common when data has been partitioned into files where common values (like month and/or day) can
+be embedded in the path name to help select relevant files (push down predicates are applied to path values by many
+query engines).
+
+Declared fields in a pipeline have the following format: `<field_name>|<field_type>`, where `<field_name>` is a string,
+or an ordinal (number representing the position).
+
+`<field_type>` is optional, depending on the use. `<field_type>` further may be formatted as `<type>|<metadata>`.
+
+The actual supported types and associated metadata are described in xref:types.adoc[].
+
+== Transforms
+
+Transforms manipulate the tuple stream. They are applied to every tuple in the tuple stream.
+
+Insert literal:: Insert a literal value into a field.
+Coerce field:: Transform a field, in every tuple.
+Copy field:: Copy a field value to a new field.
+Rename field:: Rename a field, optionally coercing its type.
+Discard field:: Remove a field.
+Apply function:: Apply intrinsic functions against one or more fields.
+
+=== Operators
+
+There are three transform operators:
+
+`pass:[=>]`:: Assign a literal value to a new field.
+Format::: `literal pass:[=>] new_field|type`
+`+>`:: Retain the input field, and assign the result value to a new field.
+Format::: `field +> new_field|type`
+`pass:[->]`:: Discard the input fields, and assign the result value to a new field.
+Format::: `field pass:[->] new_field|type`
+
+For example:
+
+- `US pass:[=>] country|String` - assigns the value `US` to the field `country` as a string.
+- `0.5 pass:[=>] ratio|Double` - assigns the value `0.5` to the field `ratio` as a double.
+- `1689820455 pass:[=>] time|DateTime|yyyyMMdd` - convert the long value to a date time using the format `yyyyMMdd` and assign the result to the field `time`.
+- `ratio +> ratio|Double` - Coerces the string field "ratio" to a double, `null` ok.
+- `ratio|Double` - Same as above, coerces the string field "ratio" to a double, `null` ok.
+- `name +> firstName|String` - assigns the value of the field "name" to the field "firstName" as a string. The field `name` is retained.
+- `name pass:[->] firstName|String` - assigns the value of the field "name" to the field "firstName" as a string. The field `name` is discarded (dropped from the tuple stream).
+- `password pass:[->]` - discards the field `password` from the tuple stream.
+
+==== Expressions
+
+Expressions are applied to incoming fields and the results are assigned to a new field. Expressions can have zero or
+more field arguments.
+
+There are two types of expression:
+
+- functions - combine arguments into new values
+- filters - drop tuples from the tuple stream (currently unimplemented)
+
+NOTE: Many more expression types are planned, including native support for regular expressions and JSON paths.
+
+Current only `intrinsic` functions are supported. `intrinsic` functions are built-in functions, with optional
+parameters
+
+No arguments:: `^intrinsic{} +> new_field|type`
+No arguments, with parameters:: `^intrinsic{param1:value1, param2:value2} +> new_field|type`
+With arguments:: `from_field1+from_field2+from_fieldN ^intrinsic{} +> new_field|type`
+With arguments, with parameters:: `from_field1+from_field2+from_fieldN ^intrinsic{param1:value1, param2:value2} +> new_field|type`
+
+Expression may retain or discard the argument fields depending on the operator used.
+
+== Intrinsic Functions
+
+NOTE: Many more functions are planned.
+
+Built-in functions on fields can be applied to one or more fields in every tuple in the tuple stream.
+
+`tsid`:: create a unique id as a long or string (using https://github.com/f4b6a3/tsid-creator)
+Def:::
+`^tsid{node:...,nodeCount:...,epoch:...,format:...,counterToZero:...} +> intoField|type`
+`type`:::: must be `string` or `long`, defaults to `long`. When `string`, the `format` is honored.
+Params:::
+`node`:::: The node id, defaults to a random int.
+* If a string is provided, it is hashed to an int.
+* `SIP_HASHER.hashString(s, StandardCharsets.UTF_8).asInt() % nodeCount;`
+`nodeCount`:::: The number of nodes, defaults to `1024`
+`epoch`:::: - The epoch, defaults to `Instant.parse("2020-01-01T00:00:00.000Z").toEpochMilli()`
+`format`:::: The format, defaults to `null`. Example: `K%S` where `%S` is a placeholder.
+Placeholders:::::
+- `%S`: canonical string in upper case
+- `%s`: canonical string in lower case
+- `%X`: hexadecimal in upper case
+- `%x`: hexadecimal in lower case
+- `%d`: base-10
+- `%z`: base-62
+`counterToZero`:::: Resets the counter portion when the millisecond changes, defaults to `false`.
+

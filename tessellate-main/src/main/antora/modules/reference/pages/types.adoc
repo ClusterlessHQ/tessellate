@@ -1,0 +1,45 @@
+= Types
+
+Typed fields are at the heart of Tessellate.
+
+`tess` supports all native Java primitive types (long and Long, etc.). And additional coercive types.
+
+== Java Built-in
+
+Object types are nullable. Primitives numbers coerce to zero (`0`).
+
+When declaring a field with a type, use one of the following values depending on if `null` values are permitted.
+
+`String`:: `null` or any String value.
+`int`:: `null` coerced to `0`.
+`Integer`:: `null` ok.
+`long`:: `null` coerced to `0`
+`Long`:: `null` ok.
+`float`:: `null` coerced to `0`
+`Float`:: `null` ok.
+`double`:: `null` coerced to `0`
+`Double`:: `null` ok.
+`boolean`:: `null` coerced to `false`
+`Boolean`:: `null` ok.
+
+== Coercive
+
+Some types are canonically a custom or special Java type, but also have metadata associated with them.
+
+These type take the form `type[|metadata]` where the optional metadata can be a format string, in the case of the
+temporal types.
+
+`Instant|format`:: Canonically a `java.time.Instant`. Supports nanos precision, format defaults to ISO-8601
+instant format, e.g. `2011-12-03T10:15:30Z`
+`DateTime|format`:: Canonically a `Long`, format defaults to `yyyy-MM-dd HH:mm:ss.SSSSSS z`.
+`json`:: Canonically a `com.fasterxml.jackson.databind.JsonNode` values, nested objects, and arrays.
+
+When reading source data, fields can be parsed and coerced into specific types, as declared, or when using formats like
+Parquet, type information will be inherited.
+
+When writing to a sink, the fields and any type metadata will be used to inform how the output is rendered or written.
+
+In the case of Parquet, an `Instant` will be stored as a native Parquet `timestamp` with appropriate metadata for
+specifying the precision. When a Parquet file is read by tools like AWS Athena, the `timestamp` metadata will be
+honored.
+
