@@ -23,6 +23,27 @@ csv:: With or without headers.
 tsv:: With or without headers.
 parquet:: [Apache Parquet](https://parquet.apache.org)
 
+Regex support is based on regex groups. Groups are matched by ordinal with the declared fields in the schema.
+
+Provided named formats include:
+
+AWS S3 Access Logs::
+- named: `aws-s3-access-log`
+- https://docs.aws.amazon.com/AmazonS3/latest/dev/LogFormat.html
+
+Usage:
+
+[source,json]
+----
+{
+  "source": {
+    "schema": {
+      "name": "aws-s3-access-log"
+    }
+  }
+}
+----
+
 == Protocols
 
 Every source and sink supports its own set of protocols.

@@ -3,6 +3,10 @@
 `tess` expects a JSON formatted "pipeline" file that declares the xref:source-sink.adoc[sources, sinks], and
 xref:transforms.adoc[transforms] to be run.
 
+Some values in the pipeline file can be overridden by command line options.
+
+== Pipeline Declaration Format
+
 [source,console]
 .Print Pipeline Template
 ----
@@ -49,3 +53,92 @@ tess --print-pipeline
 <11> Compression type
 <12> Whether the schema should be embedded in the files (add headers)
 <13> Partitions to write out
+
+To view all pipeline options:
+
+[source,console]
+.Print Complete Pipeline Template
+----
+tess --print-pipeline all
+----
+
+== Pipeline File Overrides
+
+Some command line options are merged at runtime with the pipeline JSON file. Command line options take precedence over
+the pipeline JSON file.
+
+Overriding command line options include
+
+- `--inputs`
+- `--input-manifest`
+- `--input-manifest-lot`
+- `--output`
+- `--output-manifest`
+- `--output-manifest-lot`
+
+== Pipeline Template Expressions
+
+In order to embed system properties, environment variables, or other provided intrinsic values,
+http://mvel.documentnode.com[MVEL templates] are supported in the pipeline JSON file.
+
+Provided intrinsic values include:
+
+`env[...]`:: Environment variables.
+`sys[...]`:: System properties.
+`source.*`:: Pipeline source properties.
+`sink.*`:: Pipeline sink properties.
+`pid`:: `ProcessHandle.current().pid()`.
+`rnd32`:: `Math.abs(random.nextInt())` always returns the same value.
+`rnd64`:: `Math.abs(random.nextLong())` always returns the same value.
+`rnd32Next`:: `Math.abs(random.nextInt())` never returns the same value.
+`rnd64Next`:: `Math.abs(random.nextLong)` never returns the same value.
+`hostAddress`:: `localHost.getHostAddress()`.
+`hostName`:: `localHost.getCanonicalHostName()`.
+`currentTimeMillis`:: `now.toEpochMilli()`.
+`currentTimeISO8601`:: `now.toString()` at millis precision.
+`currentTimeYear`:: `utc.getYear()`.
+`currentTimeMonth`:: `utc.getMonthValue()` zero padded.
+`currentTimeDay`:: `utc.getDayOfMonth()` zero padded.
+`currentTimeHour`::  `utc.getHour()` zero padded.
+`currentTimeMinute`:: `utc.getMinute()` zero padded.
+`currentTimeSecond`:: `utc.getSecond()` zero padded.
+
+Where:
+
+- `Random random = new Random()`
+- `InetAddress localHost = InetAddress.getLocalHost()`
+- `Instant now = Instant.now()`
+- `ZonedDateTime utc = now.atZone(ZoneId.of("UTC"))`
+
+For example:
+
+- `@{env['USER']}` - resolve an environment variable
+- `@{sys['user.name']}` - resolve a system property
+- `@{sink.manifestLot}` - resolve a sink property from the pipeline JSON definition
+
+Used in a transform to embed the current `lot` value into the output:
+
+[source,json]
+----
+{
+  "transform": [
+    "@{source.manifestLot}=>lot|string"
+  ]
+}
+----
+
+Or create a filename that prevents collisions but simplifies duplicate removal:
+
+[source,json]
+----
+{
+  "filename": {
+    "prefix": "access",
+    "includeGuid": true,
+    "providedGuid": "@{sink.manifestLot}-@{currentTimeMillis}",
+    "includeFieldsHash": true
+  }
+}
+----
+
+Will result in a filename similar to `access-1717f2ea-20230717PT5M250-1689896792672-00000-00000-m-00000.gz`.
