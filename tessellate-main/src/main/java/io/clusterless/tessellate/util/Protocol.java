@@ -9,7 +9,7 @@
 package io.clusterless.tessellate.util;
 
 public enum Protocol {
-    file, hdfs, s3;
+    file, hdfs, s3, http, https;
 
     public static Protocol fromString(String protocol) {
         switch (protocol) {
@@ -19,6 +19,10 @@ public enum Protocol {
                 return hdfs;
             case "s3":
                 return s3;
+            case "http":
+                return http;
+            case "https":
+                return https;
             default:
                 throw new IllegalArgumentException("Unknown protocol: " + protocol);
         }

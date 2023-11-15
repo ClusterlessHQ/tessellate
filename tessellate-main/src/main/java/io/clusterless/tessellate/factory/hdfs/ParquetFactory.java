@@ -26,7 +26,12 @@ public class ParquetFactory extends FSFactory {
     public static TapFactory INSTANCE = new ParquetFactory();
 
     @Override
-    public Set<Protocol> getProtocols() {
+    public Set<Protocol> getSourceProtocols() {
+        return Set.of(Protocol.file, Protocol.hdfs, Protocol.s3);
+    }
+
+    @Override
+    public Set<Protocol> getSinkProtocols() {
         return Set.of(Protocol.file, Protocol.hdfs, Protocol.s3);
     }
 

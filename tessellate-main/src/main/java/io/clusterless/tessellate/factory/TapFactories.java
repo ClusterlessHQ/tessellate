@@ -47,14 +47,14 @@ public class TapFactories {
 
         for (TapFactory tapFactory : tapFactories) {
             if (tapFactory instanceof SourceFactory) {
-                Collection<Protocol> protocols = tapFactory.getProtocols();
+                Collection<Protocol> protocols = ((SourceFactory) tapFactory).getSourceProtocols();
                 for (Protocol protocol : protocols) {
                     sourceFactories.put(protocol, (SourceFactory) tapFactory);
                 }
             }
 
             if (tapFactory instanceof SinkFactory) {
-                Collection<Protocol> protocols = tapFactory.getProtocols();
+                Collection<Protocol> protocols = ((SinkFactory) tapFactory).getSinkProtocols();
                 for (Protocol protocol : protocols) {
                     sinkFactories.put(protocol, (SinkFactory) tapFactory);
                 }

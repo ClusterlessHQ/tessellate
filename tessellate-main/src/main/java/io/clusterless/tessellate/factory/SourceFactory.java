@@ -11,10 +11,14 @@ package io.clusterless.tessellate.factory;
 import cascading.tap.Tap;
 import io.clusterless.tessellate.model.Source;
 import io.clusterless.tessellate.options.PipelineOptions;
+import io.clusterless.tessellate.util.Protocol;
 
 import java.io.IOException;
 import java.util.Properties;
+import java.util.Set;
 
 public interface SourceFactory extends TapFactory {
+    Set<Protocol> getSourceProtocols();
+
     Tap<Properties, ?, ?> getSource(PipelineOptions pipelineOptions, Source sourceModel) throws IOException;
 }

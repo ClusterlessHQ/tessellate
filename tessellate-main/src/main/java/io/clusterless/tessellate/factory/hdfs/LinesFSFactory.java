@@ -19,7 +19,12 @@ import java.util.Set;
 
 public abstract class LinesFSFactory extends FSFactory {
     @Override
-    public Set<Protocol> getProtocols() {
+    public Set<Protocol> getSourceProtocols() {
+        return Set.of(Protocol.hdfs, Protocol.s3);
+    }
+
+    @Override
+    public Set<Protocol> getSinkProtocols() {
         return Set.of(Protocol.hdfs, Protocol.s3);
     }
 

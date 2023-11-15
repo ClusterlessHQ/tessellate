@@ -48,7 +48,12 @@ public class LocalDirectoryFactory extends FilesFactory {
     private int openWritesThreshold = 100;
 
     @Override
-    public Set<Protocol> getProtocols() {
+    public Set<Protocol> getSourceProtocols() {
+        return Set.of(Protocol.file);
+    }
+
+    @Override
+    public Set<Protocol> getSinkProtocols() {
         return Set.of(Protocol.file);
     }
 
