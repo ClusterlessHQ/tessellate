@@ -17,7 +17,11 @@ brew install tessellate
 tess --version
 ```
 
-Alternatively, you can download the latest releases from GitHub:
+Available on Docker Hub:
+
+- https://hub.docker.com/r/clusterless/tessellate/tags
+
+And, you can download the latest releases directly from GitHub:
 
 - https://github.com/ClusterlessHQ/tessellate/releases
 

@@ -16,7 +16,7 @@ plugins {
     java
     application
     `java-test-fixtures`
-    id("org.jreleaser") version "1.8.0"
+    id("org.jreleaser") version "1.9.0"
 }
 
 val versionProperties = Properties().apply {
@@ -276,16 +276,14 @@ jreleaser {
 
     packagers {
         brew {
-            active.set(Active.ALWAYS)
+            active.set(Active.NEVER)
             repository.active.set(Active.ALWAYS)
         }
 
         docker {
-            active.set(Active.NEVER)
+            active.set(Active.ALWAYS)
             repository {
-                repoOwner.set("clusterless")
-                name.set("tessellate")
-                tagName.set("{{projectVersion}}")
+                active.set(Active.NEVER)
             }
 
             registries {
@@ -293,6 +291,12 @@ jreleaser {
                     externalLogin.set(true)
                     repositoryName.set("clusterless")
                 }
+            }
+
+            buildx {
+                enabled.set(false)
+                platform("linux/amd64")
+                platform("linux/arm64")
             }
 
             imageName("{{owner}}/{{distributionName}}:{{projectVersion}}")
@@ -304,7 +308,6 @@ jreleaser {
             } else {
                 imageName("{{owner}}/{{distributionName}}:latest-wip")
             }
-
         }
     }
 }
