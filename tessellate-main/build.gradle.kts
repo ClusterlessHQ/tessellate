@@ -282,8 +282,10 @@ jreleaser {
 
         docker {
             active.set(Active.ALWAYS)
+
             repository {
-                active.set(Active.NEVER)
+                repoOwner.set("ClusterlessHQ")
+                name.set("tessellate-docker")
             }
 
             registries {
