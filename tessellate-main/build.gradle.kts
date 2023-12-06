@@ -276,7 +276,7 @@ jreleaser {
 
     packagers {
         brew {
-            active.set(Active.NEVER)
+            active.set(Active.ALWAYS)
             repository.active.set(Active.ALWAYS)
         }
 
