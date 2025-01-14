@@ -55,21 +55,21 @@ repositories {
 
 var integrationTestImplementation = configurations.create("integrationTestImplementation")
 
-val jupiter = "5.9.1"
+val jupiter = "5.10.3"
 
 dependencies {
 
-    val commons = "0.7"
+    val commons = "0.12"
     implementation("io.clusterless:clusterless-commons-core:$commons")
 
-    implementation("com.google.guava:guava:31.1-jre")
+    implementation("com.google.guava:guava:33.4.0-jre")
 
-    implementation("org.jetbrains:annotations:24.0.0")
-    implementation("info.picocli:picocli:4.7.4")
+    implementation("org.jetbrains:annotations:24.1.0")
+    implementation("info.picocli:picocli:4.7.6")
 
-    implementation("org.slf4j:slf4j-api:2.0.7")
-    implementation("ch.qos.logback:logback-classic:1.4.8")
-    implementation("ch.qos.logback:logback-core:1.4.8")
+    implementation("org.slf4j:slf4j-api:2.0.16")
+    implementation("ch.qos.logback:logback-classic:1.5.16")
+    implementation("ch.qos.logback:logback-core:1.5.16")
 
     val cascading = "4.6.0-wip-9"
     implementation("net.wensel:cascading-core:$cascading")
@@ -79,12 +79,12 @@ dependencies {
     implementation("net.wensel:cascading-hadoop3-parquet:$cascading")
     implementation("net.wensel:cascading-hadoop3-io:$cascading")
 
-    val parquet = "1.13.1"
+    val parquet = "1.15.0"
     implementation("org.apache.parquet:parquet-common:$parquet")
     implementation("org.apache.parquet:parquet-column:$parquet")
     implementation("org.apache.parquet:parquet-hadoop:$parquet")
 
-    val hadoop3Version = "3.3.4"
+    val hadoop3Version = "3.3.6"
     implementation("org.apache.hadoop:hadoop-mapreduce-client-core:$hadoop3Version")
     implementation("org.apache.hadoop:hadoop-common:$hadoop3Version")
     implementation("org.apache.hadoop:hadoop-aws:$hadoop3Version")
@@ -92,53 +92,54 @@ dependencies {
     implementation("org.mvel:mvel2:2.5.0.Final")
 
     // required by hadoop in java 9+
-    implementation("javax.xml.bind:jaxb-api:2.3.0")
+    implementation("javax.xml.bind:jaxb-api:2.4.0-b180830.0359")
 
     // the bundle is too large, so we only include the s3 and dynamodb dependencies
-    implementation("com.amazonaws:aws-java-sdk-s3:1.12.487")
-    implementation("com.amazonaws:aws-java-sdk-dynamodb:1.12.487")
+    val awsSdk = "1.12.765"
+    implementation("com.amazonaws:aws-java-sdk-s3:$awsSdk")
+    implementation("com.amazonaws:aws-java-sdk-dynamodb:$awsSdk")
 
-    val jackson = "2.14.2"
+    val jackson = "2.18.2"
     implementation("com.fasterxml.jackson.core:jackson-core:$jackson")
     implementation("com.fasterxml.jackson.core:jackson-databind:$jackson")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-joda:$jackson")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jackson")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8:$jackson")
 
-    implementation("org.fusesource.jansi:jansi:2.4.0")
+    implementation("org.fusesource.jansi:jansi:2.4.1")
     implementation("com.github.hal4j:uritemplate:1.3.1")
 
     implementation("org.jparsec:jparsec:3.1")
 
-    implementation("com.github.f4b6a3:tsid-creator:5.2.5")
+    implementation("com.github.f4b6a3:tsid-creator:5.2.6")
 
     testImplementation("net.wensel:cascading-core:$cascading:tests")
 
     // https://github.com/hosuaby/inject-resources
-    val injectResources = "0.3.3"
+    val injectResources = "0.3.4"
     testImplementation("io.hosuaby:inject-resources-core:$injectResources")
     testImplementation("io.hosuaby:inject-resources-junit-jupiter:$injectResources")
 
     // https://github.com/webcompere/system-stubs
-    val systemStubs = "2.0.2"
+    val systemStubs = "2.1.6"
     testImplementation("uk.org.webcompere:system-stubs-core:$systemStubs")
     testImplementation("uk.org.webcompere:system-stubs-jupiter:$systemStubs")
-    testImplementation("org.mockito:mockito-inline:5.1.1")
+    testImplementation("org.mockito:mockito-inline:5.2.0")
 
-    testImplementation("org.assertj:assertj-core:3.24.2")
+    testImplementation("org.assertj:assertj-core:3.26.3")
 
 //     https://mvnrepository.com/artifact/software.amazon.awssdk
-    val awsSdk2 = "2.20.69"
+    val awsSdk2 = "2.29.51"
     integrationTestImplementation("software.amazon.awssdk:s3:$awsSdk2")
 
-    val testContainers = "1.18.3"
+    val testContainers = "1.20.4"
     integrationTestImplementation("org.testcontainers:testcontainers:$testContainers")
     integrationTestImplementation("org.testcontainers:junit-jupiter:$testContainers")
     integrationTestImplementation("org.testcontainers:localstack:$testContainers")
     // https://github.com/testcontainers/testcontainers-java/issues/1442#issuecomment-694342883
-    integrationTestImplementation("com.amazonaws:aws-java-sdk-s3:1.12.13")
+    integrationTestImplementation("com.amazonaws:aws-java-sdk-s3:$awsSdk")
 
-    testFixturesImplementation("org.jetbrains:annotations:24.0.0")
+    testFixturesImplementation("org.jetbrains:annotations:24.1.0")
     testFixturesImplementation("org.junit.jupiter:junit-jupiter-api:$jupiter")
 
     configurations.configureEach {
