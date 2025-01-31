@@ -16,7 +16,7 @@ plugins {
     java
     application
     `java-test-fixtures`
-    id("org.jreleaser") version "1.9.0"
+    id("org.jreleaser") version "1.16.0"
 }
 
 val versionProperties = Properties().apply {
