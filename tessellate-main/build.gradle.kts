@@ -203,7 +203,7 @@ configurations["integrationTestImplementation"].extendsFrom(configurations.testI
 tasks.named<ProcessResources>("processResources") {
     doFirst {
         file("${buildDir}/resources/main/version.properties")
-                .writeText("release.full=${version}")
+            .writeText("release.full=${version}")
     }
 }
 
@@ -296,8 +296,11 @@ jreleaser {
                 }
             }
 
+            label("org.opencontainers.image.title", "Tessellate")
+            label("org.opencontainers.image.description", "Tessellate is tool for parsing and partitioning data.")
+
             buildx {
-                enabled.set(false)
+                enabled.set(true)
                 platform("linux/amd64")
                 platform("linux/arm64")
             }
@@ -315,7 +318,14 @@ jreleaser {
     }
 }
 
+tasks.register("createPath") {
+    doLast {
+        file("build/jreleaser").mkdirs()
+    }
+}
+
 tasks.register("release") {
+    dependsOn("createPath")
     dependsOn("distZip")
     dependsOn("jreleaserRelease")
     dependsOn("jreleaserPackage")
