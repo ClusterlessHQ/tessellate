@@ -8,16 +8,20 @@
 
 package io.clusterless.tessellate.factory.hdfs;
 
+import cascading.CascadingException;
 import cascading.flow.FlowProcess;
 import cascading.flow.hadoop.util.HadoopUtil;
 import cascading.scheme.Scheme;
 import cascading.tap.SinkMode;
 import cascading.tap.Tap;
+import cascading.tap.TapException;
 import cascading.tap.hadoop.Hfs;
 import cascading.tap.hadoop.PartitionTap;
 import cascading.tap.local.hadoop.LocalHfsAdaptor;
 import cascading.tap.partition.Partition;
+import cascading.tap.type.TapWith;
 import cascading.tuple.Fields;
+import cascading.util.Util;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import io.clusterless.tessellate.factory.ManifestWriter;
 import io.clusterless.tessellate.factory.Observed;
@@ -31,10 +35,13 @@ import io.clusterless.tessellate.options.PipelineOptions;
 import io.clusterless.tessellate.util.Property;
 import io.clusterless.tessellate.util.URIs;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.s3a.Constants;
 import org.apache.hadoop.fs.s3a.S3AFileSystem;
 import org.apache.hadoop.fs.s3a.S3AUtils;
 import org.apache.hadoop.fs.s3a.auth.AssumedRoleCredentialProvider;
+import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -124,7 +131,9 @@ public abstract class FSFactory extends FilesFactory {
                 .map(URI::toString)
                 .toArray(String[]::new);
 
-        return new Hfs(scheme, commonURI.toString(), SinkMode.UPDATE) {
+        Path path = new Path(commonURI);
+
+        return new Hfs(scheme, path, SinkMode.UPDATE) {
             @Override
             public boolean isSink() {
                 return false;
@@ -144,6 +153,18 @@ public abstract class FSFactory extends FilesFactory {
                 HadoopUtil.copyConfiguration(local, flowProcess.getConfig());
                 return super.retrieveSourceFields(flowProcess);
             }
+
+            // this exists because we can't construct the inner class directly from the constructor
+            // Cascading should consider providing a method to get the preferred clone class for a tap
+            @Override
+            protected TapWith<Configuration, RecordReader, OutputCollector> create(Scheme<Configuration, RecordReader, OutputCollector, ?, ?> scheme, Path path, SinkMode sinkMode) {
+                try {
+                    return Util.newInstance(Hfs.class, scheme, path, sinkMode);
+                } catch (CascadingException exception) {
+                    throw new TapException("unable to create a new instance of: " + Hfs.class.getName(), exception);
+                }
+            }
+
         };
     }
 
@@ -155,7 +176,9 @@ public abstract class FSFactory extends FilesFactory {
 
         Observed.INSTANCE.writes(commonURI);
 
-        return new Hfs(scheme, commonURI.toString(), SinkMode.UPDATE) {
+        Path path = new Path(commonURI);
+
+        return new Hfs(scheme, path, SinkMode.UPDATE) {
             @Override
             public void sourceConfInit(FlowProcess<? extends Configuration> process, Configuration conf) {
                 HadoopUtil.copyConfiguration(local, conf);
@@ -249,7 +272,7 @@ public abstract class FSFactory extends FilesFactory {
     }
 
     private String getAWSCredentialProviders() {
-        LinkedList<Class> list = new LinkedList<>(S3AUtils.STANDARD_AWS_PROVIDERS);
+        LinkedList<Class<?>> list = new LinkedList<>(S3AUtils.STANDARD_AWS_PROVIDERS);
 
         list.addFirst(DefaultAWSCredentialsProviderChain.class);
 
