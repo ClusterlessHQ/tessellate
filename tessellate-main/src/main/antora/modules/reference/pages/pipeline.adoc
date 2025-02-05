@@ -86,7 +86,9 @@ http://mvel.documentnode.com[MVEL templates] are supported in the pipeline JSON 
 Provided intrinsic values include:
 
 `env[...]`:: Environment variables.
+`envOr(..., ...)`:: Environment variables or a default value.
 `sys[...]`:: System properties.
+`sysOr(..., ...)`:: System properties or a default value.
 `source.*`:: Pipeline source properties.
 `sink.*`:: Pipeline sink properties.
 `pid`:: `ProcessHandle.current().pid()`.

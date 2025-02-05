@@ -20,6 +20,9 @@ public class LiteralResolverTest {
         assertEquals(System.getenv("USER"), resolve("env.USER", context));
         assertEquals(System.getenv("USER"), resolve("env['USER']", context));
         assertEquals(System.getProperty("user.name"), resolve("sys['user.name']", context));
+        assertEquals("default", resolve("envOr('NADA','default')", context));
+
+        assertEquals("default", resolve("sysOr('some.prop','default')", context));
 
         assertEquals(context.rnd64(), resolve("rnd64", context));
         assertEquals(context.currentTimeISO8601(), resolve("currentTimeISO8601", context));
