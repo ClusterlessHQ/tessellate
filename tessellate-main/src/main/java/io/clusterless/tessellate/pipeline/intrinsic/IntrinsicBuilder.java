@@ -18,11 +18,15 @@ import java.util.List;
 
 public abstract class IntrinsicBuilder {
     public static class Result {
-
         final Fields arguments;
         final Function<?> function;
         final Fields results;
 
+        /**
+         * @param arguments the fields to apply the function to
+         * @param function  the function to apply to the arguments
+         * @param results   the fields used to embed in the working fields set in the pipeline
+         */
         public Result(Fields arguments, Function<?> function, Fields results) {
             this.arguments = arguments;
             this.function = function;

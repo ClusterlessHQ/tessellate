@@ -8,6 +8,7 @@
 
 package io.clusterless.tessellate.pipeline;
 
+import io.clusterless.tessellate.pipeline.intrinsic.FixedWidthIntrinsic;
 import io.clusterless.tessellate.pipeline.intrinsic.IntrinsicBuilder;
 import io.clusterless.tessellate.pipeline.intrinsic.TsidIntrinsic;
 
@@ -24,6 +25,7 @@ public class Intrinsics {
 
     static {
         add(new TsidIntrinsic());
+        add(new FixedWidthIntrinsic());
     }
 
     public static Map<String, IntrinsicBuilder> builders() {

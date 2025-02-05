@@ -84,6 +84,65 @@ public class PipelineTest {
     }
 
     @Test
+    void badWidth(@PathForResource("/data/delimited-variable-width.csv") URI input, @PathForOutput URI output) throws IOException {
+        Transform transform = new Transform(
+                "^fixedWidth{ width:5, insertAt:3 } ->"
+        );
+
+        fixedWidthBase(input, output, transform);
+    }
+
+    @Test
+    void badWidthWithFields(@PathForResource("/data/delimited-variable-width.csv") URI input, @PathForOutput URI output) throws IOException {
+        Transform transform = new Transform(
+                "^fixedWidth{ width:5, insertAt:3 } -> _0+_1+_2+_3+_4"
+        );
+
+        fixedWidthBase(input, output, transform);
+    }
+
+    private static void fixedWidthBase(URI input, URI output, Transform transform) throws IOException {
+        PipelineOptions pipelineOptions = new PipelineOptions();
+
+        PipelineDef def = PipelineDef.builder()
+                .withName("test")
+                .withSource(Source.builder()
+                        .withInputs(List.of(input))
+                        .withSchema(Schema.builder()
+                                .withFormat(Format.csv)
+                                .withEmbedsSchema(false)
+                                .build())
+                        .build())
+                .withTransform(transform)
+                .withSink(Sink.builder()
+                        .withOutput(output)
+                        .withSchema(Schema.builder()
+//                                .withDeclared(Field.asField("0", "1", "2", "3", "4"))
+                                .withFormat(Format.csv)
+                                .withEmbedsSchema(true)
+                                .build())
+                        .withFilename(Filename.builder()
+                                .withPrefix("test")
+                                .build())
+                        .build())
+                .build();
+
+        Pipeline pipeline = new Pipeline(pipelineOptions, def);
+
+        pipeline.run();
+
+        CascadingTesting.validateEntries(
+                pipeline.flow().openSink(),
+                l -> assertEquals(5, l, "wrong length"),
+                l -> assertEquals(5, l, "wrong size"),
+                l -> {
+                }
+        );
+
+        assertFilenameParts(output, "test", "", ".csv", 1);
+    }
+
+    @Test
     void headers(@PathForResource("/data/delimited-header.csv") URI input, @PathForOutput URI output) throws IOException {
         PipelineOptions pipelineOptions = new PipelineOptions();
 

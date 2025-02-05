@@ -23,19 +23,20 @@ tess --print-pipeline
       "format" : null, <3>
       "compression" : "none", <4>
       "embedsSchema" : false <5>
+      "strictParsing" : true <6>
     },
-    "partitions" : [ ] <6>
+    "partitions" : [ ] <7>
   },
-  "transform" : [ ], <7>
+  "transform" : [ ], <8>
   "sink" : {
-    "output" : null, <8>
+    "output" : null, <9>
     "schema" : {
-      "declared" : [ ], <9>
-      "format" : null, <10>
-      "compression" : "none", <11>
-      "embedsSchema" : false <12>
+      "declared" : [ ], <10>
+      "format" : null, <11>
+      "compression" : "none", <12>
+      "embedsSchema" : false <13>
     },
-    "partitions" : [ ] <13>
+    "partitions" : [ ] <14>
   }
 }
 ----
@@ -45,14 +46,15 @@ tess --print-pipeline
 <3> Format type
 <4> Compression type
 <5> Whether the schema is embedded in the files (has headers)
-<6> Partitions to parse into fields
-<7> Transforms to apply to the data
-<8> URL to write to, required
-<9> Schema fields to declare, by default all fields are written
-<10> Format type
-<11> Compression type
-<12> Whether the schema should be embedded in the files (add headers)
-<13> Partitions to write out
+<6> Whether to fail if rows don't meet the expected number of fields
+<7> Partitions to parse into fields
+<8> Transforms to apply to the data
+<9> URL to write to, required
+<10> Schema fields to declare, by default all fields are written
+<11> Format type
+<12> Compression type
+<13> Whether the schema should be embedded in the files (add headers)
+<14> Partitions to write out
 
 To view all pipeline options:
 

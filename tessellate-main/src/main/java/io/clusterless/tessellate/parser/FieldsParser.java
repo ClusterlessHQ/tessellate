@@ -99,6 +99,23 @@ public class FieldsParser {
 
     public Fields asFields(Field parsed, Type defaultType) {
         Comparable<?> name = parsed.fieldRef().asComparable();
+
+        if (name.equals("ALL")) {
+            return Fields.ALL;
+        }
+
+        if (name.equals("UNKNOWN")) {
+            return Fields.UNKNOWN;
+        }
+
+        if (name.equals("NONE")) {
+            return Fields.NONE;
+        }
+
+        if (name.equals("RESULTS")) {
+            return Fields.RESULTS;
+        }
+
         if (parsed.fieldType().isEmpty()) {
             return defaultType == null ? new Fields(name) : new Fields(name, defaultType);
         }

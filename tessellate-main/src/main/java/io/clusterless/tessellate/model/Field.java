@@ -13,12 +13,19 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.clusterless.tessellate.parser.FieldsParser;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class Field implements Model {
     @JsonIgnore
     private Fields fields;
     private final String declaration;
+
+    public static List<Field> asField(String... declarations) {
+        return Arrays.stream(declarations).map(Field::new).collect(Collectors.toList());
+    }
 
     @JsonCreator
     public Field(String declaration) {
