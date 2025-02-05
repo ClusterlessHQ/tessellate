@@ -41,8 +41,16 @@ public class MVELContext {
         return System.getenv();
     }
 
+    public String envOr(String key, String defaultValue) {
+        return System.getenv().getOrDefault(key, defaultValue);
+    }
+
     public Properties sys() {
         return System.getProperties();
+    }
+
+    public String sysOr(String key, String defaultValue) {
+        return System.getProperty(key, defaultValue);
     }
 
     public String pid() {
