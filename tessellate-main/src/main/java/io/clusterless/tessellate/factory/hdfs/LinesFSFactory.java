@@ -39,20 +39,22 @@ public abstract class LinesFSFactory extends FSFactory {
 
         switch (dataset.schema().compression()) {
             case none:
-                break;
+                return properties;
             case gzip:
-                properties.setProperty("mapreduce.map.output.compress.codec", org.apache.hadoop.io.compress.GzipCodec.class.getName());
+                properties.setProperty("mapreduce.output.fileoutputformat.compress.codec", org.apache.hadoop.io.compress.GzipCodec.class.getName());
                 break;
             case snappy:
-                properties.setProperty("mapreduce.map.output.compress.codec", org.apache.hadoop.io.compress.SnappyCodec.class.getName());
+                properties.setProperty("mapreduce.output.fileoutputformat.compress.codec", org.apache.hadoop.io.compress.SnappyCodec.class.getName());
                 break;
             case lz4:
-                properties.setProperty("mapreduce.map.output.compress.codec", org.apache.hadoop.io.compress.Lz4Codec.class.getName());
+                properties.setProperty("mapreduce.output.fileoutputformat.compress.codec", org.apache.hadoop.io.compress.Lz4Codec.class.getName());
                 break;
             case bzip2:
-                properties.setProperty("mapreduce.map.output.compress.codec", org.apache.hadoop.io.compress.BZip2Codec.class.getName());
+                properties.setProperty("mapreduce.output.fileoutputformat.compress.codec", org.apache.hadoop.io.compress.BZip2Codec.class.getName());
                 break;
         }
+
+        properties.setProperty("mapreduce.output.fileoutputformat.compress", "true");
 
         return properties;
     }
