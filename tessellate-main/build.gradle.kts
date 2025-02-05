@@ -89,6 +89,9 @@ dependencies {
     implementation("org.apache.hadoop:hadoop-common:$hadoop3Version")
     implementation("org.apache.hadoop:hadoop-aws:$hadoop3Version")
 
+    // enables use of lz4 compression
+    implementation("org.lz4:lz4-java:1.8.0")
+
     implementation("org.mvel:mvel2:2.5.0.Final")
 
     // required by hadoop in java 9+
