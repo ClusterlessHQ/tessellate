@@ -30,13 +30,13 @@ different types of operations introduced above.
 ## Single line syntax
 
 ```bnf
-operation = field-parameters expression operator field-results
+operation ::= field-parameters expression operator field-results
 
-field-paramters = field *( "+" field )
+field-paramters ::= field *( "+" field )
 
-field = (field-name / field-ordinal) [ "|" type ] 
+field ::= (field-name / field-ordinal) [ "|" type ] 
 
-expression = 
+expression ::= 
 
 ``` 
 
@@ -55,6 +55,7 @@ expression =
   - `fromField1|type+fromField2|type !{java} -> toFieldname|asType`
   - `fromFieldname @[json pointer] -> toFieldname|asType`
   - `fromFieldname ~/regex matcher/ -> toFieldname|Boolean`
+  - `^intrinsic{param1:value1, param2:value2} ->` - replaces all fields with the results
 - `[none]`- inplace coercion
   - `fieldname|asType`
 
@@ -104,6 +105,13 @@ tuple is discarded.
     - type = long, string
 - siphash
   - `fromField1+fromField2+fromFieldN ^siphash{} +> intoField|type`
+- fixedWidth - pad a string to a fixed width
+  - `^fixedWidth{width:...,insertAt:...} ->`
+  - note all fields are discarded and replaced with a new row of the given width with nulls as padding
+  - width - the expected width of the string
+  - insertAt - the position to begin inserting nulls for padding, push the elements to the right
+    -        negative will index from the right, -1 is last position
+    -        if there are fields declared on the source, set `strictParsing` to false
 
 ## Expression Transforms
 

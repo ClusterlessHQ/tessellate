@@ -12,6 +12,7 @@ import cascading.nested.json.hadoop3.JSONTextLine;
 import cascading.scheme.Scheme;
 import cascading.scheme.hadoop.TextDelimited;
 import cascading.scheme.hadoop.TextLine;
+import cascading.scheme.util.DelimitedParser;
 import cascading.tuple.Fields;
 import io.clusterless.tessellate.factory.TapFactory;
 import io.clusterless.tessellate.model.Dataset;
@@ -39,9 +40,11 @@ public class TextFSFactory extends LinesFSFactory {
             case text:
                 return new TextLine(new Fields("line"), new Fields("line"), compress);
             case csv:
-                return new TextDelimited(declaredFields, compress, schema.embedsSchema(), ",", "\"");
+                DelimitedParser csv = new DelimitedParser(",", "\"", null, schema.strictParsing(), true);
+                return new TextDelimited(declaredFields, compress, schema.embedsSchema(), schema.embedsSchema(), csv);
             case tsv:
-                return new TextDelimited(declaredFields, compress, schema.embedsSchema(), "\t", "\"");
+                DelimitedParser tsv = new DelimitedParser("\t", "\"", null, schema.strictParsing(), true);
+                return new TextDelimited(declaredFields, compress, schema.embedsSchema(), schema.embedsSchema(), tsv);
             case json:
                 return new JSONTextLine(declaredFields, compress);
         }

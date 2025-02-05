@@ -27,9 +27,9 @@ public class Schema implements Model {
     @JsonSimpleView
     private boolean embedsSchema = false;
     private String pattern;
+    private boolean strictParsing = true;
 
-    public static Builder builder() {
-        return Builder.builder();
+    public Schema() {
     }
 
     public String name() {
@@ -60,7 +60,15 @@ public class Schema implements Model {
         return pattern;
     }
 
-    public static final class Builder {
+    public boolean strictParsing() {
+        return strictParsing;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
         private String name;
         private List<String> documentation = new ArrayList<>();
         private List<Field> declared = new ArrayList<>();
@@ -68,13 +76,7 @@ public class Schema implements Model {
         private Compression compression = Compression.none;
         private boolean embedsSchema = false;
         private String pattern;
-
-        private Builder() {
-        }
-
-        public static Builder builder() {
-            return new Builder();
-        }
+        private boolean strictParsing = true;
 
         public Builder withName(String name) {
             this.name = name;
@@ -111,15 +113,21 @@ public class Schema implements Model {
             return this;
         }
 
+        public Builder withStrictParsing(boolean strictParsing) {
+            this.strictParsing = strictParsing;
+            return this;
+        }
+
         public Schema build() {
             Schema schema = new Schema();
-            schema.pattern = this.pattern;
+            schema.name = this.name;
+            schema.documentation = this.documentation;
+            schema.declared = this.declared;
             schema.format = this.format;
             schema.compression = this.compression;
-            schema.documentation = this.documentation;
-            schema.name = this.name;
             schema.embedsSchema = this.embedsSchema;
-            schema.declared = this.declared;
+            schema.pattern = this.pattern;
+            schema.strictParsing = this.strictParsing;
             return schema;
         }
     }
