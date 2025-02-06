@@ -16,8 +16,8 @@ import clusterless.commons.temporal.IntervalDateTimeFormatter;
 import com.adelean.inject.resources.junit.jupiter.GivenTextResource;
 import com.adelean.inject.resources.junit.jupiter.TestWithResources;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.clusterless.tessellate.model.Partition;
 import io.clusterless.tessellate.model.PipelineDef;
+import io.clusterless.tessellate.model.SourcePartition;
 import io.clusterless.tessellate.model.Transform;
 import io.clusterless.tessellate.parser.ast.Op;
 import io.clusterless.tessellate.type.WrappedCoercibleType;
@@ -40,7 +40,7 @@ public class PipelineParseTest {
         assertEquals(new Fields("three", new WrappedCoercibleType(Coercions.INTEGER, "-")), pipeline.source().schema().declared().get(2).fields());
         assertEquals(IntervalDateTimeFormatter.TWELFTH_FORMATTER.toString(), ((InstantType) pipeline.source().schema().declared().get(3).fields().getType(0)).getDateTimeFormatter().toString());
 
-        List<Partition> partitions = pipeline.source().partitions();
+        List<SourcePartition> partitions = pipeline.source().partitions();
 
         assertEquals(3, partitions.size());
         assertEquals(new Fields("one"), partitions.get(0).to().fields());

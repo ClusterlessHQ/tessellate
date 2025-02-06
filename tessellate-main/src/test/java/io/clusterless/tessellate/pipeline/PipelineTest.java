@@ -9,6 +9,8 @@
 package io.clusterless.tessellate.pipeline;
 
 import cascading.CascadingTesting;
+import cascading.tuple.Fields;
+import cascading.tuple.TupleEntryIterator;
 import com.github.hal4j.uritemplate.URITemplate;
 import io.clusterless.tessellate.junit.PathForOutput;
 import io.clusterless.tessellate.junit.PathForResource;
@@ -177,6 +179,76 @@ public class PipelineTest {
                 pipeline.flow().openSink(),
                 l -> assertEquals(13, l, "wrong length"), // headers are declared so aren't counted
                 l -> assertEquals(5, l, "wrong size"),
+                l -> {
+                }
+        );
+
+        assertFilenameParts(output, "test-", "-guid", ".tsv", 1);
+    }
+
+    @Test
+    void headersPartitioned(@PathForResource("/data/partitioned/x=1/y=2/z=3/delimited-header.csv") URI input, @PathForOutput URI output) throws IOException {
+        List<SourcePartition> partitions = List.of(
+                new SourcePartition("x"),
+                new SourcePartition("y"),
+                new SourcePartition("z")
+        );
+
+        Fields expected = new Fields("first", "second", "third", "fourth", "fifth", "x", "y", "z");
+        headersPartitionedBase(input, output, partitions, expected);
+    }
+
+    @Test
+    void headersPartitionedRenamed(@PathForResource("/data/partitioned/x=1/y=2/z=3/delimited-header.csv") URI input, @PathForOutput URI output) throws IOException {
+        List<SourcePartition> partitions = List.of(
+                new SourcePartition("x -> a"),
+                new SourcePartition("y -> b"),
+                new SourcePartition("z -> c")
+        );
+
+        Fields expected = new Fields("first", "second", "third", "fourth", "fifth", "a", "b", "c");
+        headersPartitionedBase(input, output, partitions, expected);
+    }
+
+    private static void headersPartitionedBase(URI input, URI output, List<SourcePartition> partitions, Fields expected) throws IOException {
+        PipelineOptions pipelineOptions = new PipelineOptions();
+
+        PipelineDef def = PipelineDef.builder()
+                .withName("test")
+                .withSource(Source.builder()
+                        .withInputs(List.of(URIs.trim(input, 4)))
+                        .withSchema(Schema.builder()
+                                .withFormat(Format.csv)
+                                .withEmbedsSchema(true)
+                                .build())
+                        .withPartitions(partitions)
+                        .build())
+                .withSink(Sink.builder()
+                        .withOutput(output)
+                        .withSchema(Schema.builder()
+                                .withFormat(Format.tsv)
+                                .withEmbedsSchema(true)
+                                .build())
+                        .withFilename(Filename.builder()
+                                .withPrefix("test")
+                                .withIncludeGuid(true)
+                                .withProvidedGuid("guid")
+                                .build())
+                        .build())
+                .build();
+
+        Pipeline pipeline = new Pipeline(pipelineOptions, def);
+
+        pipeline.run();
+
+        TupleEntryIterator iterator = pipeline.flow().openSink();
+
+        assertEquals(expected, iterator.getFields().unApplyTypes());
+
+        CascadingTesting.validateEntries(
+                iterator,
+                l -> assertEquals(13, l, "wrong length"), // headers are declared so aren't counted
+                l -> assertEquals(8, l, "wrong size"),
                 l -> {
                 }
         );
@@ -381,9 +453,9 @@ public class PipelineTest {
                                 .build())
                         .withNamedPartitions(true)
                         .withPartitions(List.of(
-                                new Partition("time+>year|DateTime|yyyy"), // DateTime can parse year, month, and day. Instant cannot,
-                                new Partition("time+>month|DateTime|MM"),
-                                new Partition("time+>day|DateTime|dd")
+                                new SinkPartition("time+>year|DateTime|yyyy"), // DateTime can parse year, month, and day. Instant cannot,
+                                new SinkPartition("time+>month|DateTime|MM"),
+                                new SinkPartition("time+>day|DateTime|dd")
                         ))
                         .withFilename(Filename.builder()
                                 .withPrefix("test")
@@ -398,8 +470,42 @@ public class PipelineTest {
 
         pipelineWrite.run();
 
+        TupleEntryIterator iterator = pipelineWrite.flow().openSink();
+
+        assertEquals(new Fields(
+                "bucketOwner",
+                "bucket",
+                "time",
+                "remoteIP",
+                "requester",
+                "requestID",
+                "operation",
+                "key",
+                "requestURI",
+                "httpStatus",
+                "errorCode",
+                "bytesSent",
+                "objectSize",
+                "totalTime",
+                "turnAroundTime",
+                "referrer",
+                "userAgent",
+                "versionID",
+                "hostId",
+                "signatureVersion",
+                "cipherSuite",
+                "authenticationType",
+                "hostHeader",
+                "tlsVersion",
+                "accessPointArn",
+                "aclRequired",
+                "year",
+                "month",
+                "day"
+        ), iterator.getFields().unApplyTypes());
+
         CascadingTesting.validateEntries(
-                pipelineWrite.flow().openSink(),
+                iterator,
                 l -> assertEquals(4, l, "wrong length"), // headers are declared so aren't counted
                 l -> assertEquals(merged.source().schema().declared().size() + 3, l, "wrong size"),
                 l -> {
@@ -418,9 +524,9 @@ public class PipelineTest {
                                 .build())
                         .withNamedPartitions(true)
                         .withPartitions(List.of(
-                                new Partition("year|DateTime|yyyy"),
-                                new Partition("month|DateTime|MM"),
-                                new Partition("day|DateTime|dd")
+                                new SourcePartition("year|DateTime|yyyy"),
+                                new SourcePartition("month|DateTime|MM"),
+                                new SourcePartition("day|DateTime|dd")
                         ))
                         .build())
                 .withSink(Sink.builder()
@@ -436,8 +542,42 @@ public class PipelineTest {
 
         pipelineRead.run();
 
+        TupleEntryIterator finalIterator = pipelineRead.flow().openSink();
+
+        assertEquals(new Fields(
+                "bucketOwner",
+                "bucket",
+                "time",
+                "remoteIP",
+                "requester",
+                "requestID",
+                "operation",
+                "key",
+                "requestURI",
+                "httpStatus",
+                "errorCode",
+                "bytesSent",
+                "objectSize",
+                "totalTime",
+                "turnAroundTime",
+                "referrer",
+                "userAgent",
+                "versionID",
+                "hostId",
+                "signatureVersion",
+                "cipherSuite",
+                "authenticationType",
+                "hostHeader",
+                "tlsVersion",
+                "accessPointArn",
+                "aclRequired",
+                "year",
+                "month",
+                "day"
+        ), finalIterator.getFields().unApplyTypes());
+
         CascadingTesting.validateEntries(
-                pipelineRead.flow().openSink(),
+                finalIterator,
                 l -> assertEquals(4, l, "wrong length"), // headers are declared so aren't counted
                 l -> assertEquals(merged.source().schema().declared().size() + 3, l, "wrong size"),
                 l -> {
@@ -506,9 +646,9 @@ public class PipelineTest {
                                 .build())
                         .withNamedPartitions(true)
                         .withPartitions(List.of(
-                                new Partition("time+>year|DateTime|yyyy"), // DateTime can parse year, month, and day. Instant cannot,
-                                new Partition("time+>month|DateTime|MM"),
-                                new Partition("time+>day|DateTime|dd")
+                                new SinkPartition("time+>year|DateTime|yyyy"), // DateTime can parse year, month, and day. Instant cannot,
+                                new SinkPartition("time+>month|DateTime|MM"),
+                                new SinkPartition("time+>day|DateTime|dd")
                         ))
                         .withFilename(Filename.builder()
                                 .withPrefix("test")
@@ -549,9 +689,9 @@ public class PipelineTest {
                                 .build())
                         .withNamedPartitions(true)
                         .withPartitions(List.of(
-                                new Partition("year|DateTime|yyyy"),
-                                new Partition("month|DateTime|MM"),
-                                new Partition("day|DateTime|dd")
+                                new SourcePartition("year|DateTime|yyyy"),
+                                new SourcePartition("month|DateTime|MM"),
+                                new SourcePartition("day|DateTime|dd")
                         ))
                         .build())
                 .withSink(Sink.builder()

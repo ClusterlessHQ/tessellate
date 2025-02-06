@@ -13,6 +13,7 @@ import cascading.tap.partition.DelimitedPartition;
 import cascading.tap.partition.NamedPartition;
 import cascading.tap.partition.Partition;
 import cascading.tuple.Fields;
+import cascading.tuple.TupleEntry;
 import io.clusterless.tessellate.factory.SinkFactory;
 import io.clusterless.tessellate.factory.SourceFactory;
 import io.clusterless.tessellate.model.Dataset;
@@ -26,6 +27,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.UUID;
@@ -102,11 +104,35 @@ public abstract class FilesFactory implements SourceFactory, SinkFactory {
         }
 
         Fields partitionFields = Models.partitionsAsFields(dataset.partitions(), String.class);
+        Map<String, String> partitionMap = Models.partitionsAsMap(dataset.partitions());
 
         if (dataset.namedPartitions()) {
-            return Optional.of(new NamedPartition(partitionFields, "/"));
+            return Optional.of(new NamedPartition(partitionFields, "/") {
+                protected void parsePartitionInto(String partition, Fields partitionFields, int numSplits, TupleEntry tupleEntry) {
+                    Map<String, Integer> posMap = getPosMap();
+                    String[] split = getPattern().split(partition, numSplits);
+
+                    for (String entry : split) {
+                        String[] keyValue = getKeyValuePattern().split(entry, 2);
+
+                        String value = getPattern().split(keyValue[1], 2)[0]; // remove any trailing slashes
+                        tupleEntry.setString(posMap.get(mapPartitionNameToFieldName(keyValue[0])), value);
+                    }
+                }
+
+                @Override
+                protected String mapPartitionNameToFieldName(String partitionName) {
+                    return partitionMap.getOrDefault(partitionName, partitionName);
+                }
+            });
         } else {
-            return Optional.of(new DelimitedPartition(partitionFields, "/"));
+            return Optional.of(new DelimitedPartition(partitionFields, "/") {
+                protected void parsePartitionInto(String partition, Fields partitionFields, int numSplits, TupleEntry tupleEntry) {
+                    String[] split = getPattern().split(partition, numSplits);
+                    split[split.length - 1] = getPattern().split(split[split.length - 1], 2)[0]; // remove any trailing slashes
+                    tupleEntry.setCanonicalValues(split, 0, partitionFields.size());
+                }
+            });
         }
     }
 

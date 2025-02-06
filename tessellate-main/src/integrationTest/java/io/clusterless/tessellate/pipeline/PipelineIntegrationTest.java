@@ -171,9 +171,9 @@ public class PipelineIntegrationTest {
                                 .build())
                         .withNamedPartitions(true)
                         .withPartitions(List.of(
-                                new Partition("time+>year|DateTime|yyyy"), // DateTime can parse year, month, and day. Instant cannot,
-                                new Partition("time+>month|DateTime|MM"),
-                                new Partition("time+>day|DateTime|dd")
+                                new SinkPartition("time+>year|DateTime|yyyy"), // DateTime can parse year, month, and day. Instant cannot,
+                                new SinkPartition("time+>month|DateTime|MM"),
+                                new SinkPartition("time+>day|DateTime|dd")
                         ))
                         .build())
                 .build();
@@ -201,9 +201,9 @@ public class PipelineIntegrationTest {
                                 .build())
                         .withNamedPartitions(true)
                         .withPartitions(List.of(
-                                new Partition("year|DateTime|yyyy"),
-                                new Partition("month|DateTime|MM"),
-                                new Partition("day|DateTime|dd")
+                                new SourcePartition("year|DateTime|yyyy"),
+                                new SourcePartition("month|DateTime|MM"),
+                                new SourcePartition("day|DateTime|dd")
                         ))
                         .build())
                 .withSink(Sink.builder()
@@ -258,9 +258,9 @@ public class PipelineIntegrationTest {
                                 .build())
                         .withNamedPartitions(true)
                         .withPartitions(List.of(
-                                new Partition("time+>year|DateTime|yyyy"), // DateTime can parse year, month, and day. Instant cannot,
-                                new Partition("time+>month|DateTime|MM"),
-                                new Partition("time+>day|DateTime|dd")
+                                new SinkPartition("time+>year|DateTime|yyyy"), // DateTime can parse year, month, and day. Instant cannot,
+                                new SinkPartition("time+>month|DateTime|MM"),
+                                new SinkPartition("time+>day|DateTime|dd")
                         ))
                         .build())
                 .build();
@@ -294,9 +294,9 @@ public class PipelineIntegrationTest {
                                 .build())
                         .withNamedPartitions(true)
                         .withPartitions(List.of(
-                                new Partition("year|DateTime|yyyy"),
-                                new Partition("month|DateTime|MM"),
-                                new Partition("day|DateTime|dd")
+                                new SourcePartition("year|DateTime|yyyy"),
+                                new SourcePartition("month|DateTime|MM"),
+                                new SourcePartition("day|DateTime|dd")
                         ))
                         .build())
                 .withSink(Sink.builder()

@@ -21,7 +21,7 @@ public interface Dataset {
 
     List<URI> uris();
 
-    List<Partition> partitions();
+    List<? extends Partition> partitions();
 
     boolean namedPartitions();
 }

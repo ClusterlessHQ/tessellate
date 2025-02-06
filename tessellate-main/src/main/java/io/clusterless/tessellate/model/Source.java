@@ -23,7 +23,7 @@ public class Source implements Dataset, Model {
     @JsonSimpleView
     private Schema schema = new Schema();
     @JsonSimpleView
-    private List<Partition> partitions = new ArrayList<>();
+    private List<SourcePartition> partitions = new ArrayList<>();
     private boolean namedPartitions = true;
     private LineOptions lines = new LineOptions();
 
@@ -64,7 +64,7 @@ public class Source implements Dataset, Model {
         return select;
     }
 
-    public List<Partition> partitions() {
+    public List<SourcePartition> partitions() {
         return partitions;
     }
 
@@ -82,7 +82,7 @@ public class Source implements Dataset, Model {
         private String manifestLot;
         private List<URI> inputs = new ArrayList<>();
         private Schema schema = new Schema();
-        private List<Partition> partitions = new ArrayList<>();
+        private List<SourcePartition> partitions = new ArrayList<>();
         private boolean namedPartitions = true;
         private LineOptions lines = new LineOptions();
         private List<Field> select = new ArrayList<>();
@@ -114,7 +114,7 @@ public class Source implements Dataset, Model {
             return this;
         }
 
-        public Builder withPartitions(List<Partition> partitions) {
+        public Builder withPartitions(List<SourcePartition> partitions) {
             this.partitions = partitions;
             return this;
         }
