@@ -8,26 +8,5 @@
 
 package io.clusterless.tessellate.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import org.jetbrains.annotations.NotNull;
-
-/**
- * ts+>ymd|DateTime|yyyyMMdd
- */
-public class Partition extends Translate {
-    @JsonCreator
-    public Partition(String partition) {
-        super(partition);
-    }
-
-    @Override
-    @NotNull
-    protected String translate() {
-        return "[+]>";
-    }
-
-    @Override
-    protected boolean requiresFrom() {
-        return false;
-    }
+public interface Partition {
 }

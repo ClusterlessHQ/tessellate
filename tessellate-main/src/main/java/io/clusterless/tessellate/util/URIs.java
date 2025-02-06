@@ -13,6 +13,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
@@ -69,6 +71,33 @@ public class URIs {
         }
     }
 
+    public static URI copyWithDecodedPath(URI uri) {
+        try {
+            String decodedPath = URLDecoder.decode(uri.getPath(), StandardCharsets.UTF_8);
+            return new URI(uri.getScheme(), uri.getAuthority(), decodedPath, null, null);
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("unable to copy uri");
+        }
+    }
+
+    public static URI trimFilename(URI uri, boolean hasPartitions) {
+        if (!hasPartitions) {
+            return uri;
+        }
+
+        String path = uri.getPath();
+
+        if (path == null) {
+            return uri;
+        }
+
+        if (path.endsWith("/")) {
+            return uri;
+        }
+
+        return trim(uri, 1);
+    }
+
     public static URI trim(URI uri, int trim) {
         if (trim == 0) {
             return uri;
@@ -114,6 +143,7 @@ public class URIs {
     @NotNull
     public static URI findCommonPrefix(List<URI> uris, int numPartitions) {
         Set<String> roots = uris.stream()
+                .map(u -> trimFilename(u, numPartitions != 0))
                 .map(u -> trim(u, numPartitions))
                 .map(Objects::toString)
                 .collect(Collectors.toSet());

@@ -22,4 +22,11 @@ public class URIsTest {
         Assertions.assertEquals(URI.create("s3://bucket/"), URIs.trim(URI.create("s3://bucket/path1/path2/"), 2));
         Assertions.assertEquals(URI.create("s3://bucket/"), URIs.trim(URI.create("s3://bucket/path1/path2"), 2));
     }
+
+    @Test
+    void trimFilename() {
+        Assertions.assertEquals(URI.create("s3://bucket/path/"), URIs.trimFilename(URI.create("s3://bucket/path/"), true));
+        Assertions.assertEquals(URI.create("s3://bucket/path1/path2/"), URIs.trimFilename(URI.create("s3://bucket/path1/path2/"), true));
+        Assertions.assertEquals(URI.create("s3://bucket/path1/"), URIs.trimFilename(URI.create("s3://bucket/path1/path2"), true));
+    }
 }

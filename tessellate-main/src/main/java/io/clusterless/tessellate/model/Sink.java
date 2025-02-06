@@ -22,7 +22,7 @@ public class Sink implements Dataset, Model {
     @JsonSimpleView
     private Schema schema = new Schema();
     @JsonSimpleView
-    private List<Partition> partitions = new ArrayList<>();
+    private List<SinkPartition> partitions = new ArrayList<>();
     private boolean namedPartitions = true;
 
     private Filename filename = new Filename();
@@ -57,7 +57,7 @@ public class Sink implements Dataset, Model {
         return List.of(output());
     }
 
-    public List<Partition> partitions() {
+    public List<SinkPartition> partitions() {
         return partitions;
     }
 
@@ -74,7 +74,7 @@ public class Sink implements Dataset, Model {
         private String manifestLot;
         private URI output;
         private Schema schema = new Schema();
-        private List<Partition> partitions = new ArrayList<>();
+        private List<SinkPartition> partitions = new ArrayList<>();
         private boolean namedPartitions = true;
         private Filename filename = new Filename();
 
@@ -105,7 +105,7 @@ public class Sink implements Dataset, Model {
             return this;
         }
 
-        public Builder withPartitions(List<Partition> partitions) {
+        public Builder withPartitions(List<SinkPartition> partitions) {
             this.partitions = partitions;
             return this;
         }

@@ -22,9 +22,9 @@ import cascading.pipe.assembly.Copy;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 import io.clusterless.tessellate.factory.*;
-import io.clusterless.tessellate.model.Partition;
 import io.clusterless.tessellate.model.PipelineDef;
 import io.clusterless.tessellate.model.Schema;
+import io.clusterless.tessellate.model.SinkPartition;
 import io.clusterless.tessellate.options.PipelineOptions;
 import io.clusterless.tessellate.options.PrintOptions;
 import io.clusterless.tessellate.parser.ast.Statement;
@@ -151,7 +151,7 @@ public class Pipeline {
 
         if (!pipelineDef.sink().partitions().isEmpty()) {
             // todo: honor the -> and +> operators when declaring partitions
-            for (Partition partition : pipelineDef().sink().partitions()) {
+            for (SinkPartition partition : pipelineDef().sink().partitions()) {
                 if (partition.from().isPresent()) {
                     Pipe pipe = new Copy(context.pipe, partition.from().get().fields(), partition.to().fields());
                     partitionFields = partitionFields.append(partition.to().fields());
