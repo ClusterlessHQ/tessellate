@@ -25,10 +25,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 
 /**
  * s3://test-clusterless-manifest-086903124729-us-west-2/datasets/name=ingress-python-example-copy/version=20230101/lot={lot}/state={state}{/attempt*}/manifest.json
@@ -76,7 +73,8 @@ public class ManifestWriter {
     }
 
     public void writeManifest(Properties conf) throws IOException {
-        Set<URI> writes = Observed.INSTANCE.writes(uriPrefix);
+        // prevent future puts to the map from being added to the manifest
+        Set<URI> writes = new LinkedHashSet<>(Observed.INSTANCE.writes(uriPrefix));
 
         if (writes.isEmpty()) {
             writeManifest(conf, "empty", writes);
