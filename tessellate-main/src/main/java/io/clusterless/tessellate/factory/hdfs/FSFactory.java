@@ -87,7 +87,7 @@ public abstract class FSFactory extends FilesFactory {
 
         // uri is likely a directory or single file, let the Hfs tap handle it
         if (!isSink && dataset.hasManifest()) {
-            commonRoot = URIs.findCommonPrefix(uris, dataset.partitions().size());
+            commonRoot = URIs.findCommonPathPrefix(uris, dataset.partitions().size());
         }
 
         LOG.info("{}: handling uris: {}, with common: {}", logPrefix(isSink), uris.size(), commonRoot);
@@ -97,9 +97,9 @@ public abstract class FSFactory extends FilesFactory {
         Tap tap;
 
         if (isSink) {
-            tap = createSinkTap(local, scheme, commonRoot, uris);
+            tap = createSinkTap(local, scheme, commonRoot, dataset);
         } else {
-            tap = createSourceTap(local, scheme, commonRoot, uris);
+            tap = createSourceTap(local, scheme, commonRoot, dataset);
         }
 
         Optional<Partition> partition = createPartition(dataset);
@@ -124,11 +124,15 @@ public abstract class FSFactory extends FilesFactory {
     }
 
     @NotNull
-    private Hfs createSourceTap(Properties local, Scheme scheme, URI commonURI, List<URI> uris) {
+    private Hfs createSourceTap(Properties local, Scheme scheme, URI commonURI, Dataset dataset) {
+        List<URI> uris = dataset.uris();
         Observed.INSTANCE.reads(commonURI);
 
+        // it is important we use the Path object to normalize the uri
+        // jdk returns file:///path, and Path returns file:/path
         String[] identifiers = uris.stream()
-                .map(URI::toString)
+                .map(Path::new)
+                .map(Path::toString)
                 .toArray(String[]::new);
 
         Path path = new Path(commonURI);
@@ -141,11 +145,26 @@ public abstract class FSFactory extends FilesFactory {
 
             @Override
             public void sourceConfInit(FlowProcess<? extends Configuration> process, Configuration conf) {
+                apply(process, conf);
+            }
+
+            private Configuration apply(FlowProcess<? extends Configuration> process, Configuration conf) {
                 HadoopUtil.copyConfiguration(local, conf);
 
                 applySourceConfInitIdentifiers(process, conf, identifiers);
 
                 verifyNoDuplicates(conf);
+
+                return conf;
+            }
+
+            @Override
+            public String[] getChildIdentifiers(Configuration conf, int depth, boolean fullyQualified) throws IOException {
+                if (dataset.hasManifest()) {
+                    return identifiers;
+                }
+
+                return super.getChildIdentifiers(conf, depth, fullyQualified);
             }
 
             @Override
@@ -169,7 +188,9 @@ public abstract class FSFactory extends FilesFactory {
     }
 
     @NotNull
-    private Hfs createSinkTap(Properties local, Scheme scheme, URI commonURI, List<URI> uris) {
+    private Hfs createSinkTap(Properties local, Scheme scheme, URI commonURI, Dataset dataset) {
+        List<URI> uris = dataset.uris();
+
         if (uris.size() > 1) {
             throw new IllegalArgumentException("cannot write to multiple uris, got: " + uris.stream().limit(10));
         }
