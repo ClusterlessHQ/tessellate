@@ -8,7 +8,6 @@
 
 package io.clusterless.tessellate.util;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.URI;
@@ -16,9 +15,8 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.Set;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
@@ -85,6 +83,10 @@ public class URIs {
             return uri;
         }
 
+        return trimFilename(uri);
+    }
+
+    public static URI trimFilename(URI uri) {
         String path = uri.getPath();
 
         if (path == null) {
@@ -140,20 +142,42 @@ public class URIs {
         return Paths.get(uri.getPath()).toAbsolutePath().toUri();
     }
 
+    /**
+     * Find the common path prefix of a list of URIs. Where path considers the elements of the URI path,
+     * not substrings of the path.
+     * <p>
+     * For example, the common prefix of "s3://bucket/path1/path2" and "s3://bucket/path1/path3" is "s3://bucket/path1/".
+     */
     @NotNull
-    public static URI findCommonPrefix(List<URI> uris, int numPartitions) {
-        Set<String> roots = uris.stream()
-                .map(u -> trimFilename(u, numPartitions != 0))
-                .map(u -> trim(u, numPartitions))
-                .map(Objects::toString)
-                .collect(Collectors.toSet());
-
-        String commonPrefix = StringUtils.getCommonPrefix(roots.toArray(new String[0]));
-
-        if (commonPrefix.isEmpty()) {
-            throw new IllegalArgumentException("to many unique roots, got: " + roots);
+    public static URI findCommonPathPrefix(List<URI> uris, int numPartitions) {
+        if (uris.isEmpty()) {
+            throw new IllegalArgumentException("URI list is empty");
         }
 
-        return URI.create(commonPrefix);
+        List<String[]> elements = uris.stream()
+                .map(u -> trimFilename(u, numPartitions != 0))
+                .map(u -> trim(u, numPartitions))
+                .map(u -> u.toString().split("/"))
+                .collect(Collectors.toList());
+
+        List<String> common = new ArrayList<>();
+        for (int i = 0; i < elements.get(0).length; i++) {
+            String element = elements.get(0)[i];
+            int pos = i;
+            boolean allMatch = elements.stream().allMatch(parts -> parts.length > pos && parts[pos].equals(element));
+
+            if (allMatch) {
+                common.add(element);
+            } else {
+                break;
+            }
+        }
+
+        if (common.isEmpty()) {
+            throw new IllegalArgumentException("No common prefix found");
+        }
+
+        String commonPrefix = String.join("/", common);
+        return URI.create(commonPrefix + "/");
     }
 }

@@ -99,7 +99,8 @@ public class JSONUtil {
             return createObjectMapper()
                     .disable(MapperFeature.DEFAULT_VIEW_INCLUSION)
                     .writerWithDefaultPrettyPrinter()
-                    .withView(view).writeValueAsString(object);
+                    .withView(view)
+                    .writeValueAsString(object);
         } catch (JsonProcessingException e) {
             throw new UncheckedIOException(e);
         }

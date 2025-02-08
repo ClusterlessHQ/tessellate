@@ -8,25 +8,40 @@
 
 package io.clusterless.tessellate.util;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class URIsTest {
     @Test
     void trim() {
-        Assertions.assertEquals(URI.create("s3://bucket/"), URIs.trim(URI.create("s3://bucket/path/"), 1));
-        Assertions.assertEquals(URI.create("s3://bucket/path1/"), URIs.trim(URI.create("s3://bucket/path1/path2/"), 1));
-        Assertions.assertEquals(URI.create("s3://bucket/path1/"), URIs.trim(URI.create("s3://bucket/path1/path2"), 1));
-        Assertions.assertEquals(URI.create("s3://bucket/"), URIs.trim(URI.create("s3://bucket/path1/path2/"), 2));
-        Assertions.assertEquals(URI.create("s3://bucket/"), URIs.trim(URI.create("s3://bucket/path1/path2"), 2));
+        assertEquals(URI.create("s3://bucket/"), URIs.trim(URI.create("s3://bucket/path/"), 1));
+        assertEquals(URI.create("s3://bucket/path1/"), URIs.trim(URI.create("s3://bucket/path1/path2/"), 1));
+        assertEquals(URI.create("s3://bucket/path1/"), URIs.trim(URI.create("s3://bucket/path1/path2"), 1));
+        assertEquals(URI.create("s3://bucket/"), URIs.trim(URI.create("s3://bucket/path1/path2/"), 2));
+        assertEquals(URI.create("s3://bucket/"), URIs.trim(URI.create("s3://bucket/path1/path2"), 2));
     }
 
     @Test
     void trimFilename() {
-        Assertions.assertEquals(URI.create("s3://bucket/path/"), URIs.trimFilename(URI.create("s3://bucket/path/"), true));
-        Assertions.assertEquals(URI.create("s3://bucket/path1/path2/"), URIs.trimFilename(URI.create("s3://bucket/path1/path2/"), true));
-        Assertions.assertEquals(URI.create("s3://bucket/path1/"), URIs.trimFilename(URI.create("s3://bucket/path1/path2"), true));
+        assertEquals(URI.create("s3://bucket/path/"), URIs.trimFilename(URI.create("s3://bucket/path/"), true));
+        assertEquals(URI.create("s3://bucket/path1/path2/"), URIs.trimFilename(URI.create("s3://bucket/path1/path2/"), true));
+        assertEquals(URI.create("s3://bucket/path1/"), URIs.trimFilename(URI.create("s3://bucket/path1/path2"), true));
+    }
+
+    @Test
+    void commonPathPrefix() {
+        List<URI> uris = List.of(
+                URI.create("s3://bucket/path1/path2/"),
+                URI.create("s3://bucket/path1/path3/"),
+                URI.create("s3://bucket/path1/path4/")
+        );
+
+        assertEquals(URI.create("s3://bucket/path1/"), URIs.findCommonPathPrefix(uris, 0));
+        assertEquals(URI.create("s3://bucket/path1/"), URIs.findCommonPathPrefix(uris, 1));
+        assertEquals(URI.create("s3://bucket/"), URIs.findCommonPathPrefix(uris, 2));
     }
 }

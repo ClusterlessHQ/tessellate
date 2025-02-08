@@ -355,7 +355,9 @@ public class PipelineTest {
     }
 
     @Test
-    void writeReadParquet(@PathForResource("/data/aws-s3-access-log.txt") URI input, @PathForOutput("intermediate") URI intermediate, @PathForOutput("output") URI output) throws IOException {
+    void writeReadParquet(@PathForResource("/data/aws-s3-access-log.txt") URI input,
+                          @PathForOutput("intermediate") URI intermediate,
+                          @PathForOutput("output") URI output) throws IOException {
         PipelineOptions pipelineOptions = new PipelineOptions();
         PipelineOptionsMerge merger = new PipelineOptionsMerge(pipelineOptions);
 
@@ -433,7 +435,9 @@ public class PipelineTest {
     }
 
     @Test
-    void writeReadParquetPartitioned(@PathForResource("/data/aws-s3-access-log.txt") URI input, @PathForOutput("intermediate") URI intermediate, @PathForOutput("output") URI output) throws IOException {
+    void writeReadParquetPartitioned(@PathForResource("/data/aws-s3-access-log.txt") URI input,
+                                     @PathForOutput("intermediate") URI intermediate,
+                                     @PathForOutput("output") URI output) throws IOException {
         PipelineOptions pipelineOptions = new PipelineOptions();
         PipelineOptionsMerge merger = new PipelineOptionsMerge(pipelineOptions);
 
