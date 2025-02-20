@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.jparsec.Parsers.EOF;
-import static org.jparsec.Parsers.sequence;
 import static org.jparsec.pattern.CharPredicates.*;
 
 public class StatementParser {
@@ -83,12 +82,12 @@ public class StatementParser {
     private static final Parser<Map<String, String>> PARAMS =
             PARAM_ENTRY.sepBy(PARAM_DELIM).map(l -> l.stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
 
-    private static final Parser<IntrinsicName> INTRINSIC_NAME = sequence(
+    private static final Parser<IntrinsicName> INTRINSIC_NAME = Parsers.sequence(
             Scanners.isChar('^'),
             Scanners.many1(CharPredicates.IS_ALPHA).source(),
             (unused, intrinsic) -> new IntrinsicName(intrinsic)
     );
-    public static final Parser<IntrinsicParams> INTRINSIC_PARAMS = sequence(
+    public static final Parser<IntrinsicParams> INTRINSIC_PARAMS = Parsers.sequence(
             Scanners.isChar('{'),
             Scanners.many(IS_WHITESPACE),
             PARAMS.asOptional(),
@@ -99,14 +98,14 @@ public class StatementParser {
 
     // ^intrinsic{param1:value1, param2:value2}
     public static Parser<Intrinsic> INTRINSIC =
-            sequence(
+            Parsers.sequence(
                     INTRINSIC_NAME,
                     INTRINSIC_PARAMS,
                     Intrinsic::new
             );
 
     public static Parser<Operation> INTRINSIC_OPERATION_WITH_ARGUMENTS =
-            sequence(
+            Parsers.sequence(
                     FieldParser.fieldList.followedBy(Scanners.many(IS_WHITESPACE)),
                     INTRINSIC.followedBy(Scanners.many(IS_WHITESPACE)),
                     VARIABLE_OPS.followedBy(Scanners.many(IS_WHITESPACE)),
@@ -115,7 +114,7 @@ public class StatementParser {
             );
 
     public static Parser<Operation> INTRINSIC_OPERATION_WITHOUT_ARGUMENTS =
-            sequence(
+            Parsers.sequence(
                     INTRINSIC.followedBy(Scanners.many(IS_WHITESPACE)),
                     VARIABLE_OPS.followedBy(Scanners.many(IS_WHITESPACE)),
                     FieldParser.fieldList.followedBy(EOF),
@@ -126,14 +125,14 @@ public class StatementParser {
             .map(UnaryOperation::new);
 
     public static Parser<Operation> TRANSFORM_DISCARD =
-            sequence(
+            Parsers.sequence(
                     FieldParser.fullFieldDeclaration.followedBy(Scanners.many(IS_WHITESPACE)),
                     DISCARD.followedBy(Scanners.many(IS_WHITESPACE)).followedBy(EOF),
                     UnaryOperation::new
             );
 
     public static Parser<Operation> TRANSFORM_RENAME =
-            sequence(
+            Parsers.sequence(
                     FieldParser.fullFieldDeclaration.followedBy(Scanners.many(IS_WHITESPACE)),
                     DISCARD.followedBy(Scanners.many(IS_WHITESPACE)),
                     FieldParser.fullFieldDeclaration.followedBy(EOF),
@@ -141,7 +140,7 @@ public class StatementParser {
             );
 
     public static Parser<Operation> TRANSFORM_COPY =
-            sequence(
+            Parsers.sequence(
                     FieldParser.fullFieldDeclaration.followedBy(Scanners.many(IS_WHITESPACE)),
                     RETAIN.followedBy(Scanners.many(IS_WHITESPACE)),
                     FieldParser.fullFieldDeclaration.followedBy(EOF),
@@ -149,7 +148,7 @@ public class StatementParser {
             );
 
     public static Parser<Assignment> LITERAL_ASSIGNMENT =
-            sequence(
+            Parsers.sequence(
                     LITERAL_VALUE,
                     ASSIGNMENT.followedBy(Scanners.many(IS_WHITESPACE)),
                     FieldParser.fullFieldDeclaration.followedBy(EOF),

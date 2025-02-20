@@ -16,6 +16,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class StatementParserTest {
@@ -39,14 +40,15 @@ public class StatementParserTest {
 
     @Test
     void parse() {
-        assertNotNull(StatementParser.parse("fromField1+fromField2+fromFieldN ^siphash{} +> intoField|type"));
-        assertNotNull(StatementParser.parse("fromField1 + fromField2 + fromFieldN ^siphash{} +> intoField|type"));
-        assertNotNull(StatementParser.parse("^tsid{node:1,nodeCount:10,signed:true,epoch:123} +> intoField|type"));
+        assertInstanceOf(Intrinsic.class, assertInstanceOf(Operation.class, StatementParser.parse("fromField1+fromField2+fromFieldN ^siphash{} +> intoField|type")).exp());
+        assertInstanceOf(Intrinsic.class, assertInstanceOf(Operation.class, StatementParser.parse("fromField1 + fromField2 + fromFieldN ^siphash{} +> intoField|type")).exp());
+        assertInstanceOf(Intrinsic.class, assertInstanceOf(Operation.class, StatementParser.parse("^tsid{node:1,nodeCount:10,signed:true,epoch:123} +> intoField|type")).exp());
 
-        assertNotNull(StatementParser.parse("fromField1+fromField2+fromFieldN ^siphash{} -> intoField|type"));
-        assertNotNull(StatementParser.parse("fromField1 + fromField2 + fromFieldN ^siphash{} -> intoField|type"));
-        assertNotNull(StatementParser.parse("fromField1 + fromField2 + fromFieldN ^siphash{prefix:'{:}'} -> intoField|type"));
-        assertNotNull(StatementParser.parse("^tsid{node:1,nodeCount:10,signed:true,epoch:123} -> intoField|type"));
+        assertInstanceOf(Intrinsic.class, assertInstanceOf(Operation.class, StatementParser.parse("fromField1+fromField2+fromFieldN ^siphash{} -> intoField|type")).exp());
+        assertInstanceOf(Intrinsic.class, assertInstanceOf(Operation.class, StatementParser.parse("fromField1 + fromField2 + fromFieldN ^siphash{} -> intoField|type")).exp());
+        assertInstanceOf(Intrinsic.class, assertInstanceOf(Operation.class, StatementParser.parse("fromField1 + fromField2 + fromFieldN ^siphash{prefix:'{:}'} -> intoField|type")).exp());
+        assertInstanceOf(Intrinsic.class, assertInstanceOf(Operation.class, StatementParser.parse("^tsid{node:1,nodeCount:10,signed:true,epoch:123} -> intoField|type")).exp());
+        assertInstanceOf(Intrinsic.class, assertInstanceOf(Operation.class, StatementParser.parse("^toJson{} -> json")).exp());
 
         assertNotNull(StatementParser.parse("five => intoField|type"));
     }
