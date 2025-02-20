@@ -111,3 +111,7 @@ Params:::
 Def:::
 - `^toJson{} ->` - replace ALL fields with the JSON string with the default field name `json`
 - `from_field1 + from_field2 ^toJson{} +> node` - add the arguments to a new json object named `node`
+
+`fromJson`:: converts a json string to a row/tuple
+Def:::
+- `^fromJson{} -> to_field1 + to_field2` - the fields names must match the json properties at the root node
