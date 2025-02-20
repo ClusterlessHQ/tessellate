@@ -11,8 +11,8 @@ as fields. This is common when data has been partitioned into files where common
 be embedded in the path name to help select relevant files (push down predicates are applied to path values by many
 query engines).
 
-Declared fields in a pipeline have the following format: `<field_name>|<field_type>`, where `<field_name>` is a string,
-or an ordinal (number representing the position).
+Declared fields in a pipeline have the following format: `<field_name>|<field_type>`, where `<field_name>` is a string, or an ordinal (number representing the position).
+The `<field_name>` may be quoted by a single quote (`'`) .
 
 `<field_type>` is optional, depending on the use. `<field_type>` further may be formatted as `<type>|<metadata>`.
 
