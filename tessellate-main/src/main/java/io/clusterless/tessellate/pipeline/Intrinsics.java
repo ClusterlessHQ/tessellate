@@ -8,10 +8,7 @@
 
 package io.clusterless.tessellate.pipeline;
 
-import io.clusterless.tessellate.pipeline.intrinsic.FixedWidthIntrinsic;
-import io.clusterless.tessellate.pipeline.intrinsic.IntrinsicBuilder;
-import io.clusterless.tessellate.pipeline.intrinsic.ToJsonIntrinsic;
-import io.clusterless.tessellate.pipeline.intrinsic.TsidIntrinsic;
+import io.clusterless.tessellate.pipeline.intrinsic.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,6 +25,7 @@ public class Intrinsics {
         add(new TsidIntrinsic());
         add(new FixedWidthIntrinsic());
         add(new ToJsonIntrinsic());
+        add(new FromJsonIntrinsic());
     }
 
     public static Map<String, IntrinsicBuilder> builders() {

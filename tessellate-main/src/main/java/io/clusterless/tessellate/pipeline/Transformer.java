@@ -56,7 +56,7 @@ public class Transformer {
         if (operation.exp() != null) {
             IntrinsicBuilder.Result result = create(context, operation);
             // this overcomes what seems to be a bug with REPLACE
-            Fields selector = result.arguments().isAll() ? Fields.RESULTS : Fields.REPLACE;
+            Fields selector = result.arguments().isAll() || (context.currentFields.contains(result.arguments()) && context.currentFields.size() == result.arguments().size()) ? Fields.RESULTS : Fields.REPLACE;
             Pipe pipe = new Each(context.pipe, result.arguments(), result.function(), selector);
             Fields currentFields = context.currentFields.subtract(result.arguments()).append(result.results());
             return context.update(currentFields, pipe);

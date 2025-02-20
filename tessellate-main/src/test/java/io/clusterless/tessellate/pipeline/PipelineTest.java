@@ -721,10 +721,13 @@ public class PipelineTest {
     }
 
     @Test
-    void toJson(@PathForResource("/data/delimited-header.csv") URI input, @PathForOutput URI output) throws IOException {
+    void toJsonAndBack(
+            @PathForResource("/data/delimited-header.csv") URI input,
+            @PathForOutput("intermediate") URI intermediate,
+            @PathForOutput("output") URI output) throws IOException {
         PipelineOptions pipelineOptions = new PipelineOptions();
 
-        PipelineDef def = PipelineDef.builder()
+        PipelineDef writeJsonDef = PipelineDef.builder()
                 .withName("test")
                 .withSource(Source.builder()
                         .withInputs(List.of(input))
@@ -739,7 +742,7 @@ public class PipelineTest {
                         )
                 )
                 .withSink(Sink.builder()
-                        .withOutput(output)
+                        .withOutput(intermediate)
                         .withSchema(Schema.builder()
                                 .withFormat(Format.json)
                                 .withEmbedsSchema(false)
@@ -752,19 +755,62 @@ public class PipelineTest {
                         .build())
                 .build();
 
-        Pipeline pipeline = new Pipeline(pipelineOptions, def);
+        Pipeline writeJson = new Pipeline(pipelineOptions, writeJsonDef);
 
-        pipeline.run();
+        writeJson.run();
 
         CascadingTesting.validateEntries(
-                pipeline.flow().openSink(),
+                writeJson.flow().openSink(),
                 l -> assertEquals(13, l, "wrong length"), // headers are declared so aren't counted
                 l -> assertEquals(1, l, "wrong size"),
                 l -> {
                 }
         );
 
-        assertFilenameParts(output, "test-", "-guid", ".jsonl", 1);
+        assertFilenameParts(intermediate, "test-", "-guid", ".jsonl", 1);
+
+        PipelineDef readJsonDef = PipelineDef.builder()
+                .withName("test")
+                .withSource(Source.builder()
+                        .withInputs(List.of(intermediate))
+                        .withSchema(Schema.builder()
+                                .withDeclared(Field.asField("json"))
+                                .withFormat(Format.json)
+                                .withEmbedsSchema(true)
+                                .build())
+                        .build())
+                .withTransform(
+                        new Transform(
+                                "json ^fromJson{} -> first + second + third + fourth + fifth"
+                        )
+                )
+                .withSink(Sink.builder()
+                        .withOutput(output)
+                        .withSchema(Schema.builder()
+                                .withFormat(Format.csv)
+                                .withEmbedsSchema(true)
+                                .build())
+                        .withFilename(Filename.builder()
+                                .withPrefix("test")
+                                .withIncludeGuid(true)
+                                .withProvidedGuid("guid")
+                                .build())
+                        .build())
+                .build();
+
+        Pipeline readJson = new Pipeline(pipelineOptions, readJsonDef);
+
+        readJson.run();
+
+        CascadingTesting.validateEntries(
+                readJson.flow().openSink(),
+                l -> assertEquals(13, l, "wrong length"), // headers are declared so aren't counted
+                l -> assertEquals(5, l, "wrong size"),
+                l -> {
+                }
+        );
+
+        assertFilenameParts(output, "test-", "-guid", ".csv", 1);
     }
 
     private static void assertFilenameParts(URI output, String prefix, String guid, String extension, int fileCount) throws IOException {
