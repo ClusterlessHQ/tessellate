@@ -246,7 +246,7 @@ public class Pipeline {
         }
 
         LOG.error("flow failed with: {}", cascadingException.getMessage(), cascadingException);
-        System.err.println("flow failed with: " + cause.getMessage());
+        System.err.println("flow failed with: " + cascadingException.getMessage());
 
         return -1;
     }
