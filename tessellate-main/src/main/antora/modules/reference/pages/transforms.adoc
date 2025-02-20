@@ -68,8 +68,8 @@ parameters
 
 No arguments:: `^intrinsic{} +> new_field|type`
 No arguments, with parameters:: `^intrinsic{param1:value1, param2:value2} +> new_field|type`
-With arguments:: `from_field1+from_field2+from_fieldN ^intrinsic{} +> new_field|type`
-With arguments, with parameters:: `from_field1+from_field2+from_fieldN ^intrinsic{param1:value1, param2:value2} +> new_field|type`
+With arguments:: `from_field1 + from_field2 + from_fieldN ^intrinsic{} +> new_field|type`
+With arguments, with parameters:: `from_field1 + from_field2 + from_fieldN ^intrinsic{param1:value1, param2:value2} +> new_field|type`
 
 Expression may retain or discard the argument fields depending on the operator used.
 
@@ -106,3 +106,8 @@ Def:::
 Params:::
 `width`:::: The width of the row/tuple.
 `insertAt`:::: The index to begin inserting the null padding.
+
+`toJson`:: converts a row/tuple to a JSON string
+Def:::
+- `^toJson{} ->` - replace ALL fields with the JSON string with the default field name `json`
+- `from_field1 + from_field2 ^toJson{} +> node` - add the arguments to a new json object named `node`

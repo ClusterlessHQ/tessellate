@@ -720,6 +720,53 @@ public class PipelineTest {
         );
     }
 
+    @Test
+    void toJson(@PathForResource("/data/delimited-header.csv") URI input, @PathForOutput URI output) throws IOException {
+        PipelineOptions pipelineOptions = new PipelineOptions();
+
+        PipelineDef def = PipelineDef.builder()
+                .withName("test")
+                .withSource(Source.builder()
+                        .withInputs(List.of(input))
+                        .withSchema(Schema.builder()
+                                .withFormat(Format.csv)
+                                .withEmbedsSchema(true)
+                                .build())
+                        .build())
+                .withTransform(
+                        new Transform(
+                                "^toJson{} -> json"
+                        )
+                )
+                .withSink(Sink.builder()
+                        .withOutput(output)
+                        .withSchema(Schema.builder()
+                                .withFormat(Format.json)
+                                .withEmbedsSchema(false)
+                                .build())
+                        .withFilename(Filename.builder()
+                                .withPrefix("test")
+                                .withIncludeGuid(true)
+                                .withProvidedGuid("guid")
+                                .build())
+                        .build())
+                .build();
+
+        Pipeline pipeline = new Pipeline(pipelineOptions, def);
+
+        pipeline.run();
+
+        CascadingTesting.validateEntries(
+                pipeline.flow().openSink(),
+                l -> assertEquals(13, l, "wrong length"), // headers are declared so aren't counted
+                l -> assertEquals(1, l, "wrong size"),
+                l -> {
+                }
+        );
+
+        assertFilenameParts(output, "test-", "-guid", ".jsonl", 1);
+    }
+
     private static void assertFilenameParts(URI output, String prefix, String guid, String extension, int fileCount) throws IOException {
         final int[] count = {0};
         try (Stream<Path> pathStream = Files.find(Paths.get(output), 10, (path, attr) -> !path.toString().startsWith(".") && path.toString().endsWith(extension))) {
