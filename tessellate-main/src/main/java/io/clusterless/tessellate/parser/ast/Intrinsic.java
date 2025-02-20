@@ -8,9 +8,15 @@
 
 package io.clusterless.tessellate.parser.ast;
 
+import java.util.Optional;
+
 public class Intrinsic implements Exp {
     IntrinsicName name;
     IntrinsicParams params;
+
+    public Intrinsic(IntrinsicName name, Optional<IntrinsicParams> params) {
+        this(name, params.orElse(new IntrinsicParams(Optional.empty())));
+    }
 
     public Intrinsic(IntrinsicName name, IntrinsicParams params) {
         this.name = name;
