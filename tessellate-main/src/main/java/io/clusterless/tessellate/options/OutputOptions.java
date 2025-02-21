@@ -25,6 +25,8 @@ public class OutputOptions implements AWSOptions {
     protected String awsRegion;
     @CommandLine.Option(names = {"--output-aws-assumed-role-arn"}, description = "aws assumed role arn")
     protected String awsAssumedRoleARN;
+    @CommandLine.Option(names = {"--output-errors"}, description = "output errors uri")
+    private URI outputErrors;
 
     public URI output() {
         return output;
@@ -66,5 +68,9 @@ public class OutputOptions implements AWSOptions {
     @Override
     public String awsAssumedRoleARN() {
         return awsAssumedRoleARN;
+    }
+
+    public URI outputErrors() {
+        return outputErrors;
     }
 }

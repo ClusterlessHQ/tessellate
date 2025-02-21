@@ -86,6 +86,20 @@ public class URIs {
         return trimFilename(uri);
     }
 
+    public static URI copyAsDirectory(URI uri) {
+        String path = uri.getPath();
+
+        if (path == null) {
+            return uri;
+        }
+
+        if (path.endsWith("/")) {
+            return uri;
+        }
+
+        return copyWithPath(uri, path + "/");
+    }
+
     public static URI trimFilename(URI uri) {
         String path = uri.getPath();
 
