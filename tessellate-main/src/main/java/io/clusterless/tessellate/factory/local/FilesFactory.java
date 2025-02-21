@@ -88,6 +88,8 @@ public abstract class FilesFactory implements SourceFactory, SinkFactory {
 
         if (Files.exists(path)) {
             return Files.isDirectory(path);
+        } else if (path.toString().endsWith("/")) {
+            return true;
         } else {
             // assuming directory if no extension
             return path.getFileName().toString().lastIndexOf('.') == -1;

@@ -32,6 +32,7 @@ import io.clusterless.tessellate.printer.SchemaPrinter;
 import io.clusterless.tessellate.util.Compression;
 import io.clusterless.tessellate.util.Format;
 import io.clusterless.tessellate.util.Models;
+import io.clusterless.tessellate.util.URIs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -196,11 +197,13 @@ public class Pipeline {
         if (pipelineDef.source().errorPath() != null) {
             Tap<Properties, ?, ?> errorTap = createTrap(pipelineDef.source().errorPath(), "errors-source", sinkFactory);
             traps.put(HEAD, errorTap);
+            LOG.info("trapping input errors at: {}", errorTap.getIdentifier());
         }
 
         if (pipelineDef.sink().errorPath() != null) {
             Tap<Properties, ?, ?> errorTap = createTrap(pipelineDef.sink().errorPath(), "errors-sink", sinkFactory);
             traps.put(TAIL, errorTap);
+            LOG.info("trapping output errors at: {}", errorTap.getIdentifier());
         }
 
         if (!traps.isEmpty()) {
@@ -225,7 +228,8 @@ public class Pipeline {
 
     private Tap<Properties, ?, ?> createTrap(URI errorPath, String prefix, SinkFactory sinkFactory) throws IOException {
         Sink errorSink = Sink.builder()
-                .withOutput(errorPath)
+                // for FileTap the final / gets removed
+                .withOutput(URIs.copyAsDirectory(URIs.cleanFileUrls(errorPath)))
                 .withFilename(Filename.builder()
                         .withPrefix(prefix)
                         .build())

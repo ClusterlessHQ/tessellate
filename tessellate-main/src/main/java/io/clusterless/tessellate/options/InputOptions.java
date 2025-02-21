@@ -27,6 +27,8 @@ public class InputOptions implements AWSOptions {
     protected String awsRegion;
     @CommandLine.Option(names = {"--input-aws-assumed-role-arn"}, description = "aws assumed role arn")
     protected String awsAssumedRoleARN;
+    @CommandLine.Option(names = {"--input-errors"}, description = "input errors uri")
+    private URI inputErrors;
 
     public InputOptions setInputs(List<URI> inputs) {
         this.inputs = inputs;
@@ -63,5 +65,9 @@ public class InputOptions implements AWSOptions {
     @Override
     public String awsAssumedRoleARN() {
         return awsAssumedRoleARN;
+    }
+
+    public URI inputErrors() {
+        return inputErrors;
     }
 }

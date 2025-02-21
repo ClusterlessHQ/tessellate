@@ -45,9 +45,11 @@ public class PipelineOptionsMerge {
             .putInto("inputs", "/source/inputs")
             .putInto("inputManifest", "/source/manifest")
             .putInto("inputManifestLot", "/source/manifestLot")
+            .putInto("inputErrors", "/source/errorPath")
             .putInto("output", "/sink/output")
             .putInto("outputManifestTemplate", "/sink/manifestTemplate")
-            .putInto("outputManifestLot", "/sink/manifestLot");
+            .putInto("outputManifestLot", "/sink/manifestLot")
+            .putInto("outputErrors", "/sink/errorPath");
     private static JSONBuilder builder = new JSONBuilder(buildSpec);
 
     // all uris that should be resolved relative to the pipeline file path
@@ -63,9 +65,11 @@ public class PipelineOptionsMerge {
         argumentLookups.put("inputs", pipelineOptions -> nullOrNode(pipelineOptions.inputOptions().inputs()));
         argumentLookups.put("inputManifest", pipelineOptions -> nullOrNode(pipelineOptions.inputOptions().inputManifest()));
         argumentLookups.put("inputManifestLot", pipelineOptions -> nullOrNode(pipelineOptions.inputOptions().inputLot()));
+        argumentLookups.put("inputErrors", pipelineOptions -> nullOrNode(pipelineOptions.inputOptions().inputErrors()));
         argumentLookups.put("output", pipelineOptions -> nullOrNode(pipelineOptions.outputOptions().output()));
         argumentLookups.put("outputManifestTemplate", pipelineOptions -> nullOrNode(pipelineOptions.outputOptions().outputManifestTemplate()));
         argumentLookups.put("outputManifestLot", pipelineOptions -> nullOrNode(pipelineOptions.outputOptions().outputLot()));
+        argumentLookups.put("outputErrors", pipelineOptions -> nullOrNode(pipelineOptions.outputOptions().outputErrors()));
     }
 
     PipelineOptions pipelineOptions;
