@@ -1,5 +1,7 @@
 # Operation Declaration Syntax
 
+__This document is a work in progress and is subject to change. It does not reflect currently available features.__
+
 The pipeline declaration, in part, declares the required operation against the schema and tuples being processed.
 
 A field can be dropped or renamed, or the field type can be changed. During processing, the field is physically dropped
