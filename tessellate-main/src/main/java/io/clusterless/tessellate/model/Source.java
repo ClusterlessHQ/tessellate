@@ -26,6 +26,7 @@ public class Source implements Dataset, Model {
     private List<SourcePartition> partitions = new ArrayList<>();
     private boolean namedPartitions = true;
     private LineOptions lines = new LineOptions();
+    private URI errorPath;
 
     @JsonIgnore
     private List<Field> select = new ArrayList<>();
@@ -77,6 +78,11 @@ public class Source implements Dataset, Model {
         return lines;
     }
 
+    @Override
+    public URI errorPath() {
+        return errorPath;
+    }
+
     public static final class Builder {
         private URI manifest;
         private String manifestLot;
@@ -86,6 +92,7 @@ public class Source implements Dataset, Model {
         private boolean namedPartitions = true;
         private LineOptions lines = new LineOptions();
         private List<Field> select = new ArrayList<>();
+        private URI errorPath;
 
         private Builder() {
         }
@@ -134,16 +141,22 @@ public class Source implements Dataset, Model {
             return this;
         }
 
+        public Builder withErrorPath(URI errorPath) {
+            this.errorPath = errorPath;
+            return this;
+        }
+
         public Source build() {
             Source source = new Source();
-            source.manifestLot = this.manifestLot;
             source.manifest = this.manifest;
-            source.lines = this.lines;
+            source.manifestLot = this.manifestLot;
             source.inputs = this.inputs;
             source.schema = this.schema;
-            source.select = this.select;
             source.partitions = this.partitions;
             source.namedPartitions = this.namedPartitions;
+            source.lines = this.lines;
+            source.select = this.select;
+            source.errorPath = this.errorPath;
             return source;
         }
     }

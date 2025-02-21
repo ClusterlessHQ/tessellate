@@ -119,7 +119,6 @@ public class PipelineTest {
                 .withSink(Sink.builder()
                         .withOutput(output)
                         .withSchema(Schema.builder()
-//                                .withDeclared(Field.asField("0", "1", "2", "3", "4"))
                                 .withFormat(Format.csv)
                                 .withEmbedsSchema(true)
                                 .build())
@@ -826,5 +825,53 @@ public class PipelineTest {
         }
 
         assertEquals(fileCount, count[0], "wrong number of files");
+    }
+
+    @Test
+    void headersBadWidth(
+            @PathForResource("/data/delimited-header-bad-width.csv") URI input,
+            @PathForOutput("output") URI output,
+            @PathForOutput("errors") URI errors
+    ) throws IOException {
+        PipelineOptions pipelineOptions = new PipelineOptions();
+
+        PipelineDef def = PipelineDef.builder()
+                .withName("test")
+                .withSource(Source.builder()
+                        .withInputs(List.of(input))
+                        .withSchema(Schema.builder()
+                                .withFormat(Format.csv)
+                                .withEmbedsSchema(true)
+                                .build())
+                        .withErrorPath(errors)
+                        .build())
+                .withSink(Sink.builder()
+                        .withOutput(output)
+                        .withSchema(Schema.builder()
+                                .withFormat(Format.tsv)
+                                .withEmbedsSchema(true)
+                                .build())
+                        .withFilename(Filename.builder()
+                                .withPrefix("test")
+                                .withIncludeGuid(true)
+                                .withProvidedGuid("guid")
+                                .build())
+                        .build())
+                .build();
+
+        Pipeline pipeline = new Pipeline(pipelineOptions, def);
+
+        pipeline.run();
+
+        CascadingTesting.validateEntries(
+                pipeline.flow().openSink(),
+                l -> assertEquals(11, l, "wrong length"), // headers are declared so aren't counted
+                l -> assertEquals(5, l, "wrong size"),
+                l -> {
+                }
+        );
+
+        assertFilenameParts(output, "test-", "-guid", ".tsv", 1);
+        assertFilenameParts(errors, "errors-source", "-", ".csv.gz", 1);
     }
 }

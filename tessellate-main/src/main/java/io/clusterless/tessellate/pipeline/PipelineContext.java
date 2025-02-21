@@ -15,17 +15,31 @@ import org.slf4j.Logger;
 
 public class PipelineContext {
     public final Logger log;
+    public final Pipe head;
+
     public Fields currentFields;
     public Pipe pipe;
 
     public PipelineContext(Logger log, Fields currentFields, Pipe pipe) {
         this.log = log;
+        this.head = pipe;
         this.currentFields = currentFields;
         this.pipe = pipe;
     }
 
     public PipelineContext update(Fields currentFields, Pipe pipe) {
         this.currentFields = currentFields;
+        this.pipe = pipe;
+        logCurrentFields(this.currentFields);
+
+        return this;
+    }
+
+    public PipelineContext name(String name) {
+        return update(new Pipe(name, pipe));
+    }
+
+    public PipelineContext update(Pipe pipe) {
         this.pipe = pipe;
         logCurrentFields(this.currentFields);
 

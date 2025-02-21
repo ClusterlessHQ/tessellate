@@ -24,4 +24,6 @@ public interface Dataset {
     List<? extends Partition> partitions();
 
     boolean namedPartitions();
+
+    URI errorPath();
 }
