@@ -40,10 +40,10 @@ public class TextFSFactory extends LinesFSFactory {
             case text:
                 return new TextLine(new Fields("line"), new Fields("line"), compress);
             case csv:
-                DelimitedParser csv = new DelimitedParser(",", "\"", null, schema.strictParsing(), true);
+                DelimitedParser csv = new DelimitedParser(",", schema.quoteChar(), null, schema.strictParsing(), true);
                 return new TextDelimited(declaredFields, compress, schema.embedsSchema(), schema.embedsSchema(), csv);
             case tsv:
-                DelimitedParser tsv = new DelimitedParser("\t", "\"", null, schema.strictParsing(), true);
+                DelimitedParser tsv = new DelimitedParser("\t", schema.quoteChar(), null, schema.strictParsing(), true);
                 return new TextDelimited(declaredFields, compress, schema.embedsSchema(), schema.embedsSchema(), tsv);
             case json:
                 return new JSONTextLine(declaredFields, compress);

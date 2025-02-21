@@ -138,10 +138,10 @@ public class LocalDirectoryFactory extends FilesFactory {
                 scheme = new TextLine(new Fields("line"), compressor);
                 break;
             case csv:
-                scheme = new TextDelimited(declaredFields, compressor, schema.embedsSchema(), ",", "\"");
+                scheme = new TextDelimited(declaredFields, compressor, schema.embedsSchema(), ",", schema.quoteChar());
                 break;
             case tsv:
-                scheme = new TextDelimited(declaredFields, compressor, schema.embedsSchema(), "\t", "\"");
+                scheme = new TextDelimited(declaredFields, compressor, schema.embedsSchema(), "\t", schema.quoteChar());
                 break;
             case json:
                 scheme = new JSONTextLine(JSONUtil.DATA_MAPPER, declaredFields, compressor) {
