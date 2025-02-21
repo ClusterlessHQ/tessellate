@@ -22,39 +22,45 @@ tess --print-pipeline
       "declared" : [ ], <2>
       "format" : null, <3>
       "compression" : "none", <4>
-      "embedsSchema" : false <5>
-      "strictParsing" : true <6>
+      "embedsSchema" : false, <5>
+      "strictParsing" : true, <6>
+      "quoteChar" : "\"" <7>
     },
-    "partitions" : [ ] <7>
+    "partitions" : [ ], <8>
+    "errorPath" : null <9>
   },
-  "transform" : [ ], <8>
+  "transform" : [ ], <10>
   "sink" : {
-    "output" : null, <9>
+    "output" : null, <11>
     "schema" : {
-      "declared" : [ ], <10>
-      "format" : null, <11>
-      "compression" : "none", <12>
-      "embedsSchema" : false <13>
+      "declared" : [ ], <12>
+      "format" : null, <13>
+      "compression" : "none", <14>
+      "embedsSchema" : false <15>
     },
-    "partitions" : [ ] <14>
+    "partitions" : [ ], <16>
+    "errorPath" : null <17>
   }
 }
 ----
 
-<1> URLs to read from, required
+<1> URLs to read from, all files must have same schema (required)
 <2> Schema fields to declare, required if not embedded or type information should be declared
 <3> Format type
 <4> Compression type
 <5> Whether the schema is embedded in the files (has headers)
-<6> Whether to fail if rows don't meet the expected number of fields
-<7> Partitions to parse into fields
-<8> Transforms to apply to the data
-<9> URL to write to, required
-<10> Schema fields to declare, by default all fields are written
-<11> Format type
-<12> Compression type
-<13> Whether the schema should be embedded in the files (add headers)
-<14> Partitions to write out
+<6> Whether to fail if rows don't meet the expected number of fields (optional)
+<7> Quote character for CSV/TSV files, blank is valid (optional)
+<8> Partitions to parse into fields
+<9> URL to write/trap errors to, this allows the app to complete (optional)
+<10> Transforms to apply to the data
+<11> URL to write to, required
+<12> Schema fields to declare, by default all fields are written
+<13> Format type
+<14> Compression type
+<15> Whether the schema should be embedded in the files (add headers)
+<16> Partitions to write out
+<17> URL to write/trap errors to, this allows the app to complete (optional)
 
 To view all pipeline options:
 

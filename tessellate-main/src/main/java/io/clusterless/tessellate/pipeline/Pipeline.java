@@ -10,6 +10,7 @@ package io.clusterless.tessellate.pipeline;
 
 import cascading.CascadingException;
 import cascading.flow.Flow;
+import cascading.flow.FlowDef;
 import cascading.flow.local.LocalFlowConnector;
 import cascading.flow.local.LocalFlowProcess;
 import cascading.flow.stream.duct.DuctException;
@@ -20,21 +21,24 @@ import cascading.pipe.Pipe;
 import cascading.pipe.assembly.Coerce;
 import cascading.pipe.assembly.Copy;
 import cascading.tap.Tap;
+import cascading.tap.TrapProps;
 import cascading.tuple.Fields;
 import io.clusterless.tessellate.factory.*;
-import io.clusterless.tessellate.model.PipelineDef;
-import io.clusterless.tessellate.model.Schema;
-import io.clusterless.tessellate.model.SinkPartition;
+import io.clusterless.tessellate.model.*;
 import io.clusterless.tessellate.options.PipelineOptions;
 import io.clusterless.tessellate.options.PrintOptions;
 import io.clusterless.tessellate.parser.ast.Statement;
 import io.clusterless.tessellate.printer.SchemaPrinter;
+import io.clusterless.tessellate.util.Compression;
 import io.clusterless.tessellate.util.Format;
 import io.clusterless.tessellate.util.Models;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -42,6 +46,9 @@ import static cascading.flow.FlowDef.flowDef;
 
 public class Pipeline {
     private static final Logger LOG = LoggerFactory.getLogger(Pipeline.class);
+    public static final String HEAD = "head";
+    public static final String TAIL = "tail";
+    public static final String TRANSFORM = "transform";
 
     public enum State {
         NONE,
@@ -128,7 +135,7 @@ public class Pipeline {
             sourceFields = sourceFields.applyTypeToAll(String.class);
         }
 
-        PipelineContext context = new PipelineContext(LOG, sourceFields, new Pipe("head"));
+        PipelineContext context = new PipelineContext(LOG, sourceFields, new Pipe(HEAD));
 
         logCurrentFields(context.currentFields);
 
@@ -142,6 +149,7 @@ public class Pipeline {
             context.update(currentFields, pipe);
         }
 
+        context.name(TRANSFORM);
         // todo: group like transforms together if there are no interdependencies
         for (Statement statement : pipelineDef.transform().statements()) {
             context = new Transformer(statement).resolve(context);
@@ -174,6 +182,7 @@ public class Pipeline {
             context.update(context.currentFields, new Each(context.pipe, new Debug(true)));
         }
 
+        context.name(TAIL);
         LOG.info("sinking into fields: {}", context.currentFields);
 
         SinkFactory sinkFactory = TapFactories.findSinkFactory(pipelineDef.sink());
@@ -182,13 +191,52 @@ public class Pipeline {
 
         Tap<Properties, ?, ?> sinkTap = sinkFactory.getSink(pipelineOptions, pipelineDef.sink(), context.currentFields);
 
-        flow = new LocalFlowConnector(commonProperties).connect(flowDef()
+        Map<String, Tap> traps = new HashMap<>();
+
+        if (pipelineDef.source().errorPath() != null) {
+            Tap<Properties, ?, ?> errorTap = createTrap(pipelineDef.source().errorPath(), "errors-source", sinkFactory);
+            traps.put(HEAD, errorTap);
+        }
+
+        if (pipelineDef.sink().errorPath() != null) {
+            Tap<Properties, ?, ?> errorTap = createTrap(pipelineDef.sink().errorPath(), "errors-sink", sinkFactory);
+            traps.put(TAIL, errorTap);
+        }
+
+        if (!traps.isEmpty()) {
+            commonProperties = TrapProps.trapProps()
+                    .setRecordThrowableMessage(true)
+                    .setRecordElementTrace(true)
+                    .setRecordThrowableStackTrace(true)
+                    .buildProperties(commonProperties);
+        }
+
+        FlowDef flowDef = flowDef()
                 .setName("pipeline")
-                .addSource(context.pipe, sourceTap)
-                .addSink(context.pipe, sinkTap)
-                .addTail(context.pipe));
+                .addSource(HEAD, sourceTap)
+                .addSink(TAIL, sinkTap)
+                .addTail(context.pipe)
+                .addTraps(traps);
+
+        flow = new LocalFlowConnector(commonProperties).connect(flowDef);
 
         state = State.READY;
+    }
+
+    private Tap<Properties, ?, ?> createTrap(URI errorPath, String prefix, SinkFactory sinkFactory) throws IOException {
+        Sink errorSink = Sink.builder()
+                .withOutput(errorPath)
+                .withFilename(Filename.builder()
+                        .withPrefix(prefix)
+                        .build())
+                .withSchema(Schema.builder()
+                        .withFormat(Format.csv)
+                        .withCompression(Compression.gzip)
+                        .withDeclared(Field.asField("ALL"))
+                        .build())
+                .build();
+
+        return sinkFactory.getSink(pipelineOptions, errorSink, Fields.ALL);
     }
 
     private static void logCurrentFields(Fields currentFields) {
@@ -205,7 +253,7 @@ public class Pipeline {
         }
 
         if (pipelineOptions().printOptions().printOutputSchema()) {
-            Tap tap = flow.getSink();
+            Tap<?, ?, ?> tap = flow.getSink();
             PrintOptions.PrintFormat printFormat = pipelineOptions().printOptions().printFormat();
             SchemaPrinter schemaPrinter = new SchemaPrinter(tap, printFormat);
 

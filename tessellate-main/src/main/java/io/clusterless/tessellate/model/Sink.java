@@ -24,8 +24,8 @@ public class Sink implements Dataset, Model {
     @JsonSimpleView
     private List<SinkPartition> partitions = new ArrayList<>();
     private boolean namedPartitions = true;
-
     private Filename filename = new Filename();
+    private URI errorPath;
 
     public static Builder builder() {
         return Builder.builder();
@@ -43,6 +43,7 @@ public class Sink implements Dataset, Model {
         return manifestLot;
     }
 
+    @Override
     public Schema schema() {
         return schema;
     }
@@ -57,16 +58,23 @@ public class Sink implements Dataset, Model {
         return List.of(output());
     }
 
+    @Override
     public List<SinkPartition> partitions() {
         return partitions;
     }
 
+    @Override
     public boolean namedPartitions() {
         return namedPartitions;
     }
 
     public Filename filename() {
         return filename;
+    }
+
+    @Override
+    public URI errorPath() {
+        return errorPath;
     }
 
     public static final class Builder {
@@ -77,6 +85,7 @@ public class Sink implements Dataset, Model {
         private List<SinkPartition> partitions = new ArrayList<>();
         private boolean namedPartitions = true;
         private Filename filename = new Filename();
+        private URI errorPath;
 
         private Builder() {
         }
@@ -120,15 +129,21 @@ public class Sink implements Dataset, Model {
             return this;
         }
 
+        public Builder withErrorPath(URI errorPath) {
+            this.errorPath = errorPath;
+            return this;
+        }
+
         public Sink build() {
             Sink sink = new Sink();
+            sink.manifestTemplate = this.manifestTemplate;
+            sink.manifestLot = this.manifestLot;
+            sink.output = this.output;
             sink.schema = this.schema;
+            sink.partitions = this.partitions;
             sink.namedPartitions = this.namedPartitions;
             sink.filename = this.filename;
-            sink.output = this.output;
-            sink.manifestLot = this.manifestLot;
-            sink.manifestTemplate = this.manifestTemplate;
-            sink.partitions = this.partitions;
+            sink.errorPath = this.errorPath;
             return sink;
         }
     }
