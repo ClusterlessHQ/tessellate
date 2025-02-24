@@ -11,8 +11,8 @@ package io.clusterless.tessellate.pipeline.intrinsic;
 import cascading.nested.json.JSONGetFunction;
 import cascading.tuple.Fields;
 import io.clusterless.tessellate.parser.ast.Operation;
+import io.clusterless.tessellate.util.json.JSONUtil;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class FromJsonIntrinsic extends IntrinsicBuilder {
@@ -44,9 +44,8 @@ public class FromJsonIntrinsic extends IntrinsicBuilder {
             toFields = toFields.applyTypeToAll(String.class);
         }
 
-        Map<Fields, String> pathMap = new LinkedHashMap<>();
-
-        toFields.fieldsIterator().forEachRemaining(field -> pathMap.put(field, "/" + field.get(0)));
+        // need to escape / and ~ in field names
+        Map<Fields, String> pathMap = JSONUtil.asPointerMap(toFields);
 
         JSONGetFunction function = new JSONGetFunction(pathMap);
 

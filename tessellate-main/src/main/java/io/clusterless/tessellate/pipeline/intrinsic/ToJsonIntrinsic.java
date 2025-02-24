@@ -37,6 +37,7 @@ public class ToJsonIntrinsic extends IntrinsicBuilder {
             throw new IllegalArgumentException("results may only have one field");
         }
 
+        // Cascading will escape / and ~ in field names
         JSONCreateFunction function = new JSONCreateFunction(toFields);
 
         return new Result(fromFields, function, toFields);
