@@ -9,18 +9,22 @@
 package io.clusterless.tessellate.util.json;
 
 import cascading.nested.json.JSONCoercibleType;
+import cascading.tuple.Fields;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 public class JSONUtil {
     public static final ObjectMapper DATA_MAPPER;
@@ -205,5 +209,18 @@ public class JSONUtil {
         } catch (JsonProcessingException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    public static @NotNull Map<Fields, String> asPointerMap(Fields toFields) {
+        Map<Fields, String> pathMap = new LinkedHashMap<>();
+
+        toFields.fieldsIterator().forEachRemaining(field -> {
+            String value = field.get(0).toString();
+            // per the json pointer spec
+            String encodedField = value.replace("~", "~0").replace("/", "~1");
+            pathMap.put(field, "/" + encodedField);
+        });
+
+        return pathMap;
     }
 }
