@@ -14,6 +14,7 @@ import cascading.scheme.local.CompressorScheme;
 import cascading.scheme.local.Compressors;
 import cascading.scheme.local.TextDelimited;
 import cascading.scheme.local.TextLine;
+import cascading.scheme.util.DelimitedParser;
 import cascading.tap.SinkMode;
 import cascading.tap.Tap;
 import cascading.tap.local.FileTap;
@@ -138,10 +139,12 @@ public class LocalDirectoryFactory extends FilesFactory {
                 scheme = new TextLine(new Fields("line"), compressor);
                 break;
             case csv:
-                scheme = new TextDelimited(declaredFields, compressor, schema.embedsSchema(), ",", schema.quoteChar());
+                DelimitedParser csv = new DelimitedParser(",", schema.quoteChar(), null, schema.strictParsing(), true);
+                scheme = new TextDelimited(declaredFields, compressor, schema.embedsSchema(), csv);
                 break;
             case tsv:
-                scheme = new TextDelimited(declaredFields, compressor, schema.embedsSchema(), "\t", schema.quoteChar());
+                DelimitedParser tsv = new DelimitedParser("\t", schema.quoteChar(), null, schema.strictParsing(), true);
+                scheme = new TextDelimited(declaredFields, compressor, schema.embedsSchema(), tsv);
                 break;
             case json:
                 scheme = new JSONTextLine(JSONUtil.DATA_MAPPER, declaredFields, compressor) {
