@@ -106,10 +106,10 @@ public class StatementParser {
 
     public static Parser<Operation> INTRINSIC_OPERATION_WITH_ARGUMENTS =
             Parsers.sequence(
-                    FieldParser.fieldList.followedBy(Scanners.many(IS_WHITESPACE)),
+                    FieldParser.FIELD_LIST.followedBy(Scanners.many(IS_WHITESPACE)),
                     INTRINSIC.followedBy(Scanners.many(IS_WHITESPACE)),
                     VARIABLE_OPS.followedBy(Scanners.many(IS_WHITESPACE)),
-                    FieldParser.fieldList.followedBy(EOF),
+                    FieldParser.FIELD_LIST.followedBy(EOF),
                     NAryOperation::new
             );
 
@@ -117,7 +117,7 @@ public class StatementParser {
             Parsers.sequence(
                     INTRINSIC.followedBy(Scanners.many(IS_WHITESPACE)),
                     VARIABLE_OPS.followedBy(Scanners.many(IS_WHITESPACE)),
-                    FieldParser.fieldList.followedBy(EOF),
+                    FieldParser.FIELD_LIST.followedBy(EOF),
                     NAryOperation::new
             );
 
@@ -155,6 +155,35 @@ public class StatementParser {
                     Assignment::new
             );
 
+    private static final Parser<JoinType> JOIN_NAME = Parsers.sequence(
+            Scanners.isChar('+'),
+            Parsers.or(Scanners.stringCaseInsensitive(JoinType.inner.name()), Scanners.stringCaseInsensitive(JoinType.outer.name()))
+                    .source(),
+            (unused, type) -> JoinType.valueOf(type)
+    );
+    public static final Parser<Void> JOIN_PARAMS = Parsers.sequence(
+            Scanners.isChar('{'),
+            Scanners.many(IS_WHITESPACE),
+            Scanners.isChar('}')
+    );
+
+    // +inner{}
+    public static Parser<JoinType> JOIN =
+            Parsers.sequence(
+                    JOIN_NAME,
+                    JOIN_PARAMS,
+                    (type, unused) -> type
+            );
+
+    public static Parser<Join> JOIN_STATEMENT =
+            Parsers.sequence(
+                    FieldParser.RELATION_LIST.followedBy(Scanners.many(IS_WHITESPACE)),
+                    JOIN.followedBy(Scanners.many(IS_WHITESPACE)),
+                    Parsers.or(RETAIN, DISCARD).followedBy(Scanners.many(IS_WHITESPACE)),
+                    FieldParser.FIELD_LIST.followedBy(EOF),
+                    Join::new
+            );
+
     public static Parser<Statement> STATEMENTS = Parsers.or(
             LITERAL_ASSIGNMENT,
             TRANSFORM_COERCE,
@@ -162,7 +191,8 @@ public class StatementParser {
             TRANSFORM_RENAME,
             TRANSFORM_COPY,
             INTRINSIC_OPERATION_WITH_ARGUMENTS,
-            INTRINSIC_OPERATION_WITHOUT_ARGUMENTS
+            INTRINSIC_OPERATION_WITHOUT_ARGUMENTS,
+            JOIN_STATEMENT
     );
 
     public static <T extends Statement> T parse(String parse) {

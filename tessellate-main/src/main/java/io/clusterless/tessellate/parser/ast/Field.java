@@ -10,6 +10,7 @@ package io.clusterless.tessellate.parser.ast;
 
 import io.clusterless.tessellate.parser.Printer;
 
+import java.util.Objects;
 import java.util.Optional;
 
 public class Field {
@@ -32,5 +33,17 @@ public class Field {
     @Override
     public String toString() {
         return Printer.withParams(fieldRef.asComparable(), fieldType);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Field field = (Field) o;
+        return Objects.equals(fieldRef, field.fieldRef) && Objects.equals(fieldType, field.fieldType);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(fieldRef, fieldType);
     }
 }

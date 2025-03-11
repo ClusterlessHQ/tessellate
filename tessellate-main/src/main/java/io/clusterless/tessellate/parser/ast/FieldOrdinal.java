@@ -8,6 +8,8 @@
 
 package io.clusterless.tessellate.parser.ast;
 
+import java.util.Objects;
+
 public class FieldOrdinal implements FieldRef {
     Integer ordinal;
 
@@ -28,5 +30,17 @@ public class FieldOrdinal implements FieldRef {
     @Override
     public String toString() {
         return ordinal.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        FieldOrdinal that = (FieldOrdinal) o;
+        return Objects.equals(ordinal, that.ordinal);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(ordinal);
     }
 }

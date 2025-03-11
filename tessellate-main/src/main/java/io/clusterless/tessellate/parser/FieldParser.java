@@ -93,14 +93,28 @@ public class FieldParser {
             Parsers.sequence(Parsers.or(FIELD_NAME_QUOTED, FIELD_NAME, FIELD_ORDINAL), types.asOptional(), Field::new);
 
     private static final Parser<Void> FIELD_DELIM = Parsers.sequence(Scanners.many(IS_WHITESPACE), Scanners.isChar('+'), Scanners.many(IS_WHITESPACE));
-    public static final Parser<List<Field>> fieldList =
+
+    public static final Parser<List<Field>> FIELD_LIST =
             fullFieldDeclaration.sepBy(FIELD_DELIM);
+
+    public static final Parser<String> REL_NAME = Scanners.isChar(IS_ALPHA).followedBy(Scanners.many(IS_ALPHA_NUMERIC)).source();
+
+    public static final Parser<Rel> RELATION = Parsers.sequence(
+            REL_NAME,
+            Parsers.sequence(Scanners.many(IS_WHITESPACE), Scanners.isChar('('), Scanners.many(IS_WHITESPACE)),
+            FIELD_LIST,
+            Parsers.sequence(Scanners.many(IS_WHITESPACE), Scanners.isChar(')'), Scanners.many(IS_WHITESPACE)),
+            (name, unused, fields, unused2) -> new Rel(name, fields)
+    );
+
+    public static final Parser<List<Rel>> RELATION_LIST =
+            RELATION.sepBy(Parsers.sequence(Scanners.many(IS_WHITESPACE)));
 
     public static Field parseField(String field) {
         return BaseParser.parse(fullFieldDeclaration, field);
     }
 
     public static List<Field> parseFieldList(String field) {
-        return BaseParser.parse(fieldList, field);
+        return BaseParser.parse(FIELD_LIST, field);
     }
 }

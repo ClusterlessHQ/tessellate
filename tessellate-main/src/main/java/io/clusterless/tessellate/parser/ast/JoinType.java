@@ -8,16 +8,10 @@
 
 package io.clusterless.tessellate.parser.ast;
 
-public class UnaryOperation extends Operation {
-    public UnaryOperation(Field argument, Op op, Field result) {
-        super(argument, op, result);
-    }
-
-    public UnaryOperation(Field arguments, Op op) {
-        super(arguments, op);
-    }
-
-    public UnaryOperation(Field argument) {
-        super(argument);
-    }
+public enum JoinType {
+    inner,
+    left,
+    right,
+    full,
+    outer
 }
