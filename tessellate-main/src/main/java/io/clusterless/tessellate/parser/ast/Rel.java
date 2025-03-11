@@ -8,39 +8,34 @@
 
 package io.clusterless.tessellate.parser.ast;
 
+import io.clusterless.tessellate.parser.Printer;
+
+import java.util.List;
 import java.util.Objects;
 
-public class FieldName implements FieldRef {
+public class Rel {
     String name;
+    List<Field> fields;
 
-    public FieldName(CharSequence name) {
-        this.name = name.toString();
+    public Rel(String name, List<Field> fields) {
+        this.name = name;
+        this.fields = fields;
     }
 
     @Override
     public String toString() {
-        return name;
-    }
-
-    @Override
-    public boolean isOrdinal() {
-        return false;
-    }
-
-    @Override
-    public Comparable<?> asComparable() {
-        return name;
+        return Printer.literal(name) + "|" + Printer.fields(fields);
     }
 
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
-        FieldName fieldName = (FieldName) o;
-        return Objects.equals(name, fieldName.name);
+        Rel rel = (Rel) o;
+        return Objects.equals(name, rel.name) && Objects.equals(fields, rel.fields);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(name);
+        return Objects.hash(name, fields);
     }
 }

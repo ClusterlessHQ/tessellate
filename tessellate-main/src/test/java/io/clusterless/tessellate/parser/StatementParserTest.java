@@ -85,4 +85,23 @@ public class StatementParserTest {
         assertThat(operation.results())
                 .hasSize(1);
     }
+
+    @Test
+    void joins() {
+        Join join = StatementParser.parse("lhs(lhsField1+lhsField2) rhs(rhsField1+rhsField2) +inner{} +> intoField|string");
+        assertThat(join.joinType())
+                .isEqualTo(JoinType.inner);
+
+        assertThat(join.relations())
+                .hasSize(2);
+
+        assertThat(join.relations())
+                .contains(
+                        new Rel("lhs", List.of(FieldParser.parseField("lhsField1"), FieldParser.parseField("lhsField2"))),
+                        new Rel("rhs", List.of(FieldParser.parseField("rhsField1"), FieldParser.parseField("rhsField2")))
+                );
+
+        assertThat(join.results())
+                .hasSize(1);
+    }
 }

@@ -9,10 +9,5 @@
 package io.clusterless.tessellate.parser.ast;
 
 public interface Statement {
-
     Op op();
-
-    default boolean isOperation() {
-        return this instanceof Operation;
-    }
 }

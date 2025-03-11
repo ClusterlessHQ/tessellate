@@ -125,3 +125,10 @@ tuple is discarded.
 - pointer expression (json pointer) -
   - `fromField @[json pointer] +> toField`
   - `fromField @[json pointer] ~/regex/ +> toField`
+
+## Joins
+
+- `lhs(fromField1+fromField2) rhs(fromField1+fromField2+...) +inner{} +> fromField3` - copy lhs
+  `fromField1+fromField2+fromField3` to results
+- `lhs(fromField1+fromField2) rhs(fromField1+fromField2+...) +inner{} -> fromField3` - copy lhs `fromField3` to results
+- `lhs(fromField1+fromField2) rhs(fromField1+fromField2+...) +inner{}` - as a filter
