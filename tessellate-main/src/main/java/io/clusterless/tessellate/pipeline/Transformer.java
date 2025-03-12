@@ -10,16 +10,16 @@ package io.clusterless.tessellate.pipeline;
 
 import cascading.operation.Insert;
 import cascading.pipe.Each;
+import cascading.pipe.HashJoin;
 import cascading.pipe.Pipe;
-import cascading.pipe.assembly.Coerce;
-import cascading.pipe.assembly.Copy;
-import cascading.pipe.assembly.Discard;
-import cascading.pipe.assembly.Rename;
+import cascading.pipe.assembly.*;
+import cascading.pipe.joiner.*;
 import cascading.tuple.Fields;
 import cascading.tuple.coerce.Coercions;
 import io.clusterless.tessellate.parser.FieldsParser;
 import io.clusterless.tessellate.parser.ast.*;
 import io.clusterless.tessellate.pipeline.intrinsic.IntrinsicBuilder;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -32,19 +32,18 @@ public class Transformer {
     }
 
     PipelineContext resolve(PipelineContext context) {
+        if (statement.isJoin()) {
+            return handleJoin(context);
+        }
         switch (statement.op().op()) {
             case "":
                 return handleCoerce(context);
-
             case "=>":
                 return handleAssignment(context);
-
             case "+>":
                 return copyAndEval(context);
-
             case "->":
                 return discardAndEval(context);
-
             default:
                 throw new IllegalStateException("Unexpected value: " + statement.op().op());
         }
@@ -136,5 +135,79 @@ public class Transformer {
         }
 
         throw new IllegalStateException("no builder found for: " + operation);
+    }
+
+    private PipelineContext handleJoin(PipelineContext context) {
+        Join join = (Join) statement;
+
+        List<Rel> lhs = join.lhsRelations();
+        List<Rel> rhs = join.rhsRelations();
+
+        if (lhs.size() != 1) {
+            throw new IllegalArgumentException("lhs must have exactly one relation");
+        }
+
+        Rel lhsRel = lhs.get(0);
+        Rel rhsRel = rhs.get(0);
+        Fields joinLhsFields = fieldsParser.asFields(lhsRel.fields());
+        Fields joinRhsFields = fieldsParser.asFields(rhsRel.fields());
+
+        // all fields from lhs
+        Fields toFields = fieldsParser.asFields(join.results());
+
+        Pipe lhsPipe = new Pipe(lhsRel.name());
+
+        // toFields may declare fields used in the join
+        Fields lhsFields = Fields.merge(joinLhsFields, toFields);
+        lhsPipe = new Retain(lhsPipe, lhsFields);
+
+        Pipe rhsPipe = new Pipe(rhsRel.name(), context.pipe);
+
+        Joiner joiner = findJoiner(join);
+
+        context.log.info("join {}: from lhs: {}, to: {}", join.joinType(), lhsFields, toFields);
+
+        String name = String.format("%s+%s", lhsRel.name(), rhsRel.name());
+        Pipe pipe = new HashJoin(name, lhsPipe, joinLhsFields, rhsPipe, joinRhsFields, joiner);
+
+        Fields currentFields;
+
+        // `lhs(fromField1+fromField2) rhs(fromField1+fromField2+...) +inner{} +> fromField3` - copy lhs `fromField1+fromField2+fromField3` to results
+        // `lhs(fromField1+fromField2) rhs(fromField1+fromField2+...) +inner{} -> fromField3` - copy lhs `fromField3` to results
+        // `lhs(fromField1+fromField2) rhs(fromField1+fromField2+...) +inner{}` - as a filter
+        switch (join.op().op()) {
+            case "+>":
+                currentFields = lhsFields.append(context.currentFields);
+                break;
+            case "->":
+                pipe = new Discard(pipe, joinLhsFields);
+                currentFields = toFields.append(context.currentFields);
+                break;
+            case "":
+                pipe = new Discard(pipe, lhsFields);
+                currentFields = context.currentFields;
+                break;
+            default:
+                throw new IllegalArgumentException("unsupported join op: " + join.op());
+        }
+
+        context.joins.add(lhsPipe);
+
+        return context.update(currentFields, pipe);
+    }
+
+    private static @NotNull Joiner findJoiner(Join join) {
+        switch (join.joinType()) {
+            case inner:
+                return new InnerJoin();
+            case left:
+                return new LeftJoin();
+            case right:
+                return new RightJoin();
+            case outer:
+                return new OuterJoin();
+            default:
+                throw new IllegalArgumentException("unsupported join type: " + join.joinType());
+        }
     }
 }

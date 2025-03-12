@@ -27,21 +27,26 @@ import io.clusterless.tessellate.factory.*;
 import io.clusterless.tessellate.model.*;
 import io.clusterless.tessellate.options.PipelineOptions;
 import io.clusterless.tessellate.options.PrintOptions;
+import io.clusterless.tessellate.parser.ast.Join;
+import io.clusterless.tessellate.parser.ast.Rel;
 import io.clusterless.tessellate.parser.ast.Statement;
 import io.clusterless.tessellate.printer.SchemaPrinter;
 import io.clusterless.tessellate.util.Compression;
 import io.clusterless.tessellate.util.Format;
 import io.clusterless.tessellate.util.Models;
 import io.clusterless.tessellate.util.URIs;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import static cascading.flow.FlowDef.flowDef;
 
@@ -104,33 +109,23 @@ public class Pipeline {
     }
 
     public void build() throws IOException {
-        SourceFactory sourceFactory;
-        try {
-            sourceFactory = TapFactories.findSourceFactory(pipelineOptions, pipelineDef.source());
-        } catch (ManifestEmptyException e) {
-            SinkFactory sinkFactory = TapFactories.findSinkFactory(pipelineDef.sink());
+        Source primarySource = findPrimarySource();
 
-            sinkFactory.applyGlobalProperties(commonProperties);
+        // if source is a manifest, and the manifest points to empty data, we drop an empty manifest at the sink
+        SourceFactory primarySourceFactory = findPrimarySourceFactory(primarySource);
 
-            ManifestWriter manifestWriter = ManifestWriter.from(pipelineDef.sink(), null);
+        if (primarySourceFactory == null) return;
 
-            manifestWriter.writeManifest(commonProperties);
+        primarySourceFactory.applyGlobalProperties(commonProperties);
 
-            state = State.EMPTY_MANIFEST;
+        Tap<Properties, ?, ?> primarySourceTap = primarySourceFactory.getSource(pipelineOptions, primarySource);
 
-            return;
-        }
-
-        sourceFactory.applyGlobalProperties(commonProperties);
-
-        Tap<Properties, ?, ?> sourceTap = sourceFactory.getSource(pipelineOptions, pipelineDef.source());
-
-        if (pipelineDef.source().schema().embedsSchema() || pipelineDef.source().schema().format().alwaysEmbedsSchema()) {
-            sourceTap.retrieveSourceFields(flowProcess());
+        if (primarySource.schema().embedsSchema() || primarySource.schema().format().alwaysEmbedsSchema()) {
+            primarySourceTap.retrieveSourceFields(flowProcess());
         }
 
         // get source fields here so that any partition fields will be captured
-        Fields sourceFields = sourceTap.getSourceFields();
+        Fields sourceFields = primarySourceTap.getSourceFields();
 
         if (!sourceFields.hasTypes()) {
             sourceFields = sourceFields.applyTypeToAll(String.class);
@@ -140,7 +135,7 @@ public class Pipeline {
 
         logCurrentFields(context.currentFields);
 
-        Schema sourceSchema = pipelineDef.source().schema();
+        Schema sourceSchema = primarySource.schema();
         if (sourceSchema.format() == Format.regex) {
             Fields declaredFields = Models.fieldAsFields(sourceSchema.declared(), String.class, Fields.ALL);
             Pipe pipe = new Each(context.pipe, new Fields("line"), new RegexParser(declaredFields, sourceSchema.pattern()), Fields.SWAP);
@@ -194,8 +189,8 @@ public class Pipeline {
 
         Map<String, Tap> traps = new HashMap<>();
 
-        if (pipelineDef.source().errorPath() != null) {
-            Tap<Properties, ?, ?> errorTap = createTrap(pipelineDef.source().errorPath(), "errors-source", sinkFactory);
+        if (primarySource.errorPath() != null) {
+            Tap<Properties, ?, ?> errorTap = createTrap(primarySource.errorPath(), "errors-source", sinkFactory);
             traps.put(HEAD, errorTap);
             LOG.info("trapping input errors at: {}", errorTap.getIdentifier());
         }
@@ -214,9 +209,12 @@ public class Pipeline {
                     .buildProperties(commonProperties);
         }
 
+        Map<String, Tap> joinSources = createJoinSources(sinkFactory, traps);
+
         FlowDef flowDef = flowDef()
                 .setName("pipeline")
-                .addSource(HEAD, sourceTap)
+                .addSource(HEAD, primarySourceTap)
+                .addSources(joinSources)
                 .addSink(TAIL, sinkTap)
                 .addTail(context.pipe)
                 .addTraps(traps);
@@ -224,6 +222,91 @@ public class Pipeline {
         flow = new LocalFlowConnector(commonProperties).connect(flowDef);
 
         state = State.READY;
+    }
+
+    private Map<String, Tap> createJoinSources(SinkFactory sinkFactory, Map<String, Tap> traps) throws IOException {
+        Map<String, Tap> results = new HashMap<>();
+
+        Map<String, Source> secondarySources = findSecondarySources();
+
+        for (Map.Entry<String, Source> entry : secondarySources.entrySet()) {
+            String name = entry.getKey();
+            Source source = entry.getValue();
+            SourceFactory sourceFactory = TapFactories.findSourceFactory(pipelineOptions, source);
+            sourceFactory.applyGlobalProperties(commonProperties);
+            results.put(name, sourceFactory.getSource(pipelineOptions, source));
+
+            if (source.errorPath() != null) {
+                Tap<Properties, ?, ?> errorTap = createTrap(source.errorPath(), "errors-source-" + name, sinkFactory);
+                traps.put(HEAD, errorTap);
+                LOG.info("trapping input errors for: {}, at: {}", name, errorTap.getIdentifier());
+            }
+        }
+
+        return results;
+    }
+
+    private @Nullable SourceFactory findPrimarySourceFactory(Source primarySource) throws IOException {
+        SourceFactory primarySourceFactory;
+        try {
+            primarySourceFactory = TapFactories.findSourceFactory(pipelineOptions, primarySource);
+        } catch (ManifestEmptyException e) {
+            SinkFactory sinkFactory = TapFactories.findSinkFactory(pipelineDef.sink());
+
+            sinkFactory.applyGlobalProperties(commonProperties);
+
+            ManifestWriter manifestWriter = ManifestWriter.from(pipelineDef.sink(), null);
+
+            manifestWriter.writeManifest(commonProperties);
+
+            state = State.EMPTY_MANIFEST;
+
+            return null;
+        }
+
+        return primarySourceFactory;
+    }
+
+    private Source findPrimarySource() {
+        Source source = pipelineDef.source();
+
+        if (source != null) {
+            return source;
+        }
+
+        List<Join> joins = pipelineDef.transform().statements(Join.class);
+
+        if (joins.isEmpty()) {
+            throw new IllegalStateException("no source defined");
+        }
+
+        List<String> names = joins.stream()
+                .map(Join::rhsRelations)
+                .flatMap(List::stream)
+                .map(Rel::name)
+                .distinct()
+                .collect(Collectors.toList());
+
+        if (names.size() != 1) {
+            throw new IllegalStateException("multiple rhs sources defined, may only be one primary source, got: " + names);
+        }
+
+        return pipelineDef.sources().get(names.get(0));
+    }
+
+    private Map<String, Source> findSecondarySources() {
+        List<Join> joins = pipelineDef.transform().statements(Join.class);
+
+        List<String> names = joins.stream()
+                .map(Join::lhsRelations)
+                .flatMap(List::stream)
+                .map(Rel::name)
+                .distinct()
+                .collect(Collectors.toList());
+
+        return pipelineDef.sources().entrySet().stream()
+                .filter(entry -> names.contains(entry.getKey()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     private Tap<Properties, ?, ?> createTrap(URI errorPath, String prefix, SinkFactory sinkFactory) throws IOException {

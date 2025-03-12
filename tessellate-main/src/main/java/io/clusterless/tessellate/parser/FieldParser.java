@@ -108,7 +108,7 @@ public class FieldParser {
     );
 
     public static final Parser<List<Rel>> RELATION_LIST =
-            RELATION.sepBy(Parsers.sequence(Scanners.many(IS_WHITESPACE)));
+            RELATION.sepBy1(Parsers.sequence(Scanners.many(IS_WHITESPACE)));
 
     public static Field parseField(String field) {
         return BaseParser.parse(fullFieldDeclaration, field);
