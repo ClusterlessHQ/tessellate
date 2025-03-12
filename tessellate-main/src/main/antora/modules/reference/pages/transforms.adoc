@@ -101,8 +101,8 @@ Placeholders:::::
 
 `fixedWidth`:: pads a row/tuple to a fixed width by inserting nulls at a given index
 Def:::
-- `^fixedWidth{width:...,indertAt:...} ->` - replace ALL fields with the fixed with result
-- `^fixedWidth{width:...,indertAt:...} -> new_field|type + new_field2|type + etc` - name the new fields
+- `^fixedWidth{width:...,indentAt:...} ->` - replace ALL fields with the fixed with result
+- `^fixedWidth{width:...,indentAt:...} -> new_field|type + new_field2|type + etc` - name the new fields
 Params:::
 `width`:::: The width of the row/tuple.
 `insertAt`:::: The index to begin inserting the null padding.
