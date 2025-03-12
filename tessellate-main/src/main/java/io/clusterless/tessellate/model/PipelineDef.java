@@ -10,10 +10,15 @@ package io.clusterless.tessellate.model;
 
 import io.clusterless.tessellate.util.json.JsonSimpleView;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 public class PipelineDef implements Model {
     private String name;
     private AWS aws = new AWS();
-    private Source source = new Source();
+
+    private Source source; // null if not used
+    private Map<String, Source> sources = new LinkedHashMap<>();
 
     private Transform transform = new Transform();
 
@@ -22,6 +27,14 @@ public class PipelineDef implements Model {
     public static Builder builder() {
         return Builder.builder();
     }
+
+    public static PipelineDef defaultPipelineDef() {
+        return builder().withSource(new Source()).build();
+    }
+
+    public PipelineDef() {
+    }
+
 
     public String name() {
         return name;
@@ -34,6 +47,10 @@ public class PipelineDef implements Model {
     @JsonSimpleView
     public Source source() {
         return source;
+    }
+
+    public Map<String, Source> sources() {
+        return sources;
     }
 
     @JsonSimpleView
@@ -49,7 +66,8 @@ public class PipelineDef implements Model {
     public static final class Builder {
         private String name;
         private AWS aws = new AWS();
-        private Source source = new Source();
+        private Source source;
+        private Map<String, Source> sources = new LinkedHashMap<>();
         private Transform transform = new Transform();
         private Sink sink = new Sink();
 
@@ -75,6 +93,11 @@ public class PipelineDef implements Model {
             return this;
         }
 
+        public Builder withSources(Map<String, Source> sources) {
+            this.sources = sources;
+            return this;
+        }
+
         public Builder withTransform(Transform transform) {
             this.transform = transform;
             return this;
@@ -92,6 +115,7 @@ public class PipelineDef implements Model {
             pipelineDef.transform = this.transform;
             pipelineDef.sink = this.sink;
             pipelineDef.source = this.source;
+            pipelineDef.sources = this.sources;
             return pipelineDef;
         }
     }

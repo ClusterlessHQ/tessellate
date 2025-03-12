@@ -16,6 +16,13 @@ public class Join implements Statement {
     private final Op op;
     private final List<Field> results;
 
+    public Join(List<Rel> relations, JoinType joinType) {
+        this.relations = relations;
+        this.joinType = joinType;
+        this.op = new Op();
+        this.results = List.of();
+    }
+
     public Join(List<Rel> relations, JoinType joinType, Op op, List<Field> results) {
         this.relations = relations;
         this.joinType = joinType;
@@ -38,5 +45,13 @@ public class Join implements Statement {
 
     public List<Field> results() {
         return results;
+    }
+
+    public List<Rel> lhsRelations() {
+        return relations.subList(0, relations.size() - 1);
+    }
+
+    public List<Rel> rhsRelations() {
+        return relations.subList(relations.size() - 1, relations.size());
     }
 }

@@ -1,0 +1,64 @@
+= Joins
+
+Asymmetrical joins are supported.
+An asymmetrical join is a join where the left side datasets are small enough to fit into memory, and the right side datasets streamed.
+
+In order to perform a join, the small side datasets must be declared in the pipeline JSON file, and a join operator must be declared in the transform section of the pipeline that depends on the small side dataset.
+
+The join operator transform has the format:
+
+`lhs( fromField1 + fromField2 ) rhs( fromField1 + fromField2) +inner{} +> fromField3`
+
+Where `lhs` is the name of the small side dataset, and `rhs` is the name of the large side dataset.
+
+The fields declared with in the parenthesis are the fields to join on, and the fields declared after the `+>` operator are the fields to be added in the result tuple.
+
+Note the fields may have type declarations, if the join fields naturally have different types, they can be coerced to the same type by declaring the type in the join operator.
+
+The `lhs` dataset must be declared in the `sources` section of the pipeline.
+
+== Pipeline Declaration Format
+
+[source,json]
+----
+{
+  "sources" : {
+    "name1": {
+    "inputs" : [ ], <1>
+    "schema" : {
+      "declared" : [ ], <2>
+      "format" : null, <3>
+      "compression" : "none", <4>
+      "embedsSchema" : false <5>
+      },
+    "partitions" : [ ] <6>
+    },
+    "name2": {
+    "inputs" : [ ],
+    "schema" : {
+      "declared" : [ ],
+      "format" : null,
+      "compression" : "none",
+      "embedsSchema" : false
+      },
+    "partitions" : [ ]
+    }
+  }
+}
+----
+
+<1> URLs to read from, all files must have same schema (required)
+<2> Schema fields to declare, required if not embedded or type information should be declared
+<3> Format type
+<4> Compression type
+<5> Whether the schema is embedded in the files (has headers)
+<6> Whether to fail if rows don't meet the expected number of fields (optional)
+
+== Join Types
+
+The following join types are supported:
+
+* `inner`:: The default join type, only rows that have matching keys in both datasets are returned.
+* `left`:: All rows from the left side dataset are returned, and matching rows from the right side dataset are returned.
+* `right`:: All rows from the right side dataset are returned, and matching rows from the left side dataset are returned.
+* `outer`:: All rows from both datasets are returned, and matching rows are returned.

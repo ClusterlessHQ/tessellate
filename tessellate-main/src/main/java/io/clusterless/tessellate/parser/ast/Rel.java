@@ -22,6 +22,14 @@ public class Rel {
         this.fields = fields;
     }
 
+    public String name() {
+        return name;
+    }
+
+    public List<Field> fields() {
+        return fields;
+    }
+
     @Override
     public String toString() {
         return Printer.literal(name) + "|" + Printer.fields(fields);

@@ -12,10 +12,14 @@ import cascading.pipe.Pipe;
 import cascading.tuple.Fields;
 import org.slf4j.Logger;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class PipelineContext {
     public final Logger log;
     public final Pipe head;
+    public final List<Pipe> joins = new ArrayList<>();
 
     public Fields currentFields;
     public Pipe pipe;

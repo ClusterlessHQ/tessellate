@@ -9,6 +9,7 @@
 package io.clusterless.tessellate.parser;
 
 import io.clusterless.tessellate.parser.ast.*;
+import org.jetbrains.annotations.NotNull;
 import org.jparsec.Parser;
 import org.jparsec.Parsers;
 import org.jparsec.Scanners;
@@ -16,6 +17,7 @@ import org.jparsec.Terminals;
 import org.jparsec.pattern.CharPredicates;
 import org.jparsec.pattern.Patterns;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -26,7 +28,6 @@ public class StatementParser {
 
     private static Parser<Void> op(String op) {
         return Patterns.string(op).toScanner(op);
-
     }
 
     private static final Parser<String> QUOTED_LITERAL = Parsers.or(
@@ -157,10 +158,19 @@ public class StatementParser {
 
     private static final Parser<JoinType> JOIN_NAME = Parsers.sequence(
             Scanners.isChar('+'),
-            Parsers.or(Scanners.stringCaseInsensitive(JoinType.inner.name()), Scanners.stringCaseInsensitive(JoinType.outer.name()))
+            joins()
                     .source(),
             (unused, type) -> JoinType.valueOf(type)
     );
+
+    private static @NotNull Parser<Void> joins() {
+        return Parsers.or(
+                Arrays.stream(JoinType.values())
+                        .map(type -> Scanners.stringCaseInsensitive(type.name()))
+                        .collect(Collectors.toList())
+        );
+    }
+
     public static final Parser<Void> JOIN_PARAMS = Parsers.sequence(
             Scanners.isChar('{'),
             Scanners.many(IS_WHITESPACE),
@@ -176,13 +186,19 @@ public class StatementParser {
             );
 
     public static Parser<Join> JOIN_STATEMENT =
-            Parsers.sequence(
-                    FieldParser.RELATION_LIST.followedBy(Scanners.many(IS_WHITESPACE)),
-                    JOIN.followedBy(Scanners.many(IS_WHITESPACE)),
-                    Parsers.or(RETAIN, DISCARD).followedBy(Scanners.many(IS_WHITESPACE)),
-                    FieldParser.FIELD_LIST.followedBy(EOF),
-                    Join::new
-            );
+            Parsers.or(
+                    Parsers.sequence(
+                            FieldParser.RELATION_LIST.followedBy(Scanners.many(IS_WHITESPACE)),
+                            JOIN.followedBy(Scanners.many(IS_WHITESPACE)),
+                            Parsers.or(RETAIN, DISCARD).followedBy(Scanners.many(IS_WHITESPACE)),
+                            FieldParser.FIELD_LIST.followedBy(EOF),
+                            Join::new
+                    ),
+                    Parsers.sequence(
+                            FieldParser.RELATION_LIST.followedBy(Scanners.many(IS_WHITESPACE)),
+                            JOIN.followedBy(EOF),
+                            Join::new
+                    ));
 
     public static Parser<Statement> STATEMENTS = Parsers.or(
             LITERAL_ASSIGNMENT,
@@ -196,6 +212,7 @@ public class StatementParser {
     );
 
     public static <T extends Statement> T parse(String parse) {
+        //noinspection unchecked
         return (T) BaseParser.parse(STATEMENTS, parse);
     }
 

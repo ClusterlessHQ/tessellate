@@ -10,4 +10,8 @@ package io.clusterless.tessellate.parser.ast;
 
 public interface Statement {
     Op op();
+
+    default boolean isJoin() {
+        return this instanceof Join;
+    }
 }

@@ -3,3 +3,4 @@
 * xref:source-sink.adoc[]
 * xref:transforms.adoc[]
 * xref:types.adoc[]
+* xref:joins.adoc[]

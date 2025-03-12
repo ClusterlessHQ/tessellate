@@ -54,4 +54,11 @@ public class Transform implements Model {
     public List<String> statementsToString() {
         return statements.stream().map(Object::toString).collect(Collectors.toList());
     }
+
+    public <T extends Statement> List<T> statements(Class<T> type) {
+        return statements.stream()
+                .filter(type::isInstance)
+                .map(type::cast)
+                .collect(Collectors.toList());
+    }
 }
