@@ -35,7 +35,13 @@ public class FixedWidthIntrinsic extends IntrinsicBuilder {
             insertAt = -1;
         }
 
-        if (toFields.isNone()) {
+        if (width == null && toFields.isNone()) {
+            throw new IllegalArgumentException("width must be specified, or result fields must be declared");
+        }
+
+        if (width == null) {
+            width = toFields.size();
+        } else if (toFields.isNone()) {
             toFields = Fields.size(width);
         }
 
