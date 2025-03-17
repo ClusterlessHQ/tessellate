@@ -28,6 +28,7 @@ public class Schema implements Model {
     private boolean embedsSchema = false;
     private String pattern;
     private boolean strictParsing = true;
+    private String delimiterChar = null;
     private String quoteChar = "\"";
 
     public Schema() {
@@ -65,6 +66,10 @@ public class Schema implements Model {
         return strictParsing;
     }
 
+    public String delimiterChar() {
+        return delimiterChar;
+    }
+
     public String quoteChar() {
         return quoteChar;
     }
@@ -82,6 +87,7 @@ public class Schema implements Model {
         private boolean embedsSchema = false;
         private String pattern;
         private boolean strictParsing = true;
+        private String delimiterChar = null;
         private String quoteChar = "\"";
 
         public Builder withName(String name) {
@@ -124,7 +130,13 @@ public class Schema implements Model {
             return this;
         }
 
+        public Builder withDelimiterChar(String delimiterChar) {
+            this.delimiterChar = delimiterChar;
+            return this;
+        }
+
         public Builder withQuoteChar(String quoteChar) {
+            this.quoteChar = quoteChar;
             return this;
         }
 
@@ -138,6 +150,7 @@ public class Schema implements Model {
             schema.embedsSchema = this.embedsSchema;
             schema.pattern = this.pattern;
             schema.strictParsing = this.strictParsing;
+            schema.delimiterChar = this.delimiterChar;
             schema.quoteChar = this.quoteChar;
             return schema;
         }
