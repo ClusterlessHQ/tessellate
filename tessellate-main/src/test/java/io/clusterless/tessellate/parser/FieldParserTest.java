@@ -40,6 +40,14 @@ public class FieldParserTest {
     }
 
     @Test
+    void parseFieldsWithDash() {
+        assertEquals("@field-name", FieldParser.parseField("'@field-name'").fieldRef().toString());
+        assertEquals("@field-name", FieldParser.parseField("'@field-name'|DateTime").fieldRef().toString());
+        assertEquals("@field-name", FieldParser.parseField("'@field-name'|DateTime|yyyyMMdd").fieldRef().toString());
+        assertEquals("@field-name", FieldParser.parseField("'@field-name'|Instant|twelfths|yyyyMMdd").fieldRef().toString());
+    }
+
+    @Test
     void parseFieldsList() {
         assertEquals(1, FieldParser.parseFieldList("@field").size());
         assertEquals(5, FieldParser.parseFieldList("@field1+@field|DateTime+@field|DateTime|yyyyMMdd+1|DateTime|yyyyMMdd+@field|Instant|twelfths|yyyyMMdd").size());
