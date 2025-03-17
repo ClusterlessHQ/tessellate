@@ -27,7 +27,7 @@ public class TextFSFactory extends LinesFSFactory {
 
     @Override
     public Set<Format> getFormats() {
-        return Set.of(Format.text, Format.csv, Format.tsv);
+        return Set.of(Format.text, Format.csv, Format.tsv, Format.delimited);
     }
 
     @Override
@@ -39,6 +39,9 @@ public class TextFSFactory extends LinesFSFactory {
             default:
             case text:
                 return new TextLine(new Fields("line"), new Fields("line"), compress);
+            case delimited:
+                DelimitedParser delimited = new DelimitedParser(schema.delimiterChar(), schema.quoteChar(), null, schema.strictParsing(), true);
+                return new TextDelimited(declaredFields, compress, schema.embedsSchema(), schema.embedsSchema(), delimited);
             case csv:
                 DelimitedParser csv = new DelimitedParser(",", schema.quoteChar(), null, schema.strictParsing(), true);
                 return new TextDelimited(declaredFields, compress, schema.embedsSchema(), schema.embedsSchema(), csv);

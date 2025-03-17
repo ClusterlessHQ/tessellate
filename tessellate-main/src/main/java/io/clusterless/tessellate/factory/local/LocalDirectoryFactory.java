@@ -60,7 +60,7 @@ public class LocalDirectoryFactory extends FilesFactory {
 
     @Override
     public Set<Format> getFormats() {
-        return Set.of(Format.csv, Format.tsv, Format.json, Format.text);
+        return Set.of(Format.csv, Format.tsv, Format.json, Format.text, Format.delimited);
     }
 
     @Override
@@ -138,6 +138,9 @@ public class LocalDirectoryFactory extends FilesFactory {
             case text:
                 scheme = new TextLine(new Fields("line"), compressor);
                 break;
+            case delimited:
+                DelimitedParser delimited = new DelimitedParser(schema.delimiterChar(), schema.quoteChar(), null, schema.strictParsing(), true);
+                return new TextDelimited(declaredFields, compressor, schema.embedsSchema(), schema.embedsSchema(), delimited);
             case csv:
                 DelimitedParser csv = new DelimitedParser(",", schema.quoteChar(), null, schema.strictParsing(), true);
                 scheme = new TextDelimited(declaredFields, compressor, schema.embedsSchema(), csv);

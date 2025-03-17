@@ -18,6 +18,7 @@ import java.util.Set;
 public enum Format {
     csv("csv"),
     tsv("tsv"),
+    delimited,
     parquet(true, "parquet"),
     text,
     json(text, "jsonl", "json"),
