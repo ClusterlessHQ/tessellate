@@ -24,7 +24,7 @@ import static org.jparsec.pattern.CharPredicates.*;
 public class FieldParser {
     private static final CharPredicate FIELD_QUOTE = CharPredicates.isChar('\'');
     private static final CharPredicate FIELD_NAME_EXTRA = CharPredicates.among("~@#$%^&_");
-    private static final CharPredicate FIELD_NAME_EXTRA_WITH_SPACE = CharPredicates.or(CharPredicates.among(" /"), FIELD_NAME_EXTRA);
+    private static final CharPredicate FIELD_NAME_EXTRA_WITH_SPECIAL = CharPredicates.or(CharPredicates.among(" /-"), FIELD_NAME_EXTRA);
     private static final CharPredicate PARAM_EXTRA = CharPredicates.not(among("|+")); // | delimits params, + delimits fields
     private static final Parser<FieldName> FIELD_NAME =
             Scanners.isChar(
@@ -36,18 +36,18 @@ public class FieldParser {
                     .source()
                     .map(FieldName::new);
 
-    private static final Parser<FieldName> FIELD_NAME_WITH_SPACE =
+    private static final Parser<FieldName> FIELD_NAME_WITH_SPECIAL =
             Scanners.isChar(
                             or(CharPredicates.IS_ALPHA, FIELD_NAME_EXTRA)
                     )
                     .followedBy(Scanners.many(
-                            or(CharPredicates.IS_ALPHA_NUMERIC, FIELD_NAME_EXTRA_WITH_SPACE)
+                            or(CharPredicates.IS_ALPHA_NUMERIC, FIELD_NAME_EXTRA_WITH_SPECIAL)
                     ))
                     .source()
                     .map(FieldName::new);
 
     private static final Parser<FieldName> FIELD_NAME_QUOTED =
-            FIELD_NAME_WITH_SPACE.between(Scanners.isChar(FIELD_QUOTE), Scanners.isChar(FIELD_QUOTE));
+            FIELD_NAME_WITH_SPECIAL.between(Scanners.isChar(FIELD_QUOTE), Scanners.isChar(FIELD_QUOTE));
 
     private static final Parser<FieldOrdinal> FIELD_ORDINAL =
             Scanners.many1(
