@@ -178,6 +178,10 @@ public abstract class FSFactory extends FilesFactory {
             @Override
             protected TapWith<Configuration, RecordReader, OutputCollector> create(Scheme<Configuration, RecordReader, OutputCollector, ?, ?> scheme, Path path, SinkMode sinkMode) {
                 try {
+                    if (dataset.hasManifest()) {
+                        path = new Path(identifiers[0]);
+                    }
+
                     return Util.newInstance(Hfs.class, scheme, path, sinkMode);
                 } catch (CascadingException exception) {
                     throw new TapException("unable to create a new instance of: " + Hfs.class.getName(), exception);
