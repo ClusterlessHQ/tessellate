@@ -136,7 +136,9 @@ public class LocalDirectoryFactory extends FilesFactory {
         switch (schema.format()) {
             default:
             case text:
-                scheme = new TextLine(new Fields("line"), compressor);
+                Fields sinkFields = new Fields("line");
+                Fields sourceFields = dataset.schema().embedsSchema() ? new Fields("num", "line").applyTypes(Long.TYPE, String.class) : sinkFields;
+                scheme = new TextLine(sourceFields, sinkFields, compressor);
                 break;
             case delimited:
                 DelimitedParser delimited = new DelimitedParser(schema.delimiterChar(), schema.quoteChar(), null, schema.strictParsing(), true);

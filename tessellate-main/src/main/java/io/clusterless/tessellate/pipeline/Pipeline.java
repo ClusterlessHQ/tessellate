@@ -15,11 +15,13 @@ import cascading.flow.local.LocalFlowConnector;
 import cascading.flow.local.LocalFlowProcess;
 import cascading.flow.stream.duct.DuctException;
 import cascading.operation.Debug;
+import cascading.operation.expression.ExpressionFilter;
 import cascading.operation.regex.RegexParser;
 import cascading.pipe.Each;
 import cascading.pipe.Pipe;
 import cascading.pipe.assembly.Coerce;
 import cascading.pipe.assembly.Copy;
+import cascading.pipe.assembly.Discard;
 import cascading.tap.Tap;
 import cascading.tap.TrapProps;
 import cascading.tuple.Fields;
@@ -136,6 +138,18 @@ public class Pipeline {
         logCurrentFields(context.currentFields);
 
         Schema sourceSchema = primarySource.schema();
+        // this is mirrored in the Tap Factories where the Schema is instantiated
+        if ((sourceSchema.format() == Format.text || sourceSchema.format() == Format.regex) && sourceSchema.embedsSchema()) {
+            // this is a hack to skip the first line
+            LOG.info("sourcing format: {}, embedSchema is true, skipping first line, but not using the schema", sourceSchema.format());
+            Fields num = new Fields("num");
+            Pipe pipe = new Each(context.pipe, num, new ExpressionFilter("num == 0"));
+            pipe = new Discard(pipe, num);
+            Fields currentFields = context.currentFields.subtract(num);
+            logCurrentFields(currentFields);
+            context.update(currentFields, pipe);
+        }
+
         if (sourceSchema.format() == Format.regex) {
             Fields declaredFields = Models.fieldAsFields(sourceSchema.declared(), String.class, Fields.ALL);
             Pipe pipe = new Each(context.pipe, new Fields("line"), new RegexParser(declaredFields, sourceSchema.pattern()), Fields.SWAP);
