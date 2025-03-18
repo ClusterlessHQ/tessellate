@@ -38,7 +38,9 @@ public class TextFSFactory extends LinesFSFactory {
         switch (schema.format()) {
             default:
             case text:
-                return new TextLine(new Fields("line"), new Fields("line"), compress);
+                Fields sinkFields = new Fields("line");
+                Fields sourceFields = dataset.schema().embedsSchema() ? new Fields("num", "line").applyTypes(Long.TYPE, String.class) : sinkFields;
+                return new TextLine(sourceFields, sinkFields, compress);
             case delimited:
                 DelimitedParser delimited = new DelimitedParser(schema.delimiterChar(), schema.quoteChar(), null, schema.strictParsing(), true);
                 return new TextDelimited(declaredFields, compress, schema.embedsSchema(), schema.embedsSchema(), delimited);
