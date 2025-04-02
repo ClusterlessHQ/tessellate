@@ -22,6 +22,12 @@ public class Assignment implements Statement {
         this.result = result;
     }
 
+    public Assignment(Op op, Field result) {
+        this.literal = null;
+        this.op = op;
+        this.result = result;
+    }
+
     public String literal() {
         return literal;
     }

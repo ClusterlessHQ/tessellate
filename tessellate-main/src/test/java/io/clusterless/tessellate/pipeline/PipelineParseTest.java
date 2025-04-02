@@ -19,6 +19,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import io.clusterless.tessellate.model.PipelineDef;
 import io.clusterless.tessellate.model.SourcePartition;
 import io.clusterless.tessellate.model.Transform;
+import io.clusterless.tessellate.parser.ast.Assignment;
 import io.clusterless.tessellate.parser.ast.Op;
 import io.clusterless.tessellate.type.WrappedCoercibleType;
 import io.clusterless.tessellate.util.json.JSONUtil;
@@ -28,6 +29,7 @@ import java.util.List;
 import java.util.TimeZone;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 @TestWithResources
 public class PipelineParseTest {
@@ -51,12 +53,14 @@ public class PipelineParseTest {
 
         Transform transform = pipeline.transform();
 
-        assertEquals(6, transform.statements().size());
+        assertEquals(7, transform.statements().size());
         assertEquals(new Op(), transform.statements().get(0).op());
         assertEquals(new Op("->"), transform.statements().get(1).op());
         assertEquals(new Op("+>"), transform.statements().get(2).op());
         assertEquals(new Op("->"), transform.statements().get(3).op());
         assertEquals(new Op("=>"), transform.statements().get(4).op());
         assertEquals(new Op("=>"), transform.statements().get(5).op());
+        assertEquals(new Op("=>"), transform.statements().get(6).op());
+        assertNull(((Assignment) transform.statements().get(6)).literal());
     }
 }

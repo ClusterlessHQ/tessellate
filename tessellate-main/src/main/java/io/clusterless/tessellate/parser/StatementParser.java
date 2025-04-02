@@ -149,11 +149,18 @@ public class StatementParser {
             );
 
     public static Parser<Assignment> LITERAL_ASSIGNMENT =
-            Parsers.sequence(
-                    LITERAL_VALUE,
-                    ASSIGNMENT.followedBy(Scanners.many(IS_WHITESPACE)),
-                    FieldParser.fullFieldDeclaration.followedBy(EOF),
-                    Assignment::new
+            Parsers.or(
+                    Parsers.sequence(
+                            LITERAL_VALUE,
+                            ASSIGNMENT.followedBy(Scanners.many(IS_WHITESPACE)),
+                            FieldParser.fullFieldDeclaration.followedBy(EOF),
+                            Assignment::new
+                    ),
+                    Parsers.sequence(
+                            ASSIGNMENT.followedBy(Scanners.many(IS_WHITESPACE)),
+                            FieldParser.fullFieldDeclaration.followedBy(EOF),
+                            Assignment::new
+                    )
             );
 
     private static final Parser<JoinType> JOIN_NAME = Parsers.sequence(

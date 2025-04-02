@@ -34,7 +34,9 @@ Apply function:: Apply intrinsic functions against one or more fields.
 There are three transform operators:
 
 `pass:[=>]`:: Assign a literal value to a new field.
-Format::: `literal pass:[=>] new_field|type`
+Format:::
+- `literal pass:[=>] new_field|type`
+- `pass:[=>] new_field|type` # insert `null` into the field
 `+>`:: Retain the input field, and assign the result value to a new field.
 Format::: `field +> new_field|type`
 `pass:[->]`:: Discard the input fields, and assign the result value to a new field.

@@ -319,7 +319,8 @@ public class PipelineTest {
                         "httpStatus->httpStatusString|String",// rename: "httpStatus|Integer"
                         "httpStatusString|Integer",// coerce: "httpStatusString|String"
                         "requestID->",// discard: "httpStatusString|String"
-                        "200=>code|Integer" // insert
+                        "200=>code|Integer", // insert
+                        "=> _empty|Integer" // insert
                 ))
                 .withSink(Sink.builder()
                         .withOutput(output)
@@ -346,7 +347,7 @@ public class PipelineTest {
         CascadingTesting.validateEntries(
                 pipeline.flow().openSink(),
                 l -> assertEquals(4, l, "wrong length"), // headers are declared so aren't counted
-                l -> assertEquals(merged.source().schema().declared().size() + 1 + 1, l, "wrong size"),
+                l -> assertEquals(merged.source().schema().declared().size() + 1 + 1 + 1, l, "wrong size"),
                 l -> {
                 }
         );

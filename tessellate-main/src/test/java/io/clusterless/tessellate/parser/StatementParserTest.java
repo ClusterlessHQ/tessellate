@@ -51,6 +51,7 @@ public class StatementParserTest {
         assertInstanceOf(Intrinsic.class, assertInstanceOf(Operation.class, StatementParser.parse("^toJson{} -> json")).exp());
 
         assertNotNull(StatementParser.parse("five => intoField|type"));
+        assertNotNull(StatementParser.parse("=> emptyValue"));
     }
 
     @Test
