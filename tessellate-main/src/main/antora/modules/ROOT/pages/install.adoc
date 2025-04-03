@@ -1,6 +1,8 @@
 = Installation
 
-All tessellate releases are available via [Homebrew](https://brew.sh):
+All tessellate releases are available via:
+
+== https://brew.sh[Homebrew]
 
 [source,console]
 ----
@@ -8,6 +10,18 @@ brew tap clusterlesshq/tap
 brew install tessellate
 tess --version
 ----
+
+== Docker
+
+- https://hub.docker.com/r/clusterless/tessellate
+
+[source,console]
+----
+docker pull clusterless/tessellate:latest-wip
+docker run -it --rm clusterless/tessellate:latest-wip --version
+----
+
+== GitHub
 
 Or, you can download the latest releases from GitHub:
 
