@@ -199,12 +199,10 @@ public class FieldsParser {
                 .withZone(ZoneId.of("UTC"));
     }
 
-    private static TemporalUnit getUnit(String s) {
-        try {
-            return IntervalUnits.find(s.toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
+    private static TemporalUnit getUnit(String value) {
+        return IntervalUnits.findSafe(value.toUpperCase(Locale.ROOT)) // lookup unit by name
+                .or(() -> IntervalUnits.findDurationWithin(value)) // use duration string if present
+                .orElse(null);
     }
 
     public static Comparable<?> parseInt(String fieldName) {

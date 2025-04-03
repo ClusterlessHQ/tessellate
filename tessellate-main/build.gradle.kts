@@ -59,7 +59,7 @@ val jupiter = "5.10.3"
 
 dependencies {
 
-    val commons = "0.12"
+    val commons = "0.14"
     implementation("io.clusterless:clusterless-commons-core:$commons")
 
     implementation("com.google.guava:guava:33.4.0-jre")
