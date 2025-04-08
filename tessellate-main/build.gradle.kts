@@ -80,7 +80,7 @@ dependencies {
     implementation("net.wensel:cascading-hadoop3-parquet:$cascading")
     implementation("net.wensel:cascading-hadoop3-io:$cascading")
 
-    val parquet = "1.15.0"
+    val parquet = "1.15.1"
     implementation("org.apache.parquet:parquet-common:$parquet")
     implementation("org.apache.parquet:parquet-column:$parquet")
     implementation("org.apache.parquet:parquet-hadoop:$parquet")
