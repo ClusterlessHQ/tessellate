@@ -32,20 +32,20 @@ public class TsidIntrinsic extends IntrinsicBuilder {
     }
 
     @Override
-    public Result create(Operation operation) {
+    public Result create(Fields currentFields, Operation operation) {
         // default to long if not provided
         Fields toFields = fieldsParser().asFields(operation.results(), Long.TYPE);
         Intrinsic intrinsic = operation.exp();
 
-        Integer nodeCount = intrinsic.params().getInteger(NODE_COUNT);
+        Integer nodeCount = intrinsic.params().getInteger(NODE_COUNT).orElse(null);
         Integer node = intrinsic.params().getInteger(NODE, s -> {
             requireParam(nodeCount, "nodeCount param required when providing a string node value");
             return Math.abs(SIP.hashString(s, StandardCharsets.UTF_8).asInt()) % nodeCount;
         });
 
-        Long epoch = intrinsic.params().getLong(EPOCH);
-        String format = intrinsic.params().getString(FORMAT);
-        Boolean counterZero = intrinsic.params().getBoolean(COUNTER_TO_ZERO);
+        Long epoch = intrinsic.params().getLong(EPOCH).orElse(null);
+        String format = intrinsic.params().getString(FORMAT).orElse(null);
+        Boolean counterZero = intrinsic.params().getBoolean(COUNTER_TO_ZERO).orElse(null);
 
         TsidFunction function = new TsidFunction(toFields, node, nodeCount, epoch, format, counterZero);
 

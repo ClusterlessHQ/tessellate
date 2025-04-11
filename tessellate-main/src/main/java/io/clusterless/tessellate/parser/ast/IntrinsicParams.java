@@ -25,46 +25,46 @@ public class IntrinsicParams {
         return params;
     }
 
-    public String getString(String param) {
-        return params.get(param);
+    public Optional<String> getString(String param) {
+        return Optional.ofNullable(params.get(param));
     }
 
-    public Boolean getBoolean(String param) {
+    public Optional<Boolean> getBoolean(String param) {
         String value = params.get(param);
 
         if (value == null) {
-            return null;
+            return Optional.empty();
         }
 
-        return Boolean.parseBoolean(value);
+        return Optional.of(Boolean.parseBoolean(value));
     }
 
     public Integer getInteger(String param, Function<String, Integer> otherwise) {
         try {
-            return getInteger(param);
+            return getInteger(param).orElse(null);
         } catch (NumberFormatException e) {
-            return otherwise.apply(getString(param));
+            return otherwise.apply(getString(param).orElse(null));
         }
     }
 
-    public Integer getInteger(String param) {
+    public Optional<Integer> getInteger(String param) {
         String value = params.get(param);
 
         if (value == null) {
-            return null;
+            return Optional.empty();
         }
 
-        return Integer.parseInt(value);
+        return Optional.of(Integer.parseInt(value));
     }
 
-    public Long getLong(String param) {
+    public Optional<Long> getLong(String param) {
         String value = params.get(param);
 
         if (value == null) {
-            return null;
+            return Optional.empty();
         }
 
-        return Long.parseLong(value);
+        return Optional.of(Long.parseLong(value));
     }
 
     @Override

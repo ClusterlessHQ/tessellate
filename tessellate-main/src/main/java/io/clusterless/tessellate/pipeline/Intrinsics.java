@@ -26,6 +26,7 @@ public class Intrinsics {
         add(new FixedWidthIntrinsic());
         add(new ToJsonIntrinsic());
         add(new FromJsonIntrinsic());
+        add(new FormatFieldsIntrinsic());
     }
 
     public static Map<String, IntrinsicBuilder> builders() {

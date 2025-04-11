@@ -70,7 +70,7 @@ public abstract class IntrinsicBuilder {
         return FieldsParser.INSTANCE;
     }
 
-    public abstract Result create(Operation operation);
+    public abstract Result create(Fields currentFields, Operation operation);
 
     protected static void requireParam(Object value, String message) {
         if (value == null) {

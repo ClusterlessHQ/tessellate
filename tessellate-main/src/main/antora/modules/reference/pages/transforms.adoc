@@ -2,14 +2,14 @@
 
 == Fields
 
-Input and output files/objects (also referred to as sources and sinks) are made of both rows and columns. Or tuples and fields.
+Input and output files/objects (also referred to as sources and sinks) are made of both rows and columns.
+Or tuples and fields.
 
 A tuple has a set of fields, and a field has an optional xref:types.adoc[type] (and any associated metadata).
 
-Data files, or objects, have paths and names. Field values can be parsed from the paths and embedded in the tuple stream
-as fields. This is common when data has been partitioned into files where common values (like month and/or day) can
-be embedded in the path name to help select relevant files (push down predicates are applied to path values by many
-query engines).
+Data files, or objects, have paths and names.
+Field values can be parsed from the paths and embedded in the tuple stream as fields.
+This is common when data has been partitioned into files where common values (like month and/or day) can be embedded in the path name to help select relevant files (push down predicates are applied to path values by many query engines).
 
 Declared fields in a pipeline have the following format: `<field_name>|<field_type>`, where `<field_name>` is a string, or an ordinal (number representing the position).
 The `<field_name>` may be quoted by a single quote (`'`) .
@@ -20,7 +20,8 @@ The actual supported types and associated metadata are described in xref:types.a
 
 == Transforms
 
-Transforms manipulate the tuple stream. They are applied to every tuple in the tuple stream.
+Transforms manipulate the tuple stream.
+They are applied to every tuple in the tuple stream.
 
 Insert literal:: Insert a literal value into a field.
 Coerce field:: Transform a field, in every tuple.
@@ -49,14 +50,16 @@ For example:
 - `1689820455 pass:[=>] time|DateTime|yyyyMMdd` - convert the long value to a date time using the format `yyyyMMdd` and assign the result to the field `time`.
 - `ratio +> ratio|Double` - Coerces the string field "ratio" to a double, `null` ok.
 - `ratio|Double` - Same as above, coerces the string field "ratio" to a double, `null` ok.
-- `name +> firstName|String` - assigns the value of the field "name" to the field "firstName" as a string. The field `name` is retained.
-- `name pass:[->] firstName|String` - assigns the value of the field "name" to the field "firstName" as a string. The field `name` is discarded (dropped from the tuple stream).
+- `name +> firstName|String` - assigns the value of the field "name" to the field "firstName" as a string.
+The field `name` is retained.
+- `name pass:[->] firstName|String` - assigns the value of the field "name" to the field "firstName" as a string.
+The field `name` is discarded (dropped from the tuple stream).
 - `password pass:[->]` - discards the field `password` from the tuple stream.
 
 ==== Expressions
 
-Expressions are applied to incoming fields and the results are assigned to a new field. Expressions can have zero or
-more field arguments.
+Expressions are applied to incoming fields and the results are assigned to a new field.
+Expressions can have zero or more field arguments.
 
 There are two types of expression:
 
@@ -65,8 +68,7 @@ There are two types of expression:
 
 NOTE: Many more expression types are planned, including native support for regular expressions and JSON paths.
 
-Current only `intrinsic` functions are supported. `intrinsic` functions are built-in functions, with optional
-parameters
+Current only `intrinsic` functions are supported. `intrinsic` functions are built-in functions, with optional parameters
 
 No arguments:: `^intrinsic{} +> new_field|type`
 No arguments, with parameters:: `^intrinsic{param1:value1, param2:value2} +> new_field|type`
@@ -84,14 +86,16 @@ Built-in functions on fields can be applied to one or more fields in every tuple
 `tsid`:: create a unique id as a long or string (using https://github.com/f4b6a3/tsid-creator)
 Def:::
 `^tsid{node:...,nodeCount:...,epoch:...,format:...,counterToZero:...} +> intoField|type`
-`type`:::: must be `string` or `long`, defaults to `long`. When `string`, the `format` is honored.
+`type`:::: must be `string` or `long`, defaults to `long`.
+When `string`, the `format` is honored.
 Params:::
 `node`:::: The node id, defaults to a random int.
 * If a string is provided, it is hashed to an int.
 * `SIP_HASHER.hashString(s, StandardCharsets.UTF_8).asInt() % nodeCount;`
 `nodeCount`:::: The number of nodes, defaults to `1024`
 `epoch`:::: - The epoch, defaults to `Instant.parse("2020-01-01T00:00:00.000Z").toEpochMilli()`
-`format`:::: The format, defaults to `null`. Example: `K%S` where `%S` is a placeholder.
+`format`:::: The format, defaults to `null`.
+Example: `K%S` where `%S` is a placeholder.
 Placeholders:::::
 - `%S`: canonical string in upper case
 - `%s`: canonical string in lower case
@@ -118,3 +122,15 @@ Def:::
 `fromJson`:: converts a json string to a row/tuple
 Def:::
 - `^fromJson{} -> to_field1 + to_field2` - the fields names must match the json properties at the root node
+
+`formatFields`:: reformats all the argument fields to a new format.
+This is especially useful for remaining compatible with Apache Parquet.
+Def:::
+- `^formatFields{format:...} ->` - replace ALL fields with the formatted result
+- `^formatFields{format:...} +>` - append ALL fields with the formatted result
+Params:::
+`format`:::: The format string.
+- `lowerUnderscore` - converts to lower case and replaces `/\ .-` with underscores.
+The default.
+- `upperUnderscore` - converts to upper case and replaces `/\ .-` with underscores
+- `camelCase` - converts to camel case

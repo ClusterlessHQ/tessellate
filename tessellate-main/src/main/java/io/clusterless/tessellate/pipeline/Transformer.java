@@ -128,7 +128,7 @@ public class Transformer {
                 throw new IllegalArgumentException("unknown intrinsic function: " + intrinsic.name());
             }
 
-            IntrinsicBuilder.Result result = intrinsicBuilder.create(operation);
+            IntrinsicBuilder.Result result = intrinsicBuilder.create(context.currentFields, operation);
 
             context.log.info("transform {}: from: {}, to: {}, having: {}", intrinsicBuilder.name(), result.arguments(), result.results(), ((Intrinsic) operation.exp()).params());
 

@@ -19,7 +19,7 @@ public class ToJsonIntrinsic extends IntrinsicBuilder {
     }
 
     @Override
-    public Result create(Operation operation) {
+    public Result create(Fields currentFields, Operation operation) {
         Fields fromFields = fieldsParser().asFields(operation.arguments());
 
         // doesn't make sense to make an empty json object

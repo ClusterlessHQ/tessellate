@@ -23,12 +23,12 @@ public class FixedWidthIntrinsic extends IntrinsicBuilder {
     }
 
     @Override
-    public Result create(Operation operation) {
+    public Result create(Fields currentFields, Operation operation) {
         Fields toFields = fieldsParser().asFields(operation.results());
         Intrinsic intrinsic = operation.exp();
 
-        Integer width = intrinsic.params().getInteger(WIDTH);
-        Integer insertAt = intrinsic.params().getInteger(INSERT_AT);
+        Integer width = intrinsic.params().getInteger(WIDTH).orElse(null);
+        Integer insertAt = intrinsic.params().getInteger(INSERT_AT).orElse(null);
 
         // if not given, we will insert at the end
         if (insertAt == null) {
