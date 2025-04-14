@@ -21,6 +21,7 @@ import io.clusterless.tessellate.options.PipelineOptionsMerge;
 import io.clusterless.tessellate.util.Format;
 import io.clusterless.tessellate.util.URIs;
 import io.clusterless.tessellate.util.json.JSONUtil;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -92,7 +93,7 @@ public class PipelineTest {
                 "^fixedWidth{ width:5, insertAt:3 } ->"
         );
 
-        fixedWidthBase(input, output, transform);
+        fixedWidthBase(input, output, transform, List.of());
     }
 
     @Test
@@ -101,10 +102,19 @@ public class PipelineTest {
                 "^fixedWidth{ width:5, insertAt:3 } -> _0+_1+_2+_3+_4"
         );
 
-        fixedWidthBase(input, output, transform);
+        fixedWidthBase(input, output, transform, List.of());
     }
 
-    private static void fixedWidthBase(URI input, URI output, Transform transform) throws IOException {
+    @Test
+    void badWidthWithFieldsAndTypes(@PathForResource("/data/delimited-variable-width.csv") URI input, @PathForOutput URI output) throws IOException {
+        Transform transform = new Transform(
+                "^fixedWidth{ width:5, insertAt:3 } -> _0+_1+_2+_3+_4"
+        );
+
+        fixedWidthBase(input, output, transform, Field.asField("a|string", "b|string", "c|string", "d|string", "e|string"));
+    }
+
+    private static void fixedWidthBase(URI input, URI output, Transform transform, List<@NotNull Field> declared) throws IOException {
         PipelineOptions pipelineOptions = new PipelineOptions();
 
         PipelineDef def = PipelineDef.builder()
@@ -112,8 +122,10 @@ public class PipelineTest {
                 .withSource(Source.builder()
                         .withInputs(List.of(input))
                         .withSchema(Schema.builder()
+                                .withDeclared(declared)
                                 .withFormat(Format.csv)
                                 .withEmbedsSchema(false)
+                                .withStrictParsing(declared.isEmpty())
                                 .build())
                         .build())
                 .withTransform(transform)
