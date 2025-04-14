@@ -204,13 +204,13 @@ public class Pipeline {
         Map<String, Tap> traps = new HashMap<>();
 
         if (primarySource.errorPath() != null) {
-            Tap<Properties, ?, ?> errorTap = createTrap(primarySource.errorPath(), "errors-source", sinkFactory);
+            Tap<Properties, ?, ?> errorTap = createTrap(primarySource.errorPath(), "errors-source");
             traps.put(HEAD, errorTap);
             LOG.info("trapping input errors at: {}", errorTap.getIdentifier());
         }
 
         if (pipelineDef.sink().errorPath() != null) {
-            Tap<Properties, ?, ?> errorTap = createTrap(pipelineDef.sink().errorPath(), "errors-sink", sinkFactory);
+            Tap<Properties, ?, ?> errorTap = createTrap(pipelineDef.sink().errorPath(), "errors-sink");
             traps.put(TAIL, errorTap);
             LOG.info("trapping output errors at: {}", errorTap.getIdentifier());
         }
@@ -223,7 +223,7 @@ public class Pipeline {
                     .buildProperties(commonProperties);
         }
 
-        Map<String, Tap> joinSources = createJoinSources(sinkFactory, traps);
+        Map<String, Tap> joinSources = createJoinSources(traps);
 
         FlowDef flowDef = flowDef()
                 .setName("pipeline")
@@ -238,7 +238,7 @@ public class Pipeline {
         state = State.READY;
     }
 
-    private Map<String, Tap> createJoinSources(SinkFactory sinkFactory, Map<String, Tap> traps) throws IOException {
+    private Map<String, Tap> createJoinSources(Map<String, Tap> traps) throws IOException {
         Map<String, Tap> results = new HashMap<>();
 
         Map<String, Source> secondarySources = findSecondarySources();
@@ -251,7 +251,7 @@ public class Pipeline {
             results.put(name, sourceFactory.getSource(pipelineOptions, source));
 
             if (source.errorPath() != null) {
-                Tap<Properties, ?, ?> errorTap = createTrap(source.errorPath(), "errors-source-" + name, sinkFactory);
+                Tap<Properties, ?, ?> errorTap = createTrap(source.errorPath(), "errors-source-" + name);
                 traps.put(HEAD, errorTap);
                 LOG.info("trapping input errors for: {}, at: {}", name, errorTap.getIdentifier());
             }
@@ -323,7 +323,7 @@ public class Pipeline {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    private Tap<Properties, ?, ?> createTrap(URI errorPath, String prefix, SinkFactory sinkFactory) throws IOException {
+    private Tap<Properties, ?, ?> createTrap(URI errorPath, String prefix) throws IOException {
         Sink errorSink = Sink.builder()
                 // for FileTap the final / gets removed
                 .withOutput(URIs.copyAsDirectory(URIs.cleanFileUrls(errorPath)))
@@ -337,7 +337,9 @@ public class Pipeline {
                         .build())
                 .build();
 
-        return sinkFactory.getSink(pipelineOptions, errorSink, Fields.ALL);
+        SinkFactory errorSinkFactory = TapFactories.findSinkFactory(errorSink);
+
+        return errorSinkFactory.getSink(pipelineOptions, errorSink, Fields.ALL);
     }
 
     private static void logCurrentFields(Fields currentFields) {
