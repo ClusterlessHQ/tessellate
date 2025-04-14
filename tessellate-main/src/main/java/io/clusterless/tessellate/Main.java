@@ -16,7 +16,10 @@ import io.clusterless.tessellate.pipeline.Pipeline;
 import io.clusterless.tessellate.util.MetricsPrinter;
 import io.clusterless.tessellate.util.Verbosity;
 import io.clusterless.tessellate.util.VersionProvider;
+import io.clusterless.tessellate.util.Versions;
 import io.clusterless.tessellate.util.json.JSONUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 
 import java.io.IOException;
@@ -34,6 +37,8 @@ import java.util.concurrent.Callable;
         sortOptions = false
 )
 public class Main implements Callable<Integer> {
+    private static final Logger LOG = LoggerFactory.getLogger(Main.class);
+
     public enum Show {
         formats,
         protocols,
@@ -180,6 +185,8 @@ public class Main implements Callable<Integer> {
 
     private Integer executePipeline(PipelineDef pipelineDef) throws IOException {
         try {
+            LOG.info("tessellate version: {}", Versions.clsVersion());
+
             Pipeline pipeline = new Pipeline(pipelineOptions, pipelineDef);
 
             metrics.start(pipeline);
