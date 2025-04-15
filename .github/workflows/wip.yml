@@ -50,6 +50,10 @@ jobs:
         run: |
           ./gradlew --no-daemon --info --stacktrace release
 
+      - name: Trigger Netlify Doc Deploy
+        run: |
+          curl -X POST -d '{}' https://api.netlify.com/build_hooks/67fe72e7760e879248fa36c4
+
       - name: Archive Release Log
         uses: actions/upload-artifact@v4
         with:
