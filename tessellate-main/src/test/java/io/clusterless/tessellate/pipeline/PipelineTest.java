@@ -108,7 +108,7 @@ public class PipelineTest {
     @Test
     void badWidthWithFieldsAndTypes(@PathForResource("/data/delimited-variable-width.csv") URI input, @PathForOutput URI output) throws IOException {
         Transform transform = new Transform(
-                "^fixedWidth{ width:5, insertAt:3 } -> _0+_1+_2+_3+_4"
+                "^fixedWidth{ width:5, insertAt:3 } -> _0|string+_1|string+_2|string+_3|string+_4|string"
         );
 
         fixedWidthBase(input, output, transform, Field.asField("a|string", "b|string", "c|string", "d|string", "e|string"));

@@ -106,7 +106,7 @@ Placeholders:::::
 `counterToZero`:::: Resets the counter portion when the millisecond changes, defaults to `false`.
 
 `fixedWidth`:: Pads a row/tuple to a fixed width by inserting nulls at a given index.
-If any, type information is inherited from the current fields.
+Ensure type information is declared for result fields if required.
 Def:::
 - `^fixedWidth{width:...,insertAt:...} ->` - replace ALL fields with the fixed with result
 - `^fixedWidth{width:...,insertAt:...} -> new_field|type + new_field2|type + etc` - name the new fields

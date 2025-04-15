@@ -49,11 +49,6 @@ public class FixedWidthIntrinsic extends IntrinsicBuilder {
             throw new IllegalArgumentException("result fields width must match fixed width");
         }
 
-        // currentFields is equivalent to Field.ALL so we can safely copy over the type information
-        if (!toFields.hasTypes() && currentFields.hasTypes()) {
-            toFields = toFields.applyTypes(currentFields.getTypes());
-        }
-
         FixedWidthFunction function = new FixedWidthFunction(toFields, width, insertAt);
 
         return new Result(Fields.ALL, function, toFields);
