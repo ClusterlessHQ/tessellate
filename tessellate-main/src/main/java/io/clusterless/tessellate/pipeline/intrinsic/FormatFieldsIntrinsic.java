@@ -21,7 +21,7 @@ import java.util.function.BiFunction;
 public class FormatFieldsIntrinsic extends IntrinsicBuilder {
 
     public static final String FORMAT = "format";
-    public static final String REGEX = "[/\\\\ .-]";
+    public static final String REGEX = "[/\\\\ .,-]";
 
     public FormatFieldsIntrinsic() {
         super("formatFields", FORMAT);
