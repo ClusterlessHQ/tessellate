@@ -20,6 +20,7 @@ public class FormatFieldsTest {
         assertEquals("foo_bar", FormatFieldsIntrinsic.lowerUnderscore("Foo_Bar", String.class));
         assertEquals("foo_bar", FormatFieldsIntrinsic.lowerUnderscore("Foo.Bar", String.class));
         assertEquals("$foo_bar", FormatFieldsIntrinsic.lowerUnderscore("$Foo.Bar", String.class));
+        assertEquals("$foo_bar", FormatFieldsIntrinsic.lowerUnderscore("$Foo, Bar", String.class));
     }
 
     @Test
@@ -36,6 +37,7 @@ public class FormatFieldsTest {
         assertEquals("FooBar", FormatFieldsIntrinsic.camelCase("FooBar", String.class));
         assertEquals("FooBar", FormatFieldsIntrinsic.camelCase("Foo Bar", String.class));
         assertEquals("FooBarId", FormatFieldsIntrinsic.camelCase("Foo Bar ID", String.class));
+        assertEquals("FooBarId", FormatFieldsIntrinsic.camelCase("Foo, Bar ID", String.class));
         assertEquals("FooBar", FormatFieldsIntrinsic.camelCase("Foo_Bar", String.class));
         assertEquals("FooBar", FormatFieldsIntrinsic.camelCase("Foo.Bar", String.class));
         assertEquals("FooBarId", FormatFieldsIntrinsic.camelCase("FooBarID", String.class));
