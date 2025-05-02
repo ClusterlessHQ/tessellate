@@ -78,8 +78,8 @@ public class PipelineTest {
 
         CascadingTesting.validateEntries(
                 pipeline.flow().openSink(),
-                l -> assertEquals(12, l, "wrong length"),
-                l -> assertEquals(5, l, "wrong size"),
+                l -> assertEquals(12, l, "wrong file length"),
+                l -> assertEquals(5, l, "wrong tuple size"),
                 l -> {
                 }
         );
@@ -93,7 +93,7 @@ public class PipelineTest {
                 "^fixedWidth{ width:5, insertAt:3 } ->"
         );
 
-        fixedWidthBase(input, output, transform, List.of());
+        fixedSchemaBase(input, output, transform, List.of(), false, 5, 5);
     }
 
     @Test
@@ -102,7 +102,7 @@ public class PipelineTest {
                 "^fixedWidth{ width:5, insertAt:3 } -> _0+_1+_2+_3+_4"
         );
 
-        fixedWidthBase(input, output, transform, List.of());
+        fixedSchemaBase(input, output, transform, List.of(), false, 5, 5);
     }
 
     @Test
@@ -111,10 +111,28 @@ public class PipelineTest {
                 "^fixedWidth{ width:5, insertAt:3 } -> _0|string+_1|string+_2|string+_3|string+_4|string"
         );
 
-        fixedWidthBase(input, output, transform, Field.asField("a|string", "b|string", "c|string", "d|string", "e|string"));
+        fixedSchemaBase(input, output, transform, Field.asField("a|string", "b|string", "c|string", "d|string", "e|string"), false, 5, 5);
     }
 
-    private static void fixedWidthBase(URI input, URI output, Transform transform, List<@NotNull Field> declared) throws IOException {
+    @Test
+    void overlappingSchema(@PathForResource("/data/delimited-header-missing-col.csv") URI input, @PathForOutput URI output) throws IOException {
+        Transform transform = new Transform(
+                "^ensureFields{} -> first|string+second|string+third|string+fourth|string+fifth|string"
+        );
+
+        fixedSchemaBase(input, output, transform, List.of(), true, 13, 5);
+    }
+
+    @Test
+    void overlappingSchemaWithTail(@PathForResource("/data/delimited-header-missing-col.csv") URI input, @PathForOutput URI output) throws IOException {
+        Transform transform = new Transform(
+                "^ensureFields{} -> first|string+second|string+third|string+fourth|string+fifth|string+sixth|string"
+        );
+
+        fixedSchemaBase(input, output, transform, List.of(), true, 13, 6);
+    }
+
+    private static void fixedSchemaBase(URI input, URI output, Transform transform, List<@NotNull Field> declared, boolean embedsSchema, int fileLength, int tupleSize) throws IOException {
         PipelineOptions pipelineOptions = new PipelineOptions();
 
         PipelineDef def = PipelineDef.builder()
@@ -124,7 +142,7 @@ public class PipelineTest {
                         .withSchema(Schema.builder()
                                 .withDeclared(declared)
                                 .withFormat(Format.csv)
-                                .withEmbedsSchema(false)
+                                .withEmbedsSchema(embedsSchema)
                                 .withStrictParsing(declared.isEmpty())
                                 .build())
                         .build())
@@ -147,8 +165,8 @@ public class PipelineTest {
 
         CascadingTesting.validateEntries(
                 pipeline.flow().openSink(),
-                l -> assertEquals(5, l, "wrong length"),
-                l -> assertEquals(5, l, "wrong size"),
+                l -> assertEquals(fileLength, l, "wrong file length"),
+                l -> assertEquals(tupleSize, l, "wrong tuple size"),
                 l -> {
                 }
         );
@@ -189,8 +207,8 @@ public class PipelineTest {
 
         CascadingTesting.validateEntries(
                 pipeline.flow().openSink(),
-                l -> assertEquals(13, l, "wrong length"), // headers are declared so aren't counted
-                l -> assertEquals(5, l, "wrong size"),
+                l -> assertEquals(13, l, "wrong file length"), // headers are declared so aren't counted
+                l -> assertEquals(5, l, "wrong tuple size"),
                 l -> {
                 }
         );
@@ -259,8 +277,8 @@ public class PipelineTest {
 
         CascadingTesting.validateEntries(
                 iterator,
-                l -> assertEquals(13, l, "wrong length"), // headers are declared so aren't counted
-                l -> assertEquals(8, l, "wrong size"),
+                l -> assertEquals(13, l, "wrong file length"), // headers are declared so aren't counted
+                l -> assertEquals(8, l, "wrong tuple size"),
                 l -> {
                 }
         );
@@ -304,8 +322,8 @@ public class PipelineTest {
 
         CascadingTesting.validateEntries(
                 pipeline.flow().openSink(),
-                l -> assertEquals(4, l, "wrong length"), // headers are declared so aren't counted
-                l -> assertEquals(merged.source().schema().declared().size(), l, "wrong size"),
+                l -> assertEquals(4, l, "wrong file length"), // headers are declared so aren't counted
+                l -> assertEquals(merged.source().schema().declared().size(), l, "wrong tuple size"),
                 l -> {
                 }
         );
@@ -358,8 +376,8 @@ public class PipelineTest {
 
         CascadingTesting.validateEntries(
                 pipeline.flow().openSink(),
-                l -> assertEquals(4, l, "wrong length"), // headers are declared so aren't counted
-                l -> assertEquals(merged.source().schema().declared().size() + 1 + 1 + 1, l, "wrong size"),
+                l -> assertEquals(4, l, "wrong file length"), // headers are declared so aren't counted
+                l -> assertEquals(merged.source().schema().declared().size() + 1 + 1 + 1, l, "wrong tuple size"),
                 l -> {
                 }
         );
@@ -403,8 +421,8 @@ public class PipelineTest {
 
         CascadingTesting.validateEntries(
                 pipelineWrite.flow().openSink(),
-                l -> assertEquals(4, l, "wrong length"), // headers are declared so aren't counted
-                l -> assertEquals(merged.source().schema().declared().size(), l, "wrong size"),
+                l -> assertEquals(4, l, "wrong file length"), // headers are declared so aren't counted
+                l -> assertEquals(merged.source().schema().declared().size(), l, "wrong tuple size"),
                 l -> {
                 }
         );
@@ -438,8 +456,8 @@ public class PipelineTest {
 
         CascadingTesting.validateEntries(
                 pipelineRead.flow().openSink(),
-                l -> assertEquals(4, l, "wrong length"), // headers are declared so aren't counted
-                l -> assertEquals(merged.source().schema().declared().size(), l, "wrong size"),
+                l -> assertEquals(4, l, "wrong file length"), // headers are declared so aren't counted
+                l -> assertEquals(merged.source().schema().declared().size(), l, "wrong tuple size"),
                 l -> {
                 }
         );
@@ -526,8 +544,8 @@ public class PipelineTest {
 
         CascadingTesting.validateEntries(
                 iterator,
-                l -> assertEquals(4, l, "wrong length"), // headers are declared so aren't counted
-                l -> assertEquals(merged.source().schema().declared().size() + 3, l, "wrong size"),
+                l -> assertEquals(4, l, "wrong file length"), // headers are declared so aren't counted
+                l -> assertEquals(merged.source().schema().declared().size() + 3, l, "wrong tuple size"),
                 l -> {
                 }
         );
@@ -598,8 +616,8 @@ public class PipelineTest {
 
         CascadingTesting.validateEntries(
                 finalIterator,
-                l -> assertEquals(4, l, "wrong length"), // headers are declared so aren't counted
-                l -> assertEquals(merged.source().schema().declared().size() + 3, l, "wrong size"),
+                l -> assertEquals(4, l, "wrong file length"), // headers are declared so aren't counted
+                l -> assertEquals(merged.source().schema().declared().size() + 3, l, "wrong tuple size"),
                 l -> {
                 }
         );
@@ -685,8 +703,8 @@ public class PipelineTest {
 
         CascadingTesting.validateEntries(
                 pipelineWrite.flow().openSink(),
-                l -> assertEquals(4, l, "wrong length"), // headers are declared so aren't counted
-                l -> assertEquals(merged.source().schema().declared().size() + 3, l, "wrong size"),
+                l -> assertEquals(4, l, "wrong file length"), // headers are declared so aren't counted
+                l -> assertEquals(merged.source().schema().declared().size() + 3, l, "wrong tuple size"),
                 l -> {
                 }
         );
@@ -729,8 +747,8 @@ public class PipelineTest {
 
         CascadingTesting.validateEntries(
                 pipelineRead.flow().openSink(),
-                l -> assertEquals(4, l, "wrong length"), // headers are declared so aren't counted
-                l -> assertEquals(merged.source().schema().declared().size() + 3, l, "wrong size"),
+                l -> assertEquals(4, l, "wrong file length"), // headers are declared so aren't counted
+                l -> assertEquals(merged.source().schema().declared().size() + 3, l, "wrong tuple size"),
                 l -> {
                 }
         );
@@ -777,8 +795,8 @@ public class PipelineTest {
 
         CascadingTesting.validateEntries(
                 writeJson.flow().openSink(),
-                l -> assertEquals(13, l, "wrong length"), // headers are declared so aren't counted
-                l -> assertEquals(1, l, "wrong size"),
+                l -> assertEquals(13, l, "wrong file length"), // headers are declared so aren't counted
+                l -> assertEquals(1, l, "wrong tuple size"),
                 l -> {
                 }
         );
@@ -820,8 +838,8 @@ public class PipelineTest {
 
         CascadingTesting.validateEntries(
                 readJson.flow().openSink(),
-                l -> assertEquals(13, l, "wrong length"), // headers are declared so aren't counted
-                l -> assertEquals(5, l, "wrong size"),
+                l -> assertEquals(13, l, "wrong file length"), // headers are declared so aren't counted
+                l -> assertEquals(5, l, "wrong tuple size"),
                 l -> {
                 }
         );
@@ -882,8 +900,8 @@ public class PipelineTest {
 
         CascadingTesting.validateEntries(
                 pipeline.flow().openSink(),
-                l -> assertEquals(11, l, "wrong length"), // headers are declared so aren't counted
-                l -> assertEquals(5, l, "wrong size"),
+                l -> assertEquals(11, l, "wrong file length"), // headers are declared so aren't counted
+                l -> assertEquals(5, l, "wrong tuple size"),
                 l -> {
                 }
         );
@@ -983,8 +1001,8 @@ public class PipelineTest {
 
         CascadingTesting.validateEntries(
                 pipeline.flow().openSink(),
-                l -> assertEquals(length, l, "wrong length"), // headers are declared so aren't counted
-                l -> assertEquals(size, l, "wrong size"),
+                l -> assertEquals(length, l, "wrong file length"), // headers are declared so aren't counted
+                l -> assertEquals(size, l, "wrong tuple size"),
                 l -> {
                 }
         );

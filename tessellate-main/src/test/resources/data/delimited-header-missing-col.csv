@@ -1,0 +1,14 @@
+first,second,fourth,fifth
+foo,bar,bin,1
+foo,bar,bin,2
+foo,"bar,bar",bin,3
+foo,"bar"",bar",bin,4
+foo,"bar"""",bar",bin,5
+,"",,6
+,,,7
+foo,,,8
+,"",,9
+f,,,10
+f,,",bin",11
+f,,",bin",
+f,,,

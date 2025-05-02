@@ -54,8 +54,23 @@ public class Transformer {
 
         if (operation.exp() != null) {
             IntrinsicBuilder.Result result = create(context, operation);
-            // SWAP allows for efficient replacement of arguments with non-argument and results
-            Fields selector = result.arguments().isAll() || (context.currentFields.contains(result.arguments()) && context.currentFields.size() == result.arguments().size()) ? Fields.RESULTS : Fields.SWAP;
+
+            boolean argsIsAll = result.arguments().isAll() ||
+                    containsAll(context.currentFields, result.arguments());
+
+            boolean resultsEqualsDeclared = containsAll(result.function().getFieldDeclaration(), result.results());
+
+            Fields selector;
+
+            if ((argsIsAll && result.results().isNone()) || resultsEqualsDeclared) {
+                selector = Fields.RESULTS;
+            } else if (argsIsAll) {
+                selector = result.results();
+            } else {
+                // SWAP allows for efficient replacement of arguments with non-argument and results
+                selector = Fields.SWAP;
+            }
+
             Pipe pipe = new Each(context.pipe, result.arguments(), result.function(), selector);
 
             Fields currentFields = context.currentFields.subtract(result.arguments()).append(result.results());
@@ -76,6 +91,10 @@ public class Transformer {
             Fields currentFields = context.currentFields.rename(fromFields, toFields);
             return context.update(currentFields, pipe);
         }
+    }
+
+    private static boolean containsAll(Fields lhs, Fields rhs) {
+        return lhs.contains(rhs) && lhs.size() == rhs.size();
     }
 
     private PipelineContext copyAndEval(PipelineContext context) {

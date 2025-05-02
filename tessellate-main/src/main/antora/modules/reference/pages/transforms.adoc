@@ -135,3 +135,9 @@ Params:::
 The default.
 - `upperUnderscore` - converts to upper case and replaces `/\ .-` with underscores
 - `camelCase` - converts to camel case
+
+`ensureFields`:: Add any missing fields/columns.
+Use this when there are many files with overlapping but not consistent field names and the files need to be normalized so they can be processed as a single unit.
+Note any fields not declared as the result fields will be discarded.
+Def:::
+- `^ensureFields{} -> to_field1 + to_field2` - Ensure the results have all declared fields

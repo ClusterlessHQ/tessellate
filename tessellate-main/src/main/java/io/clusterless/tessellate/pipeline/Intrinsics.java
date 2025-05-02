@@ -24,6 +24,7 @@ public class Intrinsics {
     static {
         add(new TsidIntrinsic());
         add(new FixedWidthIntrinsic());
+        add(new EnsureIntrinsic());
         add(new ToJsonIntrinsic());
         add(new FromJsonIntrinsic());
         add(new FormatFieldsIntrinsic());
