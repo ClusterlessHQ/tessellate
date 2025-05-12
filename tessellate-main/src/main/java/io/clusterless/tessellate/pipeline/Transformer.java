@@ -62,7 +62,7 @@ public class Transformer {
 
             Fields selector;
 
-            if ((argsIsAll && result.results().isNone()) || resultsEqualsDeclared) {
+            if ((argsIsAll && result.results().isNone()) || (argsIsAll && resultsEqualsDeclared)) {
                 selector = Fields.RESULTS;
             } else if (argsIsAll) {
                 selector = result.results();

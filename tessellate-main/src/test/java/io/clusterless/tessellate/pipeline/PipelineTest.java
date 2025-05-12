@@ -847,6 +847,62 @@ public class PipelineTest {
         assertFilenameParts(output, "test-", "-guid", ".csv", 1);
     }
 
+    @Test
+    void toJsonPartialSwap(@PathForResource("/data/delimited-header.csv") URI input, @PathForOutput("output") URI output) throws IOException {
+        baseTransformPartial(input, output, "first+third ^toJson{} -> json", 4);
+    }
+
+    @Test
+    void toJsonPartialAppend(@PathForResource("/data/delimited-header.csv") URI input, @PathForOutput("output") URI output) throws IOException {
+        baseTransformPartial(input, output, "first+third ^toJson{} +> json", 6);
+    }
+
+    private static void baseTransformPartial(URI input, URI output, String transform, int numFields) throws IOException {
+        PipelineOptions pipelineOptions = new PipelineOptions();
+
+        PipelineDef writeJsonDef = PipelineDef.builder()
+                .withName("test")
+                .withSource(Source.builder()
+                        .withInputs(List.of(input))
+                        .withSchema(Schema.builder()
+                                .withFormat(Format.csv)
+                                .withEmbedsSchema(true)
+                                .build())
+                        .build())
+                .withTransform(
+                        new Transform(
+                                transform
+                        )
+                )
+                .withSink(Sink.builder()
+                        .withOutput(output)
+                        .withSchema(Schema.builder()
+                                .withFormat(Format.csv)
+                                .withEmbedsSchema(true)
+                                .build())
+                        .withFilename(Filename.builder()
+                                .withPrefix("test")
+                                .withIncludeGuid(true)
+                                .withProvidedGuid("guid")
+                                .build())
+                        .build())
+                .build();
+
+        Pipeline writeJson = new Pipeline(pipelineOptions, writeJsonDef);
+
+        writeJson.run();
+
+        CascadingTesting.validateEntries(
+                writeJson.flow().openSink(),
+                l -> assertEquals(13, l, "wrong file length"), // headers are declared so aren't counted
+                l -> assertEquals(numFields, l, "wrong tuple size"),
+                l -> {
+                }
+        );
+
+        assertFilenameParts(output, "test-", "-guid", ".csv", 1);
+    }
+
     private static void assertFilenameParts(URI output, String prefix, String guid, String extension, int fileCount) throws IOException {
         final int[] count = {0};
         try (Stream<Path> pathStream = Files.find(Paths.get(output), 10, (path, attr) -> !path.toString().startsWith(".") && path.toString().endsWith(extension))) {
