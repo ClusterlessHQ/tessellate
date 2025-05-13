@@ -141,3 +141,7 @@ Use this when there are many files with overlapping but not consistent field nam
 Note any fields not declared as the result fields will be discarded.
 Def:::
 - `^ensureFields{} -> to_field1 + to_field2` - Ensure the results have all declared fields
+
+`sourcePath`:: Add the URI of the data currently being processed.
+Def:::
+- `^sourcePath{} -> to_field` - Assign the current URI to `to_field`

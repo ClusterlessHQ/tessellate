@@ -52,10 +52,11 @@ public class SourcePathFunction extends BaseOperation<Tuple> implements Function
     public void operate(FlowProcess flowProcess, FunctionCall<Tuple> functionCall) {
         String sourcePath = flowProcess.getFlowProcessContext().getSourcePath();
 
-        if (sourcePath == null)
+        if (sourcePath == null) {
             sourcePath = defaultPath;
-        else if (fileNameOnly)
+        } else if (fileNameOnly) {
             sourcePath = getFileName(sourcePath);
+        }
 
         functionCall.getContext().set(0, sourcePath);
 
@@ -65,8 +66,9 @@ public class SourcePathFunction extends BaseOperation<Tuple> implements Function
     protected String getFileName(String sourcePath) {
         int i = sourcePath.lastIndexOf(File.separatorChar);
 
-        if (i == -1)
+        if (i == -1) {
             return sourcePath;
+        }
 
         return sourcePath.substring(i + 1);
     }
