@@ -384,15 +384,16 @@ public class Pipeline {
     private Integer handleCascadingException(CascadingException cascadingException) {
         Throwable cause = cascadingException.getCause();
 
-        if (cause instanceof DuctException) {
-            LOG.error("flow failed with: {}: {}", cause.getMessage(), cause.getCause().getMessage(), cascadingException);
-            System.err.println("flow failed with: " + cause.getMessage() + ": " + cause.getCause().getMessage());
-            return -1;
-        }
+        if (cause instanceof DuctException || cause instanceof CascadingException) {
+            Throwable child = cause.getCause();
+            if (child != null) {
+                LOG.error("flow failed with: {}: {}", cause.getMessage(), child.getMessage(), cascadingException);
+                System.err.println("flow failed with: " + cause.getMessage() + ": " + child.getMessage());
+            } else {
+                LOG.error("flow failed with: {}", cause.getMessage(), cascadingException);
+                System.err.println("flow failed with: " + cause.getMessage());
+            }
 
-        if (cause instanceof CascadingException) {
-            LOG.error("flow failed with: {}: {}", cause.getMessage(), cause.getCause().getMessage(), cascadingException);
-            System.err.println("flow failed with: " + cause.getMessage() + ": " + cause.getCause().getMessage());
             return -1;
         }
 
