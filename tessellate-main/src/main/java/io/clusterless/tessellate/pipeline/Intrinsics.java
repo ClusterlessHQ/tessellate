@@ -23,6 +23,7 @@ public class Intrinsics {
 
     static {
         add(new TsidIntrinsic());
+        add(new TrimToNullIntrinsic());
         add(new SourcePathIntrinsic());
         add(new FixedWidthIntrinsic());
         add(new EnsureIntrinsic());

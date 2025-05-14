@@ -145,3 +145,7 @@ Def:::
 `sourcePath`:: Add the URI of the data currently being processed.
 Def:::
 - `^sourcePath{} -> to_field` - Assign the current URI to `to_field`
+
+`trimToNull`:: Convert all arguments to `null` if the string representation of the value is an empty string or only contains whitespace.
+Def:::
+- `from_field1 + fromField2 ^trimToNull{} ->` - Convert any whitespace values to null while retaining the field names
