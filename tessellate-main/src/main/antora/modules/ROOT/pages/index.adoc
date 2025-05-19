@@ -44,6 +44,7 @@ It also natively supports the https://github.com/ClusterlessHQ/clusterless[Clust
 Other uses include:
 
 - Data inspection from a terminal
+* `tess --input somefile.parquet`
 - Host log processing (push rotated logs to HDFS or the cloud)
 - For cloud processing arriving data (like AWS Fargate or ECS via AWS Batch)
 - As a serverless function (like AWS Lambda) [we plan to publish artifacts in Maven for inclusion in Lambda functions]
