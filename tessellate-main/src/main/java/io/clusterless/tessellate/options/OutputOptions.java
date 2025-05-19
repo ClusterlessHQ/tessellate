@@ -8,13 +8,20 @@
 
 package io.clusterless.tessellate.options;
 
+import io.clusterless.tessellate.model.Field;
+import io.clusterless.tessellate.util.Format;
 import picocli.CommandLine;
 
 import java.net.URI;
+import java.util.List;
 
 public class OutputOptions implements AWSOptions {
     @CommandLine.Option(names = {"-o", "--output"}, description = "output uris")
     private URI output;
+    @CommandLine.Option(names = {"--output-fields"}, description = "output fields", converter = FieldConverter.class, split = "[\\+,]")
+    private List<Field> outputFields;
+    @CommandLine.Option(names = {"--output-format"}, description = "output format")
+    private Format outputFormat;
     @CommandLine.Option(names = {"-t", "--output-manifest-template"}, description = "output manifest uri template")
     private String outputManifestTemplate;
     @CommandLine.Option(names = {"-l", "--output-manifest-lot"}, description = "output lot")
@@ -35,6 +42,22 @@ public class OutputOptions implements AWSOptions {
     public OutputOptions setOutput(URI output) {
         this.output = output;
         return this;
+    }
+
+    public List<Field> outputFields() {
+        return outputFields;
+    }
+
+    public void setOutputFields(List<Field> outputFields) {
+        this.outputFields = outputFields;
+    }
+
+    public Format outputFormat() {
+        return outputFormat;
+    }
+
+    public void setOutputFormat(Format outputFormat) {
+        this.outputFormat = outputFormat;
     }
 
     public String outputManifestTemplate() {

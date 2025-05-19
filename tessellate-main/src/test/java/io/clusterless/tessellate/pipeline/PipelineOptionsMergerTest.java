@@ -10,11 +10,13 @@ package io.clusterless.tessellate.pipeline;
 
 import com.adelean.inject.resources.junit.jupiter.GivenTextResource;
 import com.adelean.inject.resources.junit.jupiter.TestWithResources;
+import io.clusterless.tessellate.model.Field;
 import io.clusterless.tessellate.model.PipelineDef;
 import io.clusterless.tessellate.options.PipelineOptions;
 import io.clusterless.tessellate.options.PipelineOptionsMerge;
 import io.clusterless.tessellate.parser.ast.AssignmentStatement;
 import io.clusterless.tessellate.parser.ast.UnaryOperation;
+import io.clusterless.tessellate.util.Format;
 import io.clusterless.tessellate.util.json.JSONUtil;
 import org.junit.jupiter.api.Test;
 
@@ -50,10 +52,13 @@ public class PipelineOptionsMergerTest {
     void usingOptionsMissing() throws IOException {
         List<URI> inputs = List.of(URI.create("s3://foo/input"));
         URI output = URI.create("s3://foo/output");
+        List<Field> declared = List.of(new Field("json"));
 
         PipelineOptions pipelineOptions = new PipelineOptions();
         pipelineOptions.inputOptions().setInputs(inputs);
         pipelineOptions.outputOptions().setOutput(output);
+        pipelineOptions.outputOptions().setOutputFields(declared);
+        pipelineOptions.outputOptions().setOutputFormat(Format.json);
 
         PipelineOptionsMerge merger = new PipelineOptionsMerge(pipelineOptions);
 
@@ -61,6 +66,8 @@ public class PipelineOptionsMergerTest {
 
         assertEquals(inputs, merged.source().inputs());
         assertEquals(output, merged.sink().output());
+        assertEquals(declared, merged.sink().schema().declared());
+        assertEquals(Format.json, merged.sink().schema().format());
     }
 
     @Test

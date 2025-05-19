@@ -13,6 +13,7 @@ import io.clusterless.tessellate.factory.hdfs.JSONFSFactory;
 import io.clusterless.tessellate.factory.hdfs.ParquetFactory;
 import io.clusterless.tessellate.factory.hdfs.TextFSFactory;
 import io.clusterless.tessellate.factory.local.LocalDirectoryFactory;
+import io.clusterless.tessellate.factory.local.StdOutFactory;
 import io.clusterless.tessellate.model.Sink;
 import io.clusterless.tessellate.model.Source;
 import io.clusterless.tessellate.options.PipelineOptions;
@@ -101,7 +102,7 @@ public class TapFactories {
         List<URI> inputUris = sinkModel.uris();
 
         if (inputUris.isEmpty()) {
-            return null;
+            return new StdOutFactory();
         }
 
         Format format = sinkModel.schema().format();

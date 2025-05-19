@@ -48,6 +48,8 @@ public class PipelineOptionsMerge {
             .putInto("inputManifestLot", "/source/manifestLot")
             .putInto("inputErrors", "/source/errorPath")
             .putInto("output", "/sink/output")
+            .putInto("outputFields", "/sink/schema/declared")
+            .putInto("outputFormat", "/sink/schema/format")
             .putInto("outputManifestTemplate", "/sink/manifestTemplate")
             .putInto("outputManifestLot", "/sink/manifestLot")
             .putInto("outputErrors", "/sink/errorPath");
@@ -68,6 +70,8 @@ public class PipelineOptionsMerge {
         argumentLookups.put("inputManifestLot", pipelineOptions -> nullOrNode(pipelineOptions.inputOptions().inputLot()));
         argumentLookups.put("inputErrors", pipelineOptions -> nullOrNode(pipelineOptions.inputOptions().inputErrors()));
         argumentLookups.put("output", pipelineOptions -> nullOrNode(pipelineOptions.outputOptions().output()));
+        argumentLookups.put("outputFields", pipelineOptions -> nullOrNode(pipelineOptions.outputOptions().outputFields()));
+        argumentLookups.put("outputFormat", pipelineOptions -> nullOrNode(pipelineOptions.outputOptions().outputFormat()));
         argumentLookups.put("outputManifestTemplate", pipelineOptions -> nullOrNode(pipelineOptions.outputOptions().outputManifestTemplate()));
         argumentLookups.put("outputManifestLot", pipelineOptions -> nullOrNode(pipelineOptions.outputOptions().outputLot()));
         argumentLookups.put("outputErrors", pipelineOptions -> nullOrNode(pipelineOptions.outputOptions().outputErrors()));

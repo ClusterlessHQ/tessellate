@@ -11,6 +11,7 @@ package io.clusterless.tessellate.model;
 import cascading.tuple.Fields;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.clusterless.tessellate.parser.FieldsParser;
 
 import java.util.Arrays;
@@ -27,8 +28,15 @@ public class Field implements Model {
         return Arrays.stream(declarations).map(Field::new).collect(Collectors.toList());
     }
 
+    // Constructor for deserialization from JSON string
     @JsonCreator
-    public Field(String declaration) {
+    public static Field fromString(String declaration) {
+        Objects.requireNonNull(declaration, "field may not be null");
+        return new Field(declaration);
+    }
+
+    @JsonCreator
+    public Field(@JsonProperty("declaration") String declaration) {
         Objects.requireNonNull(declaration, "field may not be null");
 
         this.declaration = declaration;
@@ -39,8 +47,24 @@ public class Field implements Model {
         return fields;
     }
 
+    public String declaration() {
+        return declaration;
+    }
+
     @Override
     public String toString() {
         return declaration;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Field field = (Field) o;
+        return Objects.equals(fields, field.fields) && Objects.equals(declaration, field.declaration);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(declaration);
     }
 }

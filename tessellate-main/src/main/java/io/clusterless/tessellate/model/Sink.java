@@ -12,6 +12,7 @@ import io.clusterless.tessellate.util.json.JsonSimpleView;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class Sink implements Dataset, Model {
@@ -55,6 +56,10 @@ public class Sink implements Dataset, Model {
 
     @Override
     public List<URI> uris() {
+        if (output() == null) {
+            return Collections.emptyList();
+        }
+
         return List.of(output());
     }
 
