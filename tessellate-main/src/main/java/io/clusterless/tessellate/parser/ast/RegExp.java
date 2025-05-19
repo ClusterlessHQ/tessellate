@@ -8,22 +8,19 @@
 
 package io.clusterless.tessellate.parser.ast;
 
-public interface Statement {
-    Op op();
+public class RegExp implements Exp {
+    String pattern;
 
-    default String opString() {
-        if (op() == null) {
-            return "";
-        }
-
-        return op().op();
+    public RegExp(String pattern) {
+        this.pattern = pattern;
     }
 
-    default boolean isJoin() {
-        return this instanceof JoinStatement;
+    public String pattern() {
+        return pattern;
     }
 
-    default boolean isFilter() {
-        return this instanceof FilterStatement;
+    @Override
+    public String toString() {
+        return "~/" + pattern + "/";
     }
 }

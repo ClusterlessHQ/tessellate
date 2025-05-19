@@ -8,7 +8,9 @@
 
 package io.clusterless.tessellate.pipeline;
 
+import cascading.operation.Filter;
 import cascading.operation.Insert;
+import cascading.operation.regex.RegexFilter;
 import cascading.pipe.Each;
 import cascading.pipe.HashJoin;
 import cascading.pipe.Pipe;
@@ -32,10 +34,15 @@ public class Transformer {
     }
 
     PipelineContext resolve(PipelineContext context) {
+        if (statement.isFilter()) {
+            return handleFilter(context);
+        }
+
         if (statement.isJoin()) {
             return handleJoin(context);
         }
-        switch (statement.op().op()) {
+
+        switch (statement.opString()) {
             case "":
                 return handleCoerce(context);
             case "=>":
@@ -127,8 +134,8 @@ public class Transformer {
     }
 
     private PipelineContext handleAssignment(PipelineContext context) {
-        String value = ((Assignment) statement).literal();
-        Fields toFields = fieldsParser.asFields(((Assignment) statement).result(), null);
+        String value = ((AssignmentStatement) statement).literal();
+        Fields toFields = fieldsParser.asFields(((AssignmentStatement) statement).result(), null);
         Object literal = Coercions.coerce(value, toFields.getType(0));
         context.log.info("transform insert: fields: {}, value: {}", toFields, literal);
         Pipe pipe = new Each(context.pipe, new Insert(toFields, literal), Fields.ALL);
@@ -157,8 +164,26 @@ public class Transformer {
         throw new IllegalStateException("no builder found for: " + operation);
     }
 
+    private PipelineContext handleFilter(PipelineContext context) {
+        List<Field> arguments = ((FilterStatement) statement).arguments();
+        Fields filterFields = fieldsParser.asFields(arguments);
+        Exp exp = ((FilterStatement) statement).exp();
+
+        context.log.info("transform filter: fields: {}, on: {}", filterFields, exp);
+
+        Filter<?> filter;
+
+        if (exp instanceof RegExp) {
+            filter = new RegexFilter(((RegExp) exp).pattern(), false, true);
+        } else {
+            throw new UnsupportedOperationException("unknown filter expression: " + exp);
+        }
+
+        return context.update(new Each(context.pipe, filterFields, filter));
+    }
+
     private PipelineContext handleJoin(PipelineContext context) {
-        Join join = (Join) statement;
+        JoinStatement join = (JoinStatement) statement;
 
         List<Rel> lhs = join.lhsRelations();
         List<Rel> rhs = join.rhsRelations();
@@ -216,7 +241,7 @@ public class Transformer {
         return context.update(currentFields, pipe);
     }
 
-    private static @NotNull Joiner findJoiner(Join join) {
+    private static @NotNull Joiner findJoiner(JoinStatement join) {
         switch (join.joinType()) {
             case inner:
                 return new InnerJoin();

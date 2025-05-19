@@ -11,18 +11,18 @@ package io.clusterless.tessellate.parser.ast;
 import com.google.common.base.Joiner;
 import io.clusterless.tessellate.parser.Printer;
 
-public class Assignment implements Statement {
+public class AssignmentStatement implements Statement {
     String literal;
     Op op;
     Field result;
 
-    public Assignment(String literal, Op op, Field result) {
+    public AssignmentStatement(String literal, Op op, Field result) {
         this.literal = literal;
         this.op = op;
         this.result = result;
     }
 
-    public Assignment(Op op, Field result) {
+    public AssignmentStatement(Op op, Field result) {
         this.literal = null;
         this.op = op;
         this.result = result;
@@ -42,8 +42,8 @@ public class Assignment implements Statement {
 
     @Override
     public String toString() {
-        return Joiner.on("")
-                .useForNull("")
+        return Joiner.on(" ")
+                .skipNulls()
                 .join(
                         Printer.literal(literal()),
                         op(),

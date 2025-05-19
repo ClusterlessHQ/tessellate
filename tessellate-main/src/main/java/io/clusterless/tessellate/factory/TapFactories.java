@@ -99,6 +99,11 @@ public class TapFactories {
 
     public static SinkFactory findSinkFactory(Sink sinkModel) {
         List<URI> inputUris = sinkModel.uris();
+
+        if (inputUris.isEmpty()) {
+            return null;
+        }
+
         Format format = sinkModel.schema().format();
         Compression compression = sinkModel.schema().compression();
         SinkFactory sinkFactory = findSinkFactory(inputUris, format, compression);

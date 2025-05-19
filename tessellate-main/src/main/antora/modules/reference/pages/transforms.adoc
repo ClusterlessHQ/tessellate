@@ -11,7 +11,8 @@ Data files, or objects, have paths and names.
 Field values can be parsed from the paths and embedded in the tuple stream as fields.
 This is common when data has been partitioned into files where common values (like month and/or day) can be embedded in the path name to help select relevant files (push down predicates are applied to path values by many query engines).
 
-Declared fields in a pipeline have the following format: `<field_name>|<field_type>`, where `<field_name>` is a string, or an ordinal (number representing the position).
+Declared fields in a pipeline have the following format:
+`<field_name>|<field_type>`, where `<field_name>` is a string, or an ordinal (number representing the position).
 The `<field_name>` may be quoted by a single quote (`'`) .
 
 `<field_type>` is optional, depending on the use. `<field_type>` further may be formatted as `<type>|<metadata>`.
@@ -20,8 +21,27 @@ The actual supported types and associated metadata are described in xref:types.a
 
 == Transforms
 
-Transforms manipulate the tuple stream.
-They are applied to every tuple in the tuple stream.
+Transforms manipulate the tuple stream either by removing (filtering) a given tuple from the stream or by changing the values in any given tuple in the stream.
+
+=== Filters
+
+A tuple can be retained in a stream if a given predicate expression returns true for any the filter's arguments.
+
+==== Expressions
+
+If the expression is a regular expression, the expression will be matched with every argument individually after being coerced into a String.
+If any value (after coercion) is `null`, an empty string ("") will be passed to the regular expression matcher.
+
+All values must match to retain the tuple.
+
+One argument:: `from_field1 ~/expression/`
+Many arguments:: `from_field1 + from_field2 + from_fieldN ~/expression/`
+
+Note there is no operator after the `~/expression/`, this indicates the statement is a filter.
+
+Note a `/` can be escaped with `//` in any expression.
+
+=== Operators
 
 Insert literal:: Insert a literal value into a field.
 Coerce field:: Transform a field, in every tuple.
@@ -29,8 +49,6 @@ Copy field:: Copy a field value to a new field.
 Rename field:: Rename a field, optionally coercing its type.
 Discard field:: Remove a field.
 Apply function:: Apply intrinsic functions against one or more fields.
-
-=== Operators
 
 There are three transform operators:
 

@@ -29,7 +29,7 @@ import io.clusterless.tessellate.factory.*;
 import io.clusterless.tessellate.model.*;
 import io.clusterless.tessellate.options.PipelineOptions;
 import io.clusterless.tessellate.options.PrintOptions;
-import io.clusterless.tessellate.parser.ast.Join;
+import io.clusterless.tessellate.parser.ast.JoinStatement;
 import io.clusterless.tessellate.parser.ast.Rel;
 import io.clusterless.tessellate.parser.ast.Statement;
 import io.clusterless.tessellate.printer.SchemaPrinter;
@@ -288,14 +288,14 @@ public class Pipeline {
             return source;
         }
 
-        List<Join> joins = pipelineDef.transform().statements(Join.class);
+        List<JoinStatement> joins = pipelineDef.transform().statements(JoinStatement.class);
 
         if (joins.isEmpty()) {
             throw new IllegalStateException("no source defined");
         }
 
         List<String> names = joins.stream()
-                .map(Join::rhsRelations)
+                .map(JoinStatement::rhsRelations)
                 .flatMap(List::stream)
                 .map(Rel::name)
                 .distinct()
@@ -309,10 +309,10 @@ public class Pipeline {
     }
 
     private Map<String, Source> findSecondarySources() {
-        List<Join> joins = pipelineDef.transform().statements(Join.class);
+        List<JoinStatement> joins = pipelineDef.transform().statements(JoinStatement.class);
 
         List<String> names = joins.stream()
-                .map(Join::lhsRelations)
+                .map(JoinStatement::lhsRelations)
                 .flatMap(List::stream)
                 .map(Rel::name)
                 .distinct()

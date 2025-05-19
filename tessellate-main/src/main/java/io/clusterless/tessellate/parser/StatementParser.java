@@ -80,6 +80,25 @@ public class StatementParser {
                     (Map::entry)
             );
 
+    // Accepts any Java regex, where '/' is escaped as '//'
+    private static final Parser<RegExp> REGEX = Parsers.sequence(
+            Scanners.string("~/"),
+            Parsers.or(
+                            Scanners.string("//"), // the retn() method doesn't work here
+                            Scanners.notChar('/')
+                    )
+                    .many().source(),
+            Scanners.isChar('/'),
+            (unused, regex, unused2) -> new RegExp(regex.replace("//", "/"))
+    );
+
+    private static final Parser<FilterStatement> REGEX_FILTER =
+            Parsers.sequence(
+                    FieldParser.FIELD_LIST.followedBy(Scanners.many(IS_WHITESPACE)),
+                    REGEX.followedBy(EOF),
+                    FilterStatement::new
+            );
+
     private static final Parser<Map<String, String>> PARAMS =
             PARAM_ENTRY.sepBy(PARAM_DELIM).map(l -> l.stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
 
@@ -148,18 +167,18 @@ public class StatementParser {
                     UnaryOperation::new
             );
 
-    public static Parser<Assignment> LITERAL_ASSIGNMENT =
+    public static Parser<AssignmentStatement> LITERAL_ASSIGNMENT =
             Parsers.or(
                     Parsers.sequence(
                             LITERAL_VALUE,
                             ASSIGNMENT.followedBy(Scanners.many(IS_WHITESPACE)),
                             FieldParser.fullFieldDeclaration.followedBy(EOF),
-                            Assignment::new
+                            AssignmentStatement::new
                     ),
                     Parsers.sequence(
                             ASSIGNMENT.followedBy(Scanners.many(IS_WHITESPACE)),
                             FieldParser.fullFieldDeclaration.followedBy(EOF),
-                            Assignment::new
+                            AssignmentStatement::new
                     )
             );
 
@@ -192,22 +211,23 @@ public class StatementParser {
                     (type, unused) -> type
             );
 
-    public static Parser<Join> JOIN_STATEMENT =
+    public static Parser<JoinStatement> JOIN_STATEMENT =
             Parsers.or(
                     Parsers.sequence(
                             FieldParser.RELATION_LIST.followedBy(Scanners.many(IS_WHITESPACE)),
                             JOIN.followedBy(Scanners.many(IS_WHITESPACE)),
                             Parsers.or(RETAIN, DISCARD).followedBy(Scanners.many(IS_WHITESPACE)),
                             FieldParser.FIELD_LIST.followedBy(EOF),
-                            Join::new
+                            JoinStatement::new
                     ),
                     Parsers.sequence(
                             FieldParser.RELATION_LIST.followedBy(Scanners.many(IS_WHITESPACE)),
                             JOIN.followedBy(EOF),
-                            Join::new
+                            JoinStatement::new
                     ));
 
     public static Parser<Statement> STATEMENTS = Parsers.or(
+            REGEX_FILTER,
             LITERAL_ASSIGNMENT,
             TRANSFORM_COERCE,
             TRANSFORM_DISCARD,

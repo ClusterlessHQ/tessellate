@@ -39,15 +39,15 @@ public class PipelineContext {
         return this;
     }
 
-    public PipelineContext name(String name) {
-        return update(new Pipe(name, pipe));
-    }
-
     public PipelineContext update(Pipe pipe) {
         this.pipe = pipe;
         logCurrentFields(this.currentFields);
 
         return this;
+    }
+
+    public PipelineContext name(String name) {
+        return update(new Pipe(name, pipe));
     }
 
     public void logCurrentFields(Fields currentFields) {

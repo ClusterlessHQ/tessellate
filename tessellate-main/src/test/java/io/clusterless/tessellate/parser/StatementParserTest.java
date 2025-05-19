@@ -16,8 +16,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class StatementParserTest {
 
@@ -39,7 +38,7 @@ public class StatementParserTest {
     }
 
     @Test
-    void parse() {
+    void parseOperations() {
         assertInstanceOf(Intrinsic.class, assertInstanceOf(Operation.class, StatementParser.parse("fromField1+fromField2+fromFieldN ^siphash{} +> intoField|type")).exp());
         assertInstanceOf(Intrinsic.class, assertInstanceOf(Operation.class, StatementParser.parse("fromField1 + fromField2 + fromFieldN ^siphash{} +> intoField|type")).exp());
         assertInstanceOf(Intrinsic.class, assertInstanceOf(Operation.class, StatementParser.parse("^tsid{node:1,nodeCount:10,signed:true,epoch:123} +> intoField|type")).exp());
@@ -55,7 +54,7 @@ public class StatementParserTest {
     }
 
     @Test
-    void transforms() {
+    void parseOperationsRegressions() {
         Field field = new Field(new FieldName("time_ymd"), Optional.of(new FieldType(new FieldTypeName("DateTime"), Optional.of(new FieldTypeParam("yyyyMMdd", Optional.empty())))));
         List<Field> results = ((UnaryOperation) StatementParser.parse("time   +>   time_ymd|DateTime|yyyyMMdd")).results();
         assertThat(results).hasSize(1).map(Objects::toString).contains(field.toString());
@@ -68,6 +67,25 @@ public class StatementParserTest {
         assertNotNull(StatementParser.parse("\"five\"=>_five"));
         assertNotNull(StatementParser.parse("five=>_five"));
         assertNotNull(StatementParser.parse("1689820455=>six|DateTime|yyyyMMdd"));
+    }
+
+    @Test
+    void parseFilters() {
+        assertEquals("regex",
+                assertInstanceOf(RegExp.class,
+                        assertInstanceOf(FilterStatement.class,
+                                StatementParser.parse("fromField1+fromField2+fromFieldN ~/regex/")).exp()).pattern()
+        );
+    }
+
+    @Test
+    void parseFiltersRegressions() {
+        String regex = "(?:(?:https?|ftp):\\/\\/)?(?:[\\w-]+\\.)+[a-z]{2,6}(?:\\/[^\\s]*)?|\\b\\w+@[a-zA-Z_]+?\\.[a-zA-Z]{2,6}\\b|\\b\\d{4}-\\d{2}-\\d{2}\\b|\\b\\d{2}:\\d{2}:\\d{2}\\b|(?:[a-zA-Z]:)?(?:\\\\[\\w.-]+)+\\\\?|\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b";
+        Statement parse = StatementParser.parse("one ~/" + regex.replaceAll("/", "//") + "/");
+        assertNotNull(parse);
+        assertEquals(regex, ((RegExp) ((FilterStatement) parse).exp()).pattern());
+
+        assertNotNull(StatementParser.parse("remoteIP ~/^64\\.252\\./"));
     }
 
     @Test
@@ -89,7 +107,7 @@ public class StatementParserTest {
 
     @Test
     void joins() {
-        Join join = StatementParser.parse("lhs(lhsField1+lhsField2) rhs(rhsField1+rhsField2) +inner{} +> intoField|string");
+        JoinStatement join = StatementParser.parse("lhs(lhsField1+lhsField2) rhs(rhsField1+rhsField2) +inner{} +> intoField|string");
         assertThat(join.joinType())
                 .isEqualTo(JoinType.inner);
 

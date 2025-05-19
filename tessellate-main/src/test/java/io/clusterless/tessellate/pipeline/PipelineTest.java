@@ -29,15 +29,10 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
 
+import static io.clusterless.tessellate.util.AltAssertions.assertFilenameParts;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *
@@ -351,7 +346,8 @@ public class PipelineTest {
                         "requestID->",// discard: "httpStatusString|String"
                         "200=>code|Integer", // insert
                         "=> _empty|Integer", // insert
-                        "^sourcePath{} +> source_path"
+                        "^sourcePath{} +> source_path",
+                        "remoteIP ~/^64\\.252\\./" // retains 3 records
                 ))
                 .withSink(Sink.builder()
                         .withOutput(output)
@@ -377,7 +373,7 @@ public class PipelineTest {
 
         CascadingTesting.validateEntries(
                 pipeline.flow().openSink(),
-                l -> assertEquals(4, l, "wrong file length"), // headers are declared so aren't counted
+                l -> assertEquals(4 - 1, l, "wrong file length"), // headers are declared so are counted in the output file
                 l -> assertEquals(merged.source().schema().declared().size() + 1 + 1 + 1 + 1, l, "wrong tuple size"),
                 l -> {
                 }
@@ -904,21 +900,6 @@ public class PipelineTest {
         assertFilenameParts(output, "test-", "-guid", ".csv", 1);
     }
 
-    private static void assertFilenameParts(URI output, String prefix, String guid, String extension, int fileCount) throws IOException {
-        final int[] count = {0};
-        try (Stream<Path> pathStream = Files.find(Paths.get(output), 10, (path, attr) -> !path.toString().startsWith(".") && path.toString().endsWith(extension))) {
-            pathStream
-                    .forEach(path -> {
-                        count[0]++;
-                        String filename = path.getFileName().toString();
-                        assertTrue(filename.startsWith(prefix), "wrong filename: " + filename);
-                        assertTrue(filename.contains(guid), "wrong filename: " + filename);
-                    });
-        }
-
-        assertEquals(fileCount, count[0], "wrong number of files");
-    }
-
     @Test
     void headersBadWidth(
             @PathForResource("/data/delimited-header-bad-width.csv") URI input,
@@ -967,103 +948,4 @@ public class PipelineTest {
         assertFilenameParts(errors, "errors-source", "-", ".csv.gz", 1);
     }
 
-    @Test
-    void joinInner(@PathForResource("/data/lhs.csv") URI lhs, @PathForResource("/data/rhs.csv") URI rhs, @PathForOutput URI output) throws IOException {
-        joinTest(lhs, rhs, output, "lhs(lhs_id|int) rhs(rhs_id|int) +inner{} -> lhs_value", 11, 3);
-    }
-
-    @Test
-    void joinInnerRetain(@PathForResource("/data/lhs.csv") URI lhs, @PathForResource("/data/rhs.csv") URI rhs, @PathForOutput URI output) throws IOException {
-        joinTest(lhs, rhs, output, "lhs(lhs_id|int) rhs(rhs_id|int) +inner{} +> lhs_value", 11, 4);
-    }
-
-    @Test
-    void joinOuter(@PathForResource("/data/lhs.csv") URI lhs, @PathForResource("/data/rhs.csv") URI rhs, @PathForOutput URI output) throws IOException {
-        joinTest(lhs, rhs, output, "lhs(lhs_id|int) rhs(rhs_id|int) +outer{} -> lhs_value", 16, 3);
-    }
-
-    @Test
-    void joinOuterRetain(@PathForResource("/data/lhs.csv") URI lhs, @PathForResource("/data/rhs.csv") URI rhs, @PathForOutput URI output) throws IOException {
-        joinTest(lhs, rhs, output, "lhs(lhs_id|int) rhs(rhs_id|int) +outer{} +> lhs_value", 16, 4);
-    }
-
-    @Test
-    void joinLeft(@PathForResource("/data/lhs.csv") URI lhs, @PathForResource("/data/rhs.csv") URI rhs, @PathForOutput URI output) throws IOException {
-        joinTest(lhs, rhs, output, "lhs(lhs_id|int) rhs(rhs_id|int) +left{} -> lhs_value", 11, 3);
-    }
-
-    @Test
-    void joinLeftRetain(@PathForResource("/data/lhs.csv") URI lhs, @PathForResource("/data/rhs.csv") URI rhs, @PathForOutput URI output) throws IOException {
-        joinTest(lhs, rhs, output, "lhs(lhs_id|int) rhs(rhs_id|int) +left{} +> lhs_value", 11, 4);
-    }
-
-    @Test
-    void joinRight(@PathForResource("/data/lhs.csv") URI lhs, @PathForResource("/data/rhs.csv") URI rhs, @PathForOutput URI output) throws IOException {
-        joinTest(lhs, rhs, output, "lhs(lhs_id|int) rhs(rhs_id|int) +right{} -> lhs_value", 16, 3);
-    }
-
-    @Test
-    void joinRightRetain(@PathForResource("/data/lhs.csv") URI lhs, @PathForResource("/data/rhs.csv") URI rhs, @PathForOutput URI output) throws IOException {
-        joinTest(lhs, rhs, output, "lhs(lhs_id|int) rhs(rhs_id|int) +right{} +> lhs_value", 16, 4);
-    }
-
-    @Test
-    void joinInnerFilter(@PathForResource("/data/lhs.csv") URI lhs, @PathForResource("/data/rhs.csv") URI rhs, @PathForOutput URI output) throws IOException {
-        joinTest(lhs, rhs, output, "lhs(lhs_id|int) rhs(rhs_id|int) +inner{}", 11, 2);
-    }
-
-    private static void joinTest(URI lhs, URI rhs, URI output, String transform, int length, int size) throws IOException {
-        PipelineOptions pipelineOptions = new PipelineOptions();
-
-        PipelineDef def = PipelineDef.builder()
-                .withName("test")
-                .withSources(Map.of(
-                        "lhs",
-                        Source.builder()
-                                .withInputs(List.of(lhs))
-                                .withSchema(Schema.builder()
-                                        .withFormat(Format.csv)
-                                        .withEmbedsSchema(true)
-                                        .build())
-                                .build(),
-                        "rhs",
-                        Source.builder()
-                                .withInputs(List.of(rhs))
-                                .withSchema(Schema.builder()
-                                        .withFormat(Format.csv)
-                                        .withEmbedsSchema(true)
-                                        .build())
-                                .build()
-                ))
-                .withTransform(
-                        new Transform(transform)
-                )
-                .withSink(Sink.builder()
-                        .withOutput(output)
-                        .withSchema(Schema.builder()
-                                .withFormat(Format.tsv)
-                                .withEmbedsSchema(true)
-                                .build())
-                        .withFilename(Filename.builder()
-                                .withPrefix("test")
-                                .withIncludeGuid(true)
-                                .withProvidedGuid("guid")
-                                .build())
-                        .build())
-                .build();
-
-        Pipeline pipeline = new Pipeline(pipelineOptions, def);
-
-        pipeline.run();
-
-        CascadingTesting.validateEntries(
-                pipeline.flow().openSink(),
-                l -> assertEquals(length, l, "wrong file length"), // headers are declared so aren't counted
-                l -> assertEquals(size, l, "wrong tuple size"),
-                l -> {
-                }
-        );
-
-        assertFilenameParts(output, "test-", "-guid", ".tsv", 1);
-    }
 }

@@ -19,7 +19,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import io.clusterless.tessellate.model.PipelineDef;
 import io.clusterless.tessellate.model.SourcePartition;
 import io.clusterless.tessellate.model.Transform;
-import io.clusterless.tessellate.parser.ast.Assignment;
+import io.clusterless.tessellate.parser.ast.AssignmentStatement;
 import io.clusterless.tessellate.parser.ast.Op;
 import io.clusterless.tessellate.type.WrappedCoercibleType;
 import io.clusterless.tessellate.util.json.JSONUtil;
@@ -54,13 +54,13 @@ public class PipelineParseTest {
         Transform transform = pipeline.transform();
 
         assertEquals(7, transform.statements().size());
-        assertEquals(new Op(), transform.statements().get(0).op());
+        assertNull(transform.statements().get(0).op());
         assertEquals(new Op("->"), transform.statements().get(1).op());
         assertEquals(new Op("+>"), transform.statements().get(2).op());
         assertEquals(new Op("->"), transform.statements().get(3).op());
         assertEquals(new Op("=>"), transform.statements().get(4).op());
         assertEquals(new Op("=>"), transform.statements().get(5).op());
         assertEquals(new Op("=>"), transform.statements().get(6).op());
-        assertNull(((Assignment) transform.statements().get(6)).literal());
+        assertNull(((AssignmentStatement) transform.statements().get(6)).literal());
     }
 }

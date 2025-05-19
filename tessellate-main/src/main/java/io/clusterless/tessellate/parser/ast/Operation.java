@@ -17,7 +17,7 @@ import java.util.List;
 public class Operation implements Statement {
     List<Field> arguments = Collections.emptyList();
     Exp exp;
-    Op op = new Op();
+    Op op;
     List<Field> results = Collections.emptyList();
 
     public Operation(List<Field> arguments, Exp exp, Op op, List<Field> results) {
@@ -66,13 +66,13 @@ public class Operation implements Statement {
 
     @Override
     public String toString() {
-        return Joiner.on("")
-                .useForNull("")
+        return Joiner.on(" ")
+                .skipNulls()
                 .join(
-                        Printer.fields(arguments),
+                        arguments.isEmpty() ? null : Printer.fields(arguments),
                         exp(),
                         op(),
-                        Printer.fields(results)
+                        results.isEmpty() ? null : Printer.fields(results)
                 );
     }
 }
