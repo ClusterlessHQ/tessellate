@@ -15,6 +15,7 @@ import heretical.pointer.operation.BuildSpec;
 import heretical.pointer.operation.json.JSONBuilder;
 import heretical.pointer.path.NestedPointer;
 import io.clusterless.tessellate.model.PipelineDef;
+import io.clusterless.tessellate.model.Source;
 import io.clusterless.tessellate.util.LiteralResolver;
 import io.clusterless.tessellate.util.MVELContext;
 import io.clusterless.tessellate.util.json.JSONUtil;
@@ -109,7 +110,7 @@ public class PipelineOptionsMerge {
                 pointer.apply(pipelineDef, n -> resolve(path, n));
             }
         } else {
-            pipelineDef = JSONUtil.CONFIG_MAPPER.valueToTree(new PipelineDef());
+            pipelineDef = JSONUtil.CONFIG_MAPPER.valueToTree(new PipelineDef(new Source()));
         }
 
         return merge(pipelineDef);
@@ -148,9 +149,8 @@ public class PipelineOptionsMerge {
     @NotNull
     private static MVELContext getContext(String mergedPipelineDef) {
         Map map = JSONUtil.stringToValue(mergedPipelineDef, Map.class);
-        MVELContext context = LiteralResolver.context((Map<String, Object>) map.get("source"), (Map<String, Object>) map.get("source"));
 
-        return context;
+        return LiteralResolver.context((Map<String, Object>) map.get("source"), (Map<String, Object>) map.get("source"));
     }
 
     private void loadAndMerge(JsonNode jsonNode, String target) {

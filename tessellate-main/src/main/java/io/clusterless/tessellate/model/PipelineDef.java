@@ -24,6 +24,10 @@ public class PipelineDef implements Model {
 
     private Sink sink = new Sink();
 
+    public PipelineDef(Source source) {
+        this.source = source;
+    }
+
     public static Builder builder() {
         return Builder.builder();
     }
