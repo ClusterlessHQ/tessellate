@@ -78,7 +78,13 @@ public class TapFactories {
         }
 
         List<URI> inputUris = sourceModel.uris();
+
+        if (sourceModel.schema().format() == null) {
+            sourceModel.schema().setFormat(Format.find(inputUris.get(0)).orElse(null));
+        }
+
         Format format = sourceModel.schema().format();
+
         Compression compression = sourceModel.schema().compression();
         SourceFactory sourceFactory = findSourceFactory(inputUris, format, compression);
 

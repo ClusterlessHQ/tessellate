@@ -8,9 +8,8 @@
 
 package io.clusterless.tessellate.util;
 
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.net.URI;
+import java.util.*;
 
 /**
  *
@@ -71,5 +70,17 @@ public enum Format {
         }
 
         return extensions.stream().findFirst().get();
+    }
+
+    public boolean hasFormat(URI uri) {
+        String path = uri.getPath();
+        Optional<String> found = extensions.stream().filter(path::endsWith).findFirst();
+
+        return found.isPresent();
+    }
+
+    public static Optional<Format> find(URI uri) {
+        return Arrays.stream(Format.values()).filter(format -> format.hasFormat(uri))
+                .findFirst();
     }
 }

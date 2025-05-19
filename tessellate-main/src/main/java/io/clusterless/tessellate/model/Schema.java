@@ -74,6 +74,10 @@ public class Schema implements Model {
         return quoteChar;
     }
 
+    public void setFormat(Format format) {
+        this.format = format;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
