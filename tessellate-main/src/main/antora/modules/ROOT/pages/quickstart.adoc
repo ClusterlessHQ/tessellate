@@ -1,0 +1,27 @@
+= Quick Start
+
+Tessellate is a command line application.
+After xref:install.adoc[installation], it can be invoked with the `tess` command.
+
+[source,console]
+.Show Help
+----
+tess -h
+----
+
+It is most common to execute tess with a xref:reference:pipeline.adoc[pipeline json] file that describes the work to be done.
+Some values in the pipeline file can be overridden by the command line options (see `--input`), but tess can do simple things with only command line options.
+
+Convert formats:: `tess --input input.csv --output output --output-format parquet`
+
+Print to stdout:: `tess --input input.gz.parquet`
+
+Print a column as json:: `tess --input input.gz.parquet --output-fields json --output-format json | jq '.property'`
+
+== Notes
+
+Use this issue to suggest cli improvements: https://github.com/ClusterlessHQ/tessellate/issues/10
+
+- The json output format expects a single column currently.
+- `tess` can read from `s3://`, `http(s)://`, and `hdfs://` natively.
+- `tess` can write to `s3://` and `hdfs://` natively.

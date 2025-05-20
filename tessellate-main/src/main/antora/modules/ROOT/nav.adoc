@@ -1,2 +1,3 @@
 * xref:install.adoc[]
+* xref:quickstart.adoc[]
 * xref:support.adoc[]
