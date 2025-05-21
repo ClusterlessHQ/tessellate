@@ -22,7 +22,6 @@ public class TrimToNullIntrinsic extends IntrinsicBuilder {
     public Result create(Fields currentFields, Operation operation) {
         Fields fromFields = fieldsParser().asFields(operation.arguments());
 
-        // doesn't make sense to make an empty json object
         if (fromFields.isNone()) {
             fromFields = Fields.ALL;
         }

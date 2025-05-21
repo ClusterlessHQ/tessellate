@@ -79,18 +79,15 @@ The field `name` is discarded (dropped from the tuple stream).
 Expressions are applied to incoming fields and the results are assigned to a new field.
 Expressions can have zero or more field arguments.
 
-There are two types of expression:
-
-- functions - combine arguments into new values
-- filters - drop tuples from the tuple stream (currently unimplemented)
-
 NOTE: Many more expression types are planned, including native support for regular expressions and JSON paths.
 
 Current only `intrinsic` functions are supported. `intrinsic` functions are built-in functions, with optional parameters
 
-No arguments:: `^intrinsic{} +> new_field|type`
+No arguments:: `^intrinsic{} +> new_field|type` // creates a new value with this field name
 No arguments, with parameters:: `^intrinsic{param1:value1, param2:value2} +> new_field|type`
-With arguments:: `from_field1 + from_field2 + from_fieldN ^intrinsic{} +> new_field|type`
+No arguments and no declared results:: `^intrinsic{} ->` // replace ALL fields with the results
+With arguments and no declared results:: `from_field1 + from_field2 ^intrinsic{} ->` // applies only the arguments and replaces them with the results
+With arguments:: `from_field1 + from_field2 + from_fieldN ^intrinsic{} +> new_field|type` // appends the new value to the tuple
 With arguments, with parameters:: `from_field1 + from_field2 + from_fieldN ^intrinsic{param1:value1, param2:value2} +> new_field|type`
 
 Expression may retain or discard the argument fields depending on the operator used.
@@ -100,6 +97,52 @@ Expression may retain or discard the argument fields depending on the operator u
 NOTE: Many more functions are planned.
 
 Built-in functions on fields can be applied to one or more fields in every tuple in the tuple stream.
+
+`ensureFields`:: Add any missing fields/columns.
+Use this when there are many files with overlapping but not consistent field names and the files need to be normalized so they can be processed as a single unit.
+Note any fields not declared as the result fields will be discarded.
+Def:::
+- `^ensureFields{} -> to_field1 + to_field2` - Ensure the results have all declared fields
+
+`fixedWidth`:: Pads a row/tuple to a fixed width by inserting nulls at a given index.
+Ensure type information is declared for result fields if required.
+Def:::
+- `^fixedWidth{width:...,insertAt:...} ->` - replace ALL fields with the fixed with result
+- `^fixedWidth{width:...,insertAt:...} -> new_field|type + new_field2|type + etc` - name the new fields
+- `^fixedWidth{insertAt:...} -> new_field|type + new_field2|type + etc` - replace all fields with the new field names
+Params:::
+`width`:::: The width of the row/tuple, defaults to size of the result fields.
+`insertAt`:::: The index to begin inserting the null padding, defaults to `-1` (last element).
+
+`fromJson`:: converts a json string to a row/tuple
+Def:::
+- `^fromJson{} -> to_field1 + to_field2` - the fields names must match the json properties at the root node
+
+`formatFields`:: Reformats all the argument fields to a new format.
+This is especially useful for remaining compatible with Apache Parquet.
+Def:::
+- `^formatFields{format:...} ->` - replace ALL fields with the formatted result
+- `^formatFields{format:...} +>` - append ALL fields with the formatted result
+Params:::
+`format`:::: The format string.
+- `lowerUnderscore` - converts to lower case and replaces `/\ .-` with underscores.
+The default.
+- `upperUnderscore` - converts to upper case and replaces `/\ .-` with underscores
+- `camelCase` - converts to camel case
+
+
+`sourcePath`:: Add the URI of the data currently being processed.
+Def:::
+- `^sourcePath{} +> to_field` - Assign the current URI to `to_field`
+
+`toJson`:: Converts a row/tuple to a JSON string.
+Def:::
+- `^toJson{} ->` - replace ALL fields with the JSON string with the default field name `json`
+- `from_field1 + from_field2 ^toJson{} +> node` - add the arguments to a new json object named `node`
+
+`trimToNull`:: Convert all arguments to `null` if the string representation of the value is an empty string or only contains whitespace.
+Def:::
+- `from_field1 + fromField2 ^trimToNull{} ->` - Convert any whitespace values to null while retaining the field names
 
 `tsid`:: Create a unique id as a long or string (using https://github.com/f4b6a3/tsid-creator).
 Def:::
@@ -122,48 +165,3 @@ Placeholders:::::
 - `%d`: base-10
 - `%z`: base-62
 `counterToZero`:::: Resets the counter portion when the millisecond changes, defaults to `false`.
-
-`fixedWidth`:: Pads a row/tuple to a fixed width by inserting nulls at a given index.
-Ensure type information is declared for result fields if required.
-Def:::
-- `^fixedWidth{width:...,insertAt:...} ->` - replace ALL fields with the fixed with result
-- `^fixedWidth{width:...,insertAt:...} -> new_field|type + new_field2|type + etc` - name the new fields
-- `^fixedWidth{insertAt:...} -> new_field|type + new_field2|type + etc` - replace all fields with the new field names
-Params:::
-`width`:::: The width of the row/tuple, defaults to size of the result fields.
-`insertAt`:::: The index to begin inserting the null padding, defaults to `-1` (last element).
-
-`toJson`:: Converts a row/tuple to a JSON string.
-Def:::
-- `^toJson{} ->` - replace ALL fields with the JSON string with the default field name `json`
-- `from_field1 + from_field2 ^toJson{} +> node` - add the arguments to a new json object named `node`
-
-`fromJson`:: converts a json string to a row/tuple
-Def:::
-- `^fromJson{} -> to_field1 + to_field2` - the fields names must match the json properties at the root node
-
-`formatFields`:: Reformats all the argument fields to a new format.
-This is especially useful for remaining compatible with Apache Parquet.
-Def:::
-- `^formatFields{format:...} ->` - replace ALL fields with the formatted result
-- `^formatFields{format:...} +>` - append ALL fields with the formatted result
-Params:::
-`format`:::: The format string.
-- `lowerUnderscore` - converts to lower case and replaces `/\ .-` with underscores.
-The default.
-- `upperUnderscore` - converts to upper case and replaces `/\ .-` with underscores
-- `camelCase` - converts to camel case
-
-`ensureFields`:: Add any missing fields/columns.
-Use this when there are many files with overlapping but not consistent field names and the files need to be normalized so they can be processed as a single unit.
-Note any fields not declared as the result fields will be discarded.
-Def:::
-- `^ensureFields{} -> to_field1 + to_field2` - Ensure the results have all declared fields
-
-`sourcePath`:: Add the URI of the data currently being processed.
-Def:::
-- `^sourcePath{} -> to_field` - Assign the current URI to `to_field`
-
-`trimToNull`:: Convert all arguments to `null` if the string representation of the value is an empty string or only contains whitespace.
-Def:::
-- `from_field1 + fromField2 ^trimToNull{} ->` - Convert any whitespace values to null while retaining the field names

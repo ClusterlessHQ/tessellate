@@ -341,11 +341,12 @@ public class PipelineTest {
                 .withTransform(new Transform(
                         "^tsid{node:1,nodeCount:256} +> id|long",
                         "time+>ymd|DateTime|yyyyMMdd", // copy: "time|Instant|dd/MMM/yyyy:HH:mm:ss Z"
+                        "httpStatus ^trimToNull{} ->", // replace with result, same name
                         "httpStatus->httpStatusString|String",// rename: "httpStatus|Integer"
                         "httpStatusString|Integer",// coerce: "httpStatusString|String"
                         "requestID->",// discard: "httpStatusString|String"
                         "200=>code|Integer", // insert
-                        "=> _empty|Integer", // insert
+                        "=> _empty|Integer", // insert null
                         "^sourcePath{} +> source_path",
                         "remoteIP ~/^64\\.252\\./" // retains 3 records
                 ))

@@ -62,25 +62,26 @@ public class Transformer {
         if (operation.exp() != null) {
             IntrinsicBuilder.Result result = create(context, operation);
 
-            boolean argsIsAll = result.arguments().isAll() ||
-                    containsAll(context.currentFields, result.arguments());
+            Fields fromFields = result.arguments();
+            Fields toFields = result.results();
 
-            boolean resultsEqualsDeclared = containsAll(result.function().getFieldDeclaration(), result.results());
+            boolean argsIsAll = fromFields.isAll() || containsAll(context.currentFields, fromFields);
+            boolean resultsEqualsDeclared = containsAll(result.function().getFieldDeclaration(), toFields);
 
             Fields selector;
 
-            if ((argsIsAll && result.results().isNone()) || (argsIsAll && resultsEqualsDeclared)) {
+            if ((argsIsAll && toFields.isNone()) || (argsIsAll && resultsEqualsDeclared)) {
                 selector = Fields.RESULTS;
             } else if (argsIsAll) {
-                selector = result.results();
+                selector = toFields;
             } else {
                 // SWAP allows for efficient replacement of arguments with non-argument and results
                 selector = Fields.SWAP;
             }
 
-            Pipe pipe = new Each(context.pipe, result.arguments(), result.function(), selector);
+            Pipe pipe = new Each(context.pipe, fromFields, result.function(), selector);
 
-            Fields currentFields = context.currentFields.subtract(result.arguments()).append(result.results());
+            Fields currentFields = context.currentFields.subtract(fromFields).append(toFields);
             return context.update(currentFields, pipe);
         }
 
@@ -107,20 +108,27 @@ public class Transformer {
     private PipelineContext copyAndEval(PipelineContext context) {
         Operation operation = (Operation) statement;
 
-        if (operation.exp() == null) {
-            Fields fromFields = fieldsParser.asFields(operation.arguments());
-            Fields toFields = fieldsParser.asFields(operation.results());
+        if (operation.exp() != null) {
+            IntrinsicBuilder.Result result = create(context, operation);
+            Fields fromFields = result.arguments();
+            Fields toFields = result.results();
 
-            context.log.info("transform copy: from: {}, to: {}", fromFields, toFields);
-            Pipe pipe = new Copy(context.pipe, fromFields, toFields);
+            context.log.info("transform eval: from: {}, to: {}", fromFields, toFields);
+            Fields selector = Fields.ALL;
+
+
+            Pipe pipe = new Each(context.pipe, fromFields, result.function(), selector);
             Fields currentFields = context.currentFields.append(toFields);
             return context.update(currentFields, pipe);
-        } else {
-            IntrinsicBuilder.Result result = create(context, operation);
-            Pipe pipe = new Each(context.pipe, result.arguments(), result.function(), Fields.ALL);
-            Fields currentFields = context.currentFields.append(result.results());
-            return context.update(currentFields, pipe);
         }
+
+        Fields fromFields = fieldsParser.asFields(operation.arguments());
+        Fields toFields = fieldsParser.asFields(operation.results());
+        context.log.info("transform copy: from: {}, to: {}", fromFields, toFields);
+
+        Pipe pipe = new Copy(context.pipe, fromFields, toFields);
+        Fields currentFields = context.currentFields.append(toFields);
+        return context.update(currentFields, pipe);
     }
 
     private PipelineContext handleCoerce(PipelineContext context) {
