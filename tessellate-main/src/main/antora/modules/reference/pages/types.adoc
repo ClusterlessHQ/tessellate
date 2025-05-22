@@ -33,11 +33,11 @@ These types take the form `type[|metadata]` where the optional metadata can be a
 `Instant|format`:: Canonically a `java.time.Instant`.
 - Supports nanos precision, format defaults to ISO-8601 instant format, e.g. `2011-12-03T10:15:30Z`
 - May also be a Clusterless time interval: `Day`, `Hours`, `Fourths`, `Sixth`, or `Twelfths`
-- The default format may be changed via the `INSTANT_TYPE_FORMAT` environment variable
+- The default format may be changed via the `TESS_INSTANT_TYPE_FORMAT` environment variable
 
 `DateTime|format`:: Canonically a `Long`.
 - Format defaults to `yyyy-MM-dd HH:mm:ss.SSSSSS z`.
-- The default format may be changed via the `DATE_TYPE_FORMAT` environment variable
+- The default format may be changed via the `TESS_DATE_TYPE_FORMAT` environment variable
 
 `json`:: Canonically `com.fasterxml.jackson.databind.JsonNode`.
 - Maybe either a value, nested object, or array.

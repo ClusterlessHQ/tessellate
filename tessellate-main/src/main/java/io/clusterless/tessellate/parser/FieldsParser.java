@@ -50,8 +50,8 @@ import java.util.TimeZone;
  */
 public class FieldsParser {
     public static final FieldsParser INSTANCE = new FieldsParser();
-    public static final String INSTANT_TYPE_FORMAT = "INSTANT_TYPE_FORMAT";
-    public static final String DATE_TYPE_FORMAT = "DATE_TYPE_FORMAT";
+    public static final String INSTANT_TYPE_FORMAT = "TESS_INSTANT_TYPE_FORMAT";
+    public static final String DATE_TYPE_FORMAT = "TESS_DATE_TYPE_FORMAT";
 
     private DateType defaultDateTimeType = new DateType("yyyy-MM-dd HH:mm:ss.SSSSSS z", TimeZone.getTimeZone("UTC"));
     private InstantType defaultInstantType = InstantType.ISO_MICROS;
