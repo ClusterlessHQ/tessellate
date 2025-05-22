@@ -110,6 +110,15 @@ public class FieldParser {
     public static final Parser<List<Rel>> RELATION_LIST =
             RELATION.sepBy1(Parsers.sequence(Scanners.many(IS_WHITESPACE)));
 
+    public static Optional<FieldTypeParam> parseFieldTypeParam(String param) {
+        if (param == null || param.isEmpty()) {
+            return Optional.empty();
+        }
+
+        // parser expects the |, hack so we don't mess with the parser
+        return BaseParser.parse(typeParam, "|" + param);
+    }
+
     public static Field parseField(String field) {
         return BaseParser.parse(fullFieldDeclaration, field);
     }

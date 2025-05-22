@@ -29,6 +29,7 @@ import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.TimeZone;
 
 /**
@@ -49,6 +50,8 @@ import java.util.TimeZone;
  */
 public class FieldsParser {
     public static final FieldsParser INSTANCE = new FieldsParser();
+    public static final String INSTANT_TYPE_FORMAT = "INSTANT_TYPE_FORMAT";
+    public static final String DATE_TYPE_FORMAT = "DATE_TYPE_FORMAT";
 
     private DateType defaultDateTimeType = new DateType("yyyy-MM-dd HH:mm:ss.SSSSSS z", TimeZone.getTimeZone("UTC"));
     private InstantType defaultInstantType = InstantType.ISO_MICROS;
@@ -128,8 +131,18 @@ public class FieldsParser {
 
         String typeName = fieldType.name().name();
 
-        String first = fieldType.param().map(FieldTypeParam::param1).orElse(null);
-        String second = fieldType.param().map(FieldTypeParam::param2).orElse(null);
+        Optional<FieldTypeParam> param = fieldType.param();
+
+        if (param.isEmpty()) {
+            if (typeName.equalsIgnoreCase("DateTime")) {
+                param = FieldParser.parseFieldTypeParam(System.getenv(DATE_TYPE_FORMAT));
+            } else if (typeName.equalsIgnoreCase("Instant")) {
+                param = FieldParser.parseFieldTypeParam(System.getenv(INSTANT_TYPE_FORMAT));
+            }
+        }
+
+        String first = param.map(FieldTypeParam::param1).orElse(null);
+        String second = param.map(FieldTypeParam::param2).orElse(null);
 
         if (typeName.equalsIgnoreCase("string")) {
             type = String.class;
@@ -194,8 +207,8 @@ public class FieldsParser {
         return typeNames[0];
     }
 
-    private static DateTimeFormatter createPattern(String splitType) {
-        return DateTimeFormatter.ofPattern(splitType)
+    public static DateTimeFormatter createPattern(String format) {
+        return DateTimeFormatter.ofPattern(format)
                 .withZone(ZoneId.of("UTC"));
     }
 

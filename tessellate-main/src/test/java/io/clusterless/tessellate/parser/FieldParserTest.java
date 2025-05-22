@@ -8,12 +8,23 @@
 
 package io.clusterless.tessellate.parser;
 
+import cascading.tuple.type.DateType;
+import cascading.tuple.type.InstantType;
+import clusterless.commons.temporal.IntervalUnits;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
+@ExtendWith(SystemStubsExtension.class)
 public class FieldParserTest {
+
+    @SystemStub
+    private EnvironmentVariables variables = new EnvironmentVariables();
+
     @Test
     void parseFields() {
         assertNotNull(FieldParser.parseField("@field"));
@@ -55,5 +66,53 @@ public class FieldParserTest {
         assertEquals(2, FieldParser.parseFieldList("@field1 + @field2").size());
         assertEquals(4, FieldParser.parseFieldList("@field1 + @field2+@field3 +@field4").size());
         assertEquals(5, FieldParser.parseFieldList("@field1+ @field|DateTime +@field|DateTime|yyyyMMdd+1|DateTime|yyyyMMdd + @field|Instant|twelfths|yyyyMMdd").size());
+    }
+
+    @Test
+    void parseFieldsWithTypeDefaults() {
+        assertEquals(
+                "yyyyMMdd",
+                assertInstanceOf(
+                        DateType.class,
+                        FieldsParser.INSTANCE.asFields(FieldParser.parseField("@field|DateTime|yyyyMMdd")).getType(0)
+                ).getDateFormat().toLocalizedPattern()
+        );
+
+        variables.set(FieldsParser.DATE_TYPE_FORMAT, "yyyyMMdd");
+        assertEquals(
+                "yyyyMMdd",
+                assertInstanceOf(
+                        DateType.class,
+                        FieldsParser.INSTANCE.asFields(FieldParser.parseField("@field|DateTime")).getType(0)
+                ).getDateFormat().toLocalizedPattern()
+        );
+
+        assertEquals(
+                FieldsParser.createPattern("yyyyMMdd").toString(),
+                assertInstanceOf(
+                        InstantType.class,
+                        FieldsParser.INSTANCE.asFields(FieldParser.parseField("@field|Instant|twelfths|yyyyMMdd")).getType(0)
+                ).getDateTimeFormatter().toString()
+        );
+
+        variables.set(FieldsParser.INSTANT_TYPE_FORMAT, "twelfths|yyyyMMdd");
+
+        assertEquals(
+                FieldsParser.createPattern("yyyyMMdd").toString(),
+                assertInstanceOf(
+                        InstantType.class,
+                        FieldsParser.INSTANCE.asFields(FieldParser.parseField("@field|Instant")).getType(0)
+                ).getDateTimeFormatter().toString()
+        );
+
+        variables.set(FieldsParser.INSTANT_TYPE_FORMAT, "twelfths");
+
+        assertEquals(
+                IntervalUnits.formatter(IntervalUnits.find("twelfths")).toString(),
+                assertInstanceOf(
+                        InstantType.class,
+                        FieldsParser.INSTANCE.asFields(FieldParser.parseField("@field|Instant")).getType(0)
+                ).getDateTimeFormatter().toString()
+        );
     }
 }

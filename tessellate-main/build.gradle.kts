@@ -125,7 +125,7 @@ dependencies {
     testImplementation("io.hosuaby:inject-resources-junit-jupiter:$injectResources")
 
     // https://github.com/webcompere/system-stubs
-    val systemStubs = "2.1.6"
+    val systemStubs = "2.1.8"
     testImplementation("uk.org.webcompere:system-stubs-core:$systemStubs")
     testImplementation("uk.org.webcompere:system-stubs-jupiter:$systemStubs")
     testImplementation("org.mockito:mockito-inline:5.2.0")
