@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Chris K Wensel <chris@wensel.net>. All Rights Reserved.
+ * Copyright (c) 2023-2025 Chris K Wensel <chris@wensel.net>. All Rights Reserved.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -9,6 +9,8 @@
 package io.clusterless.tessellate.factory.jdbc;
 
 import cascading.tuple.Fields;
+import io.clusterless.tessellate.junit.PathForOutput;
+import io.clusterless.tessellate.junit.ResourceExtension;
 import io.clusterless.tessellate.model.Schema;
 import io.clusterless.tessellate.model.Sink;
 import io.clusterless.tessellate.util.Compression;
@@ -16,29 +18,29 @@ import io.clusterless.tessellate.util.Format;
 import io.clusterless.tessellate.util.Protocol;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.net.URI;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.Properties;
 import java.util.Set;
 
+import static java.nio.file.Files.createDirectories;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Platform-agnostic tests for SQLite factory implementation.
  * Tests core functionality without dependencies on specific Cascading platforms.
  */
+@ExtendWith(ResourceExtension.class)
 public class SQLiteFactoryTest {
 
     private SQLiteFactory factory;
     private Properties testConfig;
-
-    @TempDir
-    Path tempDir;
 
     @BeforeEach
     void setUp() {
@@ -115,8 +117,10 @@ public class SQLiteFactoryTest {
     }
 
     @Test
-    void testSQLiteTapCreation() throws Exception {
-        Path dbPath = tempDir.resolve("test.db");
+    void testSQLiteTapCreation(@PathForOutput URI output) throws Exception {
+        Path path = Paths.get(output);
+        createDirectories(path);
+        Path dbPath = path.resolve("test.db");
         URI sqliteUri = URI.create("sqlite://" + dbPath + "?table=test_table");
 
         Schema schema = Schema.builder()
@@ -170,6 +174,34 @@ public class SQLiteFactoryTest {
 
         // Clean up
         tap.deleteResource(testConfig);
+
+        // --- Test with relative file path ---
+        // Relativize the output path to the current working directory, then use that as the base for the relative db path
+        Path cwd = Paths.get("").toAbsolutePath();
+        Path outputRelToCwd = cwd.relativize(path.toAbsolutePath());
+        Path relDbPath = outputRelToCwd.resolve("relative_test.db");
+        URI relSqliteUri = URI.create("sqlite://" + relDbPath + "?table=rel_table");
+
+        Schema relSchema = Schema.builder()
+                .withFormat(Format.sql)
+                .withTableName("rel_table")
+                .build();
+
+        Sink relSink = Sink.builder()
+                .withOutput(relSqliteUri)
+                .withSchema(relSchema)
+                .build();
+
+        SQLiteScheme relScheme = new SQLiteScheme(fields, relSink);
+        SQLiteTap relTap = new SQLiteTap(relScheme, relSink);
+
+        assertEquals("rel_table", relTap.getTableName());
+        assertEquals(relDbPath.toString(), relTap.getDatabasePath());
+        assertTrue(relTap.getIdentifier().contains("sqlite://"));
+        assertTrue(relTap.getIdentifier().contains("rel_table"));
+
+        // Clean up if file was created
+        relTap.deleteResource(testConfig);
     }
 
     @Test
@@ -194,10 +226,10 @@ public class SQLiteFactoryTest {
     }
 
     @Test
-    void testURITableNameExtraction() throws Exception {
+    void testURITableNameExtraction(@PathForOutput URI output) throws Exception {
         // Test with query parameter
-        Path dbPath = tempDir.resolve("uri_test.db");
-        URI uriWithTable = URI.create("sqlite://" + dbPath.toString() + "?table=custom_table");
+        Path dbPath = Paths.get(output).resolve("uri_test.db");
+        URI uriWithTable = URI.create("sqlite://" + dbPath + "?table=custom_table");
 
         Schema schema = Schema.builder().withFormat(Format.sql).build();
         Sink sink = Sink.builder().withOutput(uriWithTable).withSchema(schema).build();
@@ -213,7 +245,7 @@ public class SQLiteFactoryTest {
                 .withTableName("schema_table")
                 .build();
 
-        URI uriWithoutTable = URI.create("sqlite://" + dbPath.toString());
+        URI uriWithoutTable = URI.create("sqlite://" + dbPath);
         Sink sinkWithSchemaTable = Sink.builder()
                 .withOutput(uriWithoutTable)
                 .withSchema(schemaWithTable)

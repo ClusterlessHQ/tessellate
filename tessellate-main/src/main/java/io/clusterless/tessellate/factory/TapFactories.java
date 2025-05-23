@@ -151,7 +151,7 @@ public class TapFactories {
                 .findFirst();
 
         return first.orElseThrow(() ->
-                new IllegalArgumentException("no factory found for: " + scheme + ", with format: " + format.parent() + ", with compression: " + compression)
+                new IllegalArgumentException("no factory found for protocol: " + scheme.orElse("'none'") + ", with format: " + format.parent() + ", with compression: " + compression)
         );
     }
 
