@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Chris K Wensel <chris@wensel.net>. All Rights Reserved.
+ * Copyright (c) 2023 Chris K Wensel <chris@wensel.net>. All Rights Reserved.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -30,6 +30,10 @@ public class Schema implements Model {
     private boolean strictParsing = true;
     private String delimiterChar = null;
     private String quoteChar = "\"";
+    @JsonSimpleView
+    private String tableName;
+    @JsonSimpleView
+    private boolean createTable = true;
 
     public Schema() {
     }
@@ -74,6 +78,14 @@ public class Schema implements Model {
         return quoteChar;
     }
 
+    public String tableName() {
+        return tableName;
+    }
+
+    public boolean createTable() {
+        return createTable;
+    }
+
     public void setFormat(Format format) {
         this.format = format;
     }
@@ -93,6 +105,8 @@ public class Schema implements Model {
         private boolean strictParsing = true;
         private String delimiterChar = null;
         private String quoteChar = "\"";
+        private String tableName;
+        private boolean createTable = true;
 
         public Builder withName(String name) {
             this.name = name;
@@ -144,6 +158,16 @@ public class Schema implements Model {
             return this;
         }
 
+        public Builder withTableName(String tableName) {
+            this.tableName = tableName;
+            return this;
+        }
+
+        public Builder withCreateTable(boolean createTable) {
+            this.createTable = createTable;
+            return this;
+        }
+
         public Schema build() {
             Schema schema = new Schema();
             schema.name = this.name;
@@ -156,6 +180,8 @@ public class Schema implements Model {
             schema.strictParsing = this.strictParsing;
             schema.delimiterChar = this.delimiterChar;
             schema.quoteChar = this.quoteChar;
+            schema.tableName = this.tableName;
+            schema.createTable = this.createTable;
             return schema;
         }
     }

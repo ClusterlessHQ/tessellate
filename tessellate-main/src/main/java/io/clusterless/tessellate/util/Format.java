@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Chris K Wensel <chris@wensel.net>. All Rights Reserved.
+ * Copyright (c) 2023 Chris K Wensel <chris@wensel.net>. All Rights Reserved.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -21,7 +21,8 @@ public enum Format {
     parquet(true, "parquet"),
     text,
     json(text, "jsonl", "json"),
-    regex(text, "log");
+    regex(text, "log"),
+    sql("sql", "db", "sqlite");
 
     private final Format parent;
     private final boolean alwaysEmbedsSchema;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Chris K Wensel <chris@wensel.net>. All Rights Reserved.
+ * Copyright (c) 2023 Chris K Wensel <chris@wensel.net>. All Rights Reserved.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -17,6 +17,7 @@ plugins {
     application
     `java-test-fixtures`
     id("org.jreleaser") version "1.16.0"
+    idea
 }
 
 val versionProperties = Properties().apply {
@@ -117,6 +118,8 @@ dependencies {
 
     implementation("com.github.f4b6a3:tsid-creator:5.2.6")
 
+    implementation("org.xerial:sqlite-jdbc:3.46.0.0")
+
     testImplementation("net.wensel:cascading-core:$cascading:tests")
 
     // https://github.com/hosuaby/inject-resources
@@ -206,7 +209,7 @@ configurations["integrationTestImplementation"].extendsFrom(configurations.testI
 
 tasks.named<ProcessResources>("processResources") {
     doFirst {
-        file("${buildDir}/resources/main/version.properties")
+        file("${layout.buildDirectory.get().asFile}/resources/main/version.properties")
             .writeText("release.full=${version}")
     }
 }
@@ -274,7 +277,7 @@ jreleaser {
                 name.set("tess")
             }
             artifact {
-                path.set(file("build/distributions/{{distributionName}}-{{projectVersion}}.zip"))
+                path.set(file("${layout.buildDirectory.get().asFile}/distributions/{{distributionName}}-{{projectVersion}}.zip"))
             }
         }
     }
@@ -324,7 +327,7 @@ jreleaser {
 
 tasks.register("createPath") {
     doLast {
-        file("build/jreleaser").mkdirs()
+        file("${layout.buildDirectory.get().asFile}/jreleaser").mkdirs()
     }
 }
 
@@ -334,4 +337,12 @@ tasks.register("release") {
     dependsOn("jreleaserRelease")
     dependsOn("jreleaserPackage")
     dependsOn("jreleaserPublish")
+}
+
+idea {
+    module {
+        // Configure IntelliJ IDEA to use the same output directory as Gradle
+        outputDir = layout.buildDirectory.get().asFile.resolve("classes/java/main")
+        testOutputDir = layout.buildDirectory.get().asFile.resolve("classes/java/test")
+    }
 }

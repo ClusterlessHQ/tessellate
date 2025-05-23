@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Chris K Wensel <chris@wensel.net>. All Rights Reserved.
+ * Copyright (c) 2023 Chris K Wensel <chris@wensel.net>. All Rights Reserved.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -12,6 +12,7 @@ import com.google.common.collect.LinkedListMultimap;
 import io.clusterless.tessellate.factory.hdfs.JSONFSFactory;
 import io.clusterless.tessellate.factory.hdfs.ParquetFactory;
 import io.clusterless.tessellate.factory.hdfs.TextFSFactory;
+import io.clusterless.tessellate.factory.jdbc.SQLiteFactory;
 import io.clusterless.tessellate.factory.local.LocalDirectoryFactory;
 import io.clusterless.tessellate.factory.local.StdOutFactory;
 import io.clusterless.tessellate.model.Sink;
@@ -37,7 +38,8 @@ public class TapFactories {
             LocalDirectoryFactory.INSTANCE,
             ParquetFactory.INSTANCE,
             JSONFSFactory.INSTANCE,
-            TextFSFactory.INSTANCE
+            TextFSFactory.INSTANCE,
+            SQLiteFactory.INSTANCE
     ));
     private static final LinkedListMultimap<Protocol, SourceFactory> sourceFactories = LinkedListMultimap.create();
     private static final LinkedListMultimap<Protocol, SinkFactory> sinkFactories = LinkedListMultimap.create();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Chris K Wensel <chris@wensel.net>. All Rights Reserved.
+ * Copyright (c) 2023 Chris K Wensel <chris@wensel.net>. All Rights Reserved.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -9,7 +9,7 @@
 package io.clusterless.tessellate.util;
 
 public enum Protocol {
-    file, hdfs, s3, http, https, stdout;
+    file, hdfs, s3, http, https, stdout, sqlite;
 
     public static Protocol fromString(String protocol) {
         switch (protocol) {
@@ -25,6 +25,8 @@ public enum Protocol {
                 return https;
             case "-":
                 return stdout;
+            case "sqlite":
+                return sqlite;
             default:
                 throw new IllegalArgumentException("Unknown protocol: " + protocol);
         }
