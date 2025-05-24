@@ -21,6 +21,7 @@ text/regex:: Lines of text parsed by regex (like Apache or S3 log files).
 csv:: With or without headers.
 tsv:: With or without headers.
 parquet:: [Apache Parquet](https://parquet.apache.org)
+sql:: SQL database tables (currently supports SQLite).
 
 Regex support is based on regex groups.
 Groups are matched by ordinal with the declared fields in the schema.
@@ -44,6 +45,99 @@ Usage:
 }
 ----
 
+== SQLite Support
+
+The SQLite protocol (`sqlite://`) provides sink-only support for writing data to SQLite database tables.
+
+=== SQLite URI Formats
+
+SQLite URIs support both absolute and relative database file paths:
+
+Absolute paths:: Use three slashes for absolute file system paths.
+Relative paths:: Use two slashes for paths relative to the current working directory.
+
+==== Absolute Path Examples
+
+[source,json]
+----
+{
+  "sink": {
+    "output": "sqlite:///absolute/path/to/database.db",
+    "schema": {
+      "format": "sql",
+      "tableName": "my_table"
+    }
+  }
+}
+----
+
+[source,json]
+----
+{
+  "sink": {
+    "output": "sqlite:///home/user/data/analytics.db?table=events",
+    "schema": {
+      "format": "sql"
+    }
+  }
+}
+----
+
+==== Relative Path Examples
+
+[source,json]
+----
+{
+  "sink": {
+    "output": "sqlite://data/local.db",
+    "schema": {
+      "format": "sql",
+      "tableName": "processed_data"
+    }
+  }
+}
+----
+
+[source,json]
+----
+{
+  "sink": {
+    "output": "sqlite://./output/results.db?table=summary",
+    "schema": {
+      "format": "sql"
+    }
+  }
+}
+----
+
+=== Table Name Specification
+
+Table names can be specified in multiple ways (in order of precedence):
+
+1. **URI query parameter**: `sqlite://path/to/db.sqlite?table=my_table`
+2. **Schema tableName**: Set `tableName` in the schema configuration
+3. **Default**: Falls back to `data` if no table name is specified
+
+=== SQLite Configuration
+
+SQLite connections can be configured through environment variables:
+
+* `TESS_SQLITE_WAL_MODE`: Enable WAL mode (default: true)
+* `TESS_SQLITE_SYNC_MODE`: Synchronous mode (default: NORMAL)
+* `TESS_SQLITE_CACHE_SIZE`: Cache size in pages (default: 2000)
+* `TESS_SQLITE_BATCH_SIZE`: Insert batch size (default: 1000)
+
+=== Type Mapping
+
+Data types are automatically mapped from pipeline fields to SQLite types:
+
+* `String` → `TEXT`
+* `Integer`, `Long` → `INTEGER`
+* `Double`, `Float` → `REAL`
+* `Boolean` → `INTEGER` (0/1)
+* `Date`, `Instant` → `TEXT` (ISO format)
+* `byte[]` → `BLOB`
+
 == Protocols
 
 Every source and sink supports its own set of protocols.
@@ -56,6 +150,7 @@ tess --show-source=protocols
 `file://`:: Read/write local files.
 `s3://`:: Read/write files in AWS S3.
 `hdfs://`:: Read/write files on Apache Hadoop HDF filesystem.
+`sqlite://`:: Read/write SQLite database tables (sink only).
 
 == Compression
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Chris K Wensel <chris@wensel.net>. All Rights Reserved.
+ * Copyright (c) 2023 Chris K Wensel <chris@wensel.net>. All Rights Reserved.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -14,6 +14,7 @@ import cascading.tap.TapException;
 import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntryIterator;
 import io.clusterless.tessellate.model.Sink;
+import io.clusterless.tessellate.util.URIs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +40,7 @@ public class SQLiteTap extends Tap<Properties, Void, Void> {
         this.sinkModel = sinkModel;
 
         URI uri = sinkModel.uris().get(0);
-        this.databasePath = extractDatabasePath(uri);
+        this.databasePath = URIs.extractFilePath(uri);
         this.tableName = extractTableName(uri, sinkModel);
 
         if (LOG.isDebugEnabled()) {
@@ -47,13 +48,6 @@ public class SQLiteTap extends Tap<Properties, Void, Void> {
         }
     }
 
-    private String extractDatabasePath(URI uri) {
-        String path = uri.getPath();
-        if (path == null || path.isEmpty()) {
-            throw new TapException("SQLite URI must include database path: " + uri);
-        }
-        return path;
-    }
 
     private String extractTableName(URI uri, Sink sink) {
         String query = uri.getQuery();

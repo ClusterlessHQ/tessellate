@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Chris K Wensel <chris@wensel.net>. All Rights Reserved.
+ * Copyright (c) 2023 Chris K Wensel <chris@wensel.net>. All Rights Reserved.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -154,6 +154,46 @@ public class URIs {
         }
 
         return Paths.get(uri.getPath()).toAbsolutePath().toUri();
+    }
+
+    /**
+     * Extracts the file path from a URI following file:// URI conventions.
+     * Supports both absolute and relative paths for file-like URI schemes.
+     * <p>
+     * URI Format Handling:
+     * - scheme:///absolute/path  - absolute path (3 slashes, empty authority)
+     * - scheme://relative/path   - relative path (2 slashes, authority contains first path segment)
+     * - scheme:/absolute/path    - absolute path (1 slash, no authority, path starts with /)
+     * <p>
+     * This method follows RFC 8089 file URI conventions and can be used for
+     * file://, sqlite://, and other file-like URI schemes.
+     *
+     * @param uri the URI to extract the path from
+     * @return the extracted file path (may be relative or absolute)
+     * @throws IllegalArgumentException if the URI does not contain a valid path
+     */
+    public static String extractFilePath(URI uri) {
+        String path = uri.getPath();
+        String authority = uri.getAuthority();
+
+        if (authority != null && !authority.isEmpty()) {
+            // Case: scheme://relative/path or scheme://hostname/absolute/path
+            // Similar to file:// URIs, authority + path represents the full path
+            if (path != null && !path.isEmpty()) {
+                // Remove leading slash from path and combine with authority
+                // "authority" + "/rest/of/path" -> "authority/rest/of/path"
+                return authority + path;
+            } else {
+                // Only authority, no additional path
+                return authority;
+            }
+        } else if (path != null && !path.isEmpty()) {
+            // Case: scheme:/absolute/path or scheme:///absolute/path
+            // Path component exists, use as-is (may be absolute or relative)
+            return path;
+        } else {
+            throw new IllegalArgumentException("URI must include a file path: " + uri);
+        }
     }
 
     /**

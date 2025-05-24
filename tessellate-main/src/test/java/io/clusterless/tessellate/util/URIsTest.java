@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Chris K Wensel <chris@wensel.net>. All Rights Reserved.
+ * Copyright (c) 2023 Chris K Wensel <chris@wensel.net>. All Rights Reserved.
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -43,5 +43,25 @@ public class URIsTest {
         assertEquals(URI.create("s3://bucket/path1/"), URIs.findCommonPathPrefix(uris, 0));
         assertEquals(URI.create("s3://bucket/path1/"), URIs.findCommonPathPrefix(uris, 1));
         assertEquals(URI.create("s3://bucket/"), URIs.findCommonPathPrefix(uris, 2));
+    }
+
+    @Test
+    void extractFilePath() {
+        // Test absolute paths (3 slashes, empty authority)
+        assertEquals("/absolute/path/to/file.db", URIs.extractFilePath(URI.create("sqlite:///absolute/path/to/file.db")));
+        assertEquals("/home/user/data.db", URIs.extractFilePath(URI.create("file:///home/user/data.db")));
+
+        // Test relative paths (2 slashes, authority contains first path segment)
+        assertEquals("relative/path/to/file.db", URIs.extractFilePath(URI.create("sqlite://relative/path/to/file.db")));
+        assertEquals("data/local.db", URIs.extractFilePath(URI.create("file://data/local.db")));
+        assertEquals("./output/results.db", URIs.extractFilePath(URI.create("sqlite://./output/results.db")));
+
+        // Test absolute paths (1 slash, no authority)
+        assertEquals("/absolute/path", URIs.extractFilePath(URI.create("sqlite:/absolute/path")));
+        assertEquals("/usr/local/data.db", URIs.extractFilePath(URI.create("file:/usr/local/data.db")));
+
+        // Test authority only (no additional path)
+        assertEquals("filename.db", URIs.extractFilePath(URI.create("sqlite://filename.db")));
+        assertEquals("database", URIs.extractFilePath(URI.create("file://database")));
     }
 }
