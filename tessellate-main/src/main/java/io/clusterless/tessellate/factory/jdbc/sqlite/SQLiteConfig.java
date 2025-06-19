@@ -6,7 +6,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package io.clusterless.tessellate.factory.jdbc;
+package io.clusterless.tessellate.factory.jdbc.sqlite;
 
 import java.util.Properties;
 
@@ -32,6 +32,35 @@ public class SQLiteConfig {
     public static final String DEFAULT_TEMP_STORE = "memory";
     public static final boolean DEFAULT_TRACE_ENABLED = false;
     public static final boolean DEFAULT_AUTO_COMMIT = false;
+
+    // URI and Protocol constants
+    public static final String SQLITE_SCHEME = "sqlite://";
+    public static final String SQLITE_TABLE_SCHEME = "sqlite-table://";
+    public static final String JDBC_SQLITE_PREFIX = "jdbc:sqlite:";
+
+    // URI parameter constants
+    public static final String TABLE_PARAM = "table";
+    public static final String MODE_PARAM = "mode";
+    public static final String TABLE_MODE_VALUE = "table";
+    public static final String TABLE_PARAM_PREFIX = "?table=";
+
+    // Default values
+    public static final String DEFAULT_TABLE_NAME = "data";
+
+    // Configuration property keys for sink configuration
+    public static final String PROP_DATABASE_PATH = "sqlite.database.path";
+    public static final String PROP_TABLE_NAME = "sqlite.table.name";
+
+    // SQL statement fragments
+    public static final String INSERT_INTO = "INSERT INTO ";
+    public static final String VALUES_CLAUSE = ") VALUES (";
+    public static final String DROP_TABLE = "DROP TABLE ";
+
+    // SQLite PRAGMA statements
+    public static final String PRAGMA_JOURNAL_MODE_WAL = "PRAGMA journal_mode=WAL";
+    public static final String PRAGMA_SYNCHRONOUS = "PRAGMA synchronous=";
+    public static final String PRAGMA_CACHE_SIZE = "PRAGMA cache_size=";
+    public static final String PRAGMA_TEMP_STORE = "PRAGMA temp_store=";
 
     /**
      * Get batch size from configuration

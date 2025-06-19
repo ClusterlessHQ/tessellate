@@ -6,7 +6,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package io.clusterless.tessellate.factory.jdbc;
+package io.clusterless.tessellate.factory.jdbc.sqlite;
 
 import cascading.flow.FlowProcess;
 import cascading.tap.TapException;
@@ -29,7 +29,7 @@ import java.util.Properties;
 public class SQLiteTupleEntryCollector extends TupleEntryCollector {
     private static final Logger LOG = LoggerFactory.getLogger(SQLiteTupleEntryCollector.class);
 
-    private final SQLiteTap sqliteTap;
+    private final SQLiteBaseTap sqliteTap;
     private final FlowProcess<? extends Properties> flowProcess;
     private final Properties conf;
     private final cascading.tuple.Fields fields;
@@ -40,7 +40,7 @@ public class SQLiteTupleEntryCollector extends TupleEntryCollector {
     private int batchCount = 0;
     private long totalRowsProcessed = 0;
 
-    public SQLiteTupleEntryCollector(FlowProcess<? extends Properties> flowProcess, SQLiteTap sqliteTap) {
+    public SQLiteTupleEntryCollector(FlowProcess<? extends Properties> flowProcess, SQLiteBaseTap sqliteTap) {
         super(sqliteTap.getSinkFields());
         this.flowProcess = flowProcess;
         this.sqliteTap = sqliteTap;
@@ -49,10 +49,6 @@ public class SQLiteTupleEntryCollector extends TupleEntryCollector {
         this.batchSize = SQLiteConfig.getBatchSize(conf);
         this.traceEnabled = SQLiteConfig.isTraceEnabled(conf);
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Created SQLiteTupleEntryCollector for table: {} with batch size: {}",
-                    sqliteTap.getTableName(), batchSize);
-        }
     }
 
     @Override
@@ -72,11 +68,11 @@ public class SQLiteTupleEntryCollector extends TupleEntryCollector {
             }
 
             if (traceEnabled && totalRowsProcessed % (batchSize * 10) == 0) {
-                LOG.info("SQLite processed {} rows for table: {}", totalRowsProcessed, sqliteTap.getTableName());
+                LOG.info("sqlite processed {} rows for table: {}", totalRowsProcessed, sqliteTap.getTableName());
             }
 
         } catch (SQLException e) {
-            throw new TapException("Failed to insert data into SQLite table: " + sqliteTap.getTableName(), e);
+            throw new TapException("failed to insert data into sqlite table: " + sqliteTap.getTableName(), e);
         }
     }
 
@@ -84,7 +80,7 @@ public class SQLiteTupleEntryCollector extends TupleEntryCollector {
         Connection connection = sqliteTap.getConnection(conf);
         String tableName = sqliteTap.getTableName();
 
-        StringBuilder sql = new StringBuilder("INSERT INTO ");
+        StringBuilder sql = new StringBuilder(SQLiteConfig.INSERT_INTO);
         sql.append(tableName).append(" (");
 
         for (int i = 0; i < fields.size(); i++) {
@@ -92,7 +88,7 @@ public class SQLiteTupleEntryCollector extends TupleEntryCollector {
             sql.append(fields.get(i).toString());
         }
 
-        sql.append(") VALUES (");
+        sql.append(SQLiteConfig.VALUES_CLAUSE);
         for (int i = 0; i < fields.size(); i++) {
             if (i > 0) sql.append(", ");
             sql.append("?");
@@ -101,9 +97,6 @@ public class SQLiteTupleEntryCollector extends TupleEntryCollector {
 
         insertStatement = connection.prepareStatement(sql.toString());
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Initialized SQLite insert statement: {}", sql.toString());
-        }
     }
 
     private void bindTupleToStatement(TupleEntry tupleEntry) throws SQLException {
@@ -115,8 +108,17 @@ public class SQLiteTupleEntryCollector extends TupleEntryCollector {
             if (value == null) {
                 insertStatement.setNull(i + 1, java.sql.Types.NULL);
             } else {
-                // Apply any necessary type conversions
-                Object convertedValue = typeMapper.convertValueForSQLite(value, value.getClass());
+                // Get CoercibleType if available from Fields type information
+                cascading.tuple.type.CoercibleType<?> coercibleType = null;
+                if (fields.hasTypes() && i < fields.size()) {
+                    java.lang.reflect.Type fieldType = fields.getType(i);
+                    if (fieldType instanceof cascading.tuple.type.CoercibleType) {
+                        coercibleType = (cascading.tuple.type.CoercibleType<?>) fieldType;
+                    }
+                }
+
+                // Apply type conversions using CoercibleType when available
+                Object convertedValue = typeMapper.convertValueForSQLite(value, coercibleType);
                 insertStatement.setObject(i + 1, convertedValue);
             }
         }
@@ -124,15 +126,12 @@ public class SQLiteTupleEntryCollector extends TupleEntryCollector {
 
     private void executeBatch() throws SQLException {
         if (batchCount > 0) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Executing SQLite batch of {} rows for table: {}", batchCount, sqliteTap.getTableName());
-            }
 
             int[] results = insertStatement.executeBatch();
             sqliteTap.getConnection(conf).commit();
 
             if (traceEnabled) {
-                LOG.info("SQLite batch executed: {} rows affected for table: {}",
+                LOG.info("sqlite batch executed: {} rows affected for table: {}",
                         batchCount, sqliteTap.getTableName());
             }
 
@@ -158,34 +157,21 @@ public class SQLiteTupleEntryCollector extends TupleEntryCollector {
             sqliteTap.commitTransaction();
 
             if (LOG.isDebugEnabled() || traceEnabled) {
-                LOG.info("SQLiteTupleEntryCollector closed. Total rows processed: {} for table: {}",
+                LOG.info("sqlite tuple entry collector closed, total rows processed: {} for table: {}",
                         totalRowsProcessed, sqliteTap.getTableName());
             }
 
         } catch (SQLException e) {
-            LOG.error("Error closing SQLite tuple entry collector", e);
+            LOG.error("error closing sqlite tuple entry collector", e);
             // Try to rollback on error
             try {
                 Properties rollbackConf = new Properties();
                 SQLiteConfig.setDefaults(rollbackConf);
                 sqliteTap.rollbackResource(rollbackConf);
             } catch (Exception rollbackError) {
-                LOG.error("Failed to rollback SQLite transaction during close", rollbackError);
+                LOG.error("failed to rollback sqlite transaction during close", rollbackError);
             }
         }
     }
 
-    /**
-     * Get the total number of rows processed by this collector
-     */
-    public long getTotalRowsProcessed() {
-        return totalRowsProcessed;
-    }
-
-    /**
-     * Get the current batch count
-     */
-    public int getCurrentBatchCount() {
-        return batchCount;
-    }
 }

@@ -6,7 +6,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package io.clusterless.tessellate.factory.jdbc;
+package io.clusterless.tessellate.factory.jdbc.sqlite;
 
 import cascading.flow.FlowProcess;
 import cascading.scheme.Scheme;
@@ -14,7 +14,6 @@ import cascading.scheme.SinkCall;
 import cascading.scheme.SourceCall;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
-import io.clusterless.tessellate.model.Sink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,38 +28,30 @@ import java.util.Properties;
 public class SQLiteScheme extends Scheme<Properties, Void, Void, Void, Void> {
     private static final Logger LOG = LoggerFactory.getLogger(SQLiteScheme.class);
 
-    private final Fields fields;
-    private final Sink sinkModel;
-
-    public SQLiteScheme(Fields fields, Sink sinkModel) {
+    public SQLiteScheme(Fields fields) {
         super(fields, fields);
-        this.fields = fields;
-        this.sinkModel = sinkModel;
     }
 
     @Override
     public void sourceConfInit(FlowProcess<? extends Properties> flowProcess,
                                Tap<Properties, Void, Void> tap, Properties conf) {
-        throw new UnsupportedOperationException("SQLite scheme only supports sink operations");
+        throw new UnsupportedOperationException("sqlite scheme only supports sink operations");
     }
 
     @Override
     public void sinkConfInit(FlowProcess<? extends Properties> flowProcess,
                              Tap<Properties, Void, Void> tap, Properties conf) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Initializing SQLite sink configuration for tap: {}", tap.getIdentifier());
-        }
 
         // Set default SQLite configuration
         SQLiteConfig.setDefaults(conf);
 
         // Configure SQLite-specific properties
-        SQLiteTap sqliteTap = (SQLiteTap) tap;
-        conf.setProperty("sqlite.database.path", sqliteTap.getDatabasePath());
-        conf.setProperty("sqlite.table.name", sqliteTap.getTableName());
+        SQLiteBaseTap sqliteTap = (SQLiteBaseTap) tap;
+        conf.setProperty(SQLiteConfig.PROP_DATABASE_PATH, sqliteTap.getDatabasePath());
+        conf.setProperty(SQLiteConfig.PROP_TABLE_NAME, sqliteTap.getTableName());
 
         if (SQLiteConfig.isTraceEnabled(conf)) {
-            LOG.info("SQLite trace enabled for database: {} table: {}",
+            LOG.info("sqlite trace enabled for database: {} table: {}",
                     sqliteTap.getDatabasePath(), sqliteTap.getTableName());
         }
     }
@@ -68,40 +59,34 @@ public class SQLiteScheme extends Scheme<Properties, Void, Void, Void, Void> {
     @Override
     public void sinkPrepare(FlowProcess<? extends Properties> flowProcess,
                             SinkCall<Void, Void> sinkCall) throws IOException {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Preparing SQLite sink for processing");
-        }
 
-        SQLiteTap sqliteTap = (SQLiteTap) sinkCall.getTap();
+        SQLiteBaseTap sqliteTap = (SQLiteBaseTap) sinkCall.getTap();
         try {
             // Ensure database and table are ready
             sqliteTap.createResource(flowProcess.getConfigCopy());
 
             if (SQLiteConfig.isTraceEnabled(flowProcess.getConfigCopy())) {
-                LOG.info("SQLite sink prepared successfully for table: {}", sqliteTap.getTableName());
+                LOG.info("sqlite sink prepared successfully for table: {}", sqliteTap.getTableName());
             }
         } catch (Exception e) {
-            throw new IOException("Failed to prepare SQLite sink", e);
+            throw new IOException("failed to prepare sqlite sink", e);
         }
     }
 
     @Override
     public void sinkCleanup(FlowProcess<? extends Properties> flowProcess,
                             SinkCall<Void, Void> sinkCall) throws IOException {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Cleaning up SQLite sink resources");
-        }
 
-        SQLiteTap sqliteTap = (SQLiteTap) sinkCall.getTap();
+        SQLiteBaseTap sqliteTap = (SQLiteBaseTap) sinkCall.getTap();
         try {
             // Commit any pending transactions and close connections
             sqliteTap.commitTransaction();
 
             if (SQLiteConfig.isTraceEnabled(flowProcess.getConfigCopy())) {
-                LOG.info("SQLite sink cleanup completed for table: {}", sqliteTap.getTableName());
+                LOG.info("sqlite sink cleanup completed for table: {}", sqliteTap.getTableName());
             }
         } catch (Exception e) {
-            LOG.warn("Error during SQLite sink cleanup", e);
+            LOG.warn("error during sqlite sink cleanup", e);
             // Don't throw exception during cleanup to avoid masking original errors
         }
     }
@@ -109,7 +94,7 @@ public class SQLiteScheme extends Scheme<Properties, Void, Void, Void, Void> {
     @Override
     public boolean source(FlowProcess<? extends Properties> flowProcess,
                           SourceCall<Void, Void> sourceCall) throws IOException {
-        throw new UnsupportedOperationException("SQLite scheme only supports sink operations");
+        throw new UnsupportedOperationException("sqlite scheme only supports sink operations");
     }
 
     @Override
@@ -118,22 +103,8 @@ public class SQLiteScheme extends Scheme<Properties, Void, Void, Void, Void> {
         // For SQLite, the actual writing is handled by SQLiteTupleEntryCollector
         // This method is called by Cascading framework but we delegate to the collector
         throw new UnsupportedOperationException(
-                "SQLite sink operations are handled by SQLiteTupleEntryCollector. " +
-                        "This method should not be called in normal operation."
+                "sqlite sink operations are handled by SQLiteTupleEntryCollector. " +
+                        "this method should not be called in normal operation."
         );
-    }
-
-    /**
-     * Get the fields associated with this scheme
-     */
-    public Fields getFields() {
-        return fields;
-    }
-
-    /**
-     * Get the sink model associated with this scheme
-     */
-    public Sink getSinkModel() {
-        return sinkModel;
     }
 }

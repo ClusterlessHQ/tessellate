@@ -12,7 +12,7 @@ import com.google.common.collect.LinkedListMultimap;
 import io.clusterless.tessellate.factory.hdfs.JSONFSFactory;
 import io.clusterless.tessellate.factory.hdfs.ParquetFactory;
 import io.clusterless.tessellate.factory.hdfs.TextFSFactory;
-import io.clusterless.tessellate.factory.jdbc.SQLiteFactory;
+import io.clusterless.tessellate.factory.jdbc.sqlite.SQLiteFactory;
 import io.clusterless.tessellate.factory.local.LocalDirectoryFactory;
 import io.clusterless.tessellate.factory.local.StdOutFactory;
 import io.clusterless.tessellate.model.Sink;
