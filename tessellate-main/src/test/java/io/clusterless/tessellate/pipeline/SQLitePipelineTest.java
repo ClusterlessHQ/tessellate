@@ -8,6 +8,8 @@
 
 package io.clusterless.tessellate.pipeline;
 
+import io.clusterless.tessellate.factory.jdbc.sqlite.SQLiteConfig;
+import io.clusterless.tessellate.factory.jdbc.sqlite.SQLiteTestUtils;
 import io.clusterless.tessellate.junit.PathForOutput;
 import io.clusterless.tessellate.junit.PathForResource;
 import io.clusterless.tessellate.junit.ResourceExtension;
@@ -43,7 +45,7 @@ public class SQLitePipelineTest {
         // Clean up any existing output directory
         File outputDir = Paths.get(output).toFile();
         if (outputDir.exists()) {
-            deleteDirectory(outputDir);
+            SQLiteTestUtils.deleteDirectory(outputDir);
         }
         outputDir.mkdirs();
 
@@ -54,7 +56,7 @@ public class SQLitePipelineTest {
         runCsvToSqlitePipeline(input, sqliteUri, "csv-to-sqlite-test", "csv_data");
 
         // Verify SQLite database contents
-        verifySQLiteContents(dbPath, "csv_data", 13, 5);
+        SQLiteTestUtils.verifySQLiteContents(dbPath, "csv_data", 13, 5);
     }
 
     @Test
@@ -62,7 +64,7 @@ public class SQLitePipelineTest {
         // Clean up any existing output directory
         File outputDir = Paths.get(output).toFile();
         if (outputDir.exists()) {
-            deleteDirectory(outputDir);
+            SQLiteTestUtils.deleteDirectory(outputDir);
         }
         outputDir.mkdirs();
 
@@ -75,7 +77,7 @@ public class SQLitePipelineTest {
 
         // Verify SQLite database contents - file should be directly in the output directory
         String dbPath = Paths.get(output).resolve("relative.db").toString();
-        verifySQLiteContents(dbPath, "header_data", 13, 5);
+        SQLiteTestUtils.verifySQLiteContents(dbPath, "header_data", 13, 5);
     }
 
     @Test
@@ -83,7 +85,7 @@ public class SQLitePipelineTest {
         // Clean up any existing output directory
         File outputDir = Paths.get(output).toFile();
         if (outputDir.exists()) {
-            deleteDirectory(outputDir);
+            SQLiteTestUtils.deleteDirectory(outputDir);
         }
         outputDir.mkdirs();
 
@@ -94,13 +96,13 @@ public class SQLitePipelineTest {
         runS3LogToSqlitePipeline(input, sqliteUri, "s3log-to-sqlite-test", "s3_access_log");
 
         // Verify SQLite database contents - 4 log entries, 26 columns
-        verifySQLiteContents(dbPath, "s3_access_log", 4, 26);
+        SQLiteTestUtils.verifySQLiteContents(dbPath, "s3_access_log", 4, 26);
 
         // Verify that SQLite table schema reflects the AWS S3 access log schema types
         verifyS3LogTableSchema(dbPath, "s3_access_log");
 
         // Verify timestamp data is properly stored
-        verifyTimestampData(dbPath, "s3_access_log");
+        SQLiteTestUtils.verifyTimestampData(dbPath, "s3_access_log", "time");
     }
 
     private void runCsvToSqlitePipeline(URI input, URI sqliteUri, String pipelineName, String tableName) throws IOException {
@@ -154,78 +156,56 @@ public class SQLitePipelineTest {
         pipeline.run();
     }
 
-    private void verifySQLiteContents(String dbPath, String tableName, int expectedRowCount, int expectedColumnCount) throws SQLException {
-        String jdbcUrl = "jdbc:sqlite:" + dbPath;
 
-        try (Connection conn = DriverManager.getConnection(jdbcUrl)) {
-            // Verify table exists
-            DatabaseMetaData metaData = conn.getMetaData();
-            try (ResultSet tables = metaData.getTables(null, null, tableName, new String[]{"TABLE"})) {
-                assertTrue(tables.next(), "table " + tableName + " should exist");
-            }
-
-            // Verify row count and structure
-            try (Statement stmt = conn.createStatement();
-                 ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM " + tableName)) {
-
-                assertTrue(rs.next(), "count query should return a result");
-                assertEquals(expectedRowCount, rs.getInt(1), "wrong number of rows in " + tableName);
-            }
-
-            // Verify column count
-            try (Statement stmt = conn.createStatement();
-                 ResultSet rs = stmt.executeQuery("SELECT * FROM " + tableName + " LIMIT 1")) {
-
-                ResultSetMetaData rsMetaData = rs.getMetaData();
-                assertEquals(expectedColumnCount, rsMetaData.getColumnCount(), "wrong number of columns in " + tableName);
-            }
-
-            // Verify some sample data exists
-            try (Statement stmt = conn.createStatement();
-                 ResultSet rs = stmt.executeQuery("SELECT * FROM " + tableName + " LIMIT 3")) {
-
-                List<String> firstColumnValues = new ArrayList<>();
-                while (rs.next()) {
-                    firstColumnValues.add(rs.getString(1));
-                }
-
-                assertFalse(firstColumnValues.isEmpty(), "should have at least one row of data");
-            }
+    @Test
+    void csvToSQLiteWithTableMode(@PathForResource("/data/delimited-header.csv") URI input, @PathForOutput URI output) throws IOException, SQLException {
+        // Clean up any existing output directory
+        File outputDir = Paths.get(output).toFile();
+        if (outputDir.exists()) {
+            SQLiteTestUtils.deleteDirectory(outputDir);
         }
+        outputDir.mkdirs();
+
+        // Create SQLite database URI with table mode
+        String dbPath = Paths.get(output).resolve("table_mode_test.db").toString();
+        URI sqliteUri = URI.create("sqlite:///" + dbPath + "?" + SQLiteConfig.TABLE_PARAM + "=csv_data&" + SQLiteConfig.MODE_PARAM + "=" + SQLiteConfig.TABLE_MODE_VALUE);
+
+        runCsvToSqlitePipeline(input, sqliteUri, "csv-to-sqlite-table-mode-test", "csv_data");
+
+        // Verify SQLite database contents
+        SQLiteTestUtils.verifySQLiteContents(dbPath, "csv_data", 13, 5);
+        
+        // Verify table exists but database file persists (table mode behavior)
+        assertTrue(SQLiteTestUtils.tableExists(dbPath, "csv_data"), "table should exist in table mode");
+        assertEquals(1, SQLiteTestUtils.getTableCount(dbPath), "should have exactly one table");
     }
 
-    private void verifyTimestampData(String dbPath, String tableName) throws SQLException {
-        String jdbcUrl = "jdbc:sqlite:" + dbPath;
-
-        try (Connection conn = DriverManager.getConnection(jdbcUrl)) {
-            // Query timestamp column as string to verify Instant types are stored properly
-            try (Statement stmt = conn.createStatement();
-                 ResultSet rs = stmt.executeQuery("SELECT time, bucketOwner, operation FROM " + tableName + " ORDER BY time LIMIT 3")) {
-
-                List<String> timestampValues = new ArrayList<>();
-                while (rs.next()) {
-                    String timeStr = rs.getString("time");  // Get as string to avoid SQLite timestamp parsing issues
-                    String bucketOwner = rs.getString("bucketOwner");
-                    String operation = rs.getString("operation");
-
-                    assertNotNull(timeStr, "timestamp should not be null");
-                    assertNotNull(bucketOwner, "bucket owner should not be null");
-                    assertNotNull(operation, "operation should not be null");
-
-                    timestampValues.add(timeStr);
-                }
-
-                assertFalse(timestampValues.isEmpty(), "should have timestamp data");
-
-                // Verify timestamps are properly stored in ISO-8601 format (should contain year 2021/2023)
-                assertTrue(timestampValues.stream().anyMatch(ts -> ts.contains("2021") || ts.contains("2023")),
-                        "timestamps should contain expected years");
-
-                // Verify that timestamps are in proper ISO-8601 format
-                assertTrue(timestampValues.stream().anyMatch(ts -> ts.contains("T") && ts.contains("Z")),
-                        "timestamps should be in ISO-8601 format (contains T and Z)");
-            }
+    @Test
+    void multipleTablesSameDatabase(@PathForResource("/data/delimited-header.csv") URI input, @PathForOutput URI output) throws IOException, SQLException {
+        // Clean up any existing output directory
+        File outputDir = Paths.get(output).toFile();
+        if (outputDir.exists()) {
+            SQLiteTestUtils.deleteDirectory(outputDir);
         }
+        outputDir.mkdirs();
+
+        // Create SQLite database with two different tables
+        String dbPath = Paths.get(output).resolve("multi_table.db").toString();
+        URI table1Uri = URI.create("sqlite:///" + dbPath + "?" + SQLiteConfig.TABLE_PARAM + "=table1&" + SQLiteConfig.MODE_PARAM + "=" + SQLiteConfig.TABLE_MODE_VALUE);
+        URI table2Uri = URI.create("sqlite:///" + dbPath + "?" + SQLiteConfig.TABLE_PARAM + "=table2&" + SQLiteConfig.MODE_PARAM + "=" + SQLiteConfig.TABLE_MODE_VALUE);
+
+        // Run pipeline for first table
+        runCsvToSqlitePipeline(input, table1Uri, "multi-table-test-1", "table1");
+        
+        // Run pipeline for second table  
+        runCsvToSqlitePipeline(input, table2Uri, "multi-table-test-2", "table2");
+
+        // Verify both tables exist in same database
+        SQLiteTestUtils.verifySQLiteContents(dbPath, "table1", 13, 5);
+        SQLiteTestUtils.verifySQLiteContents(dbPath, "table2", 13, 5);
+        assertTrue(SQLiteTestUtils.tableExists(dbPath, "table1"), "table1 should exist");
+        assertTrue(SQLiteTestUtils.tableExists(dbPath, "table2"), "table2 should exist");
+        assertEquals(2, SQLiteTestUtils.getTableCount(dbPath), "should have exactly two tables");
     }
 
     private void verifyS3LogTableSchema(String dbPath, String tableName) throws SQLException {
@@ -289,21 +269,4 @@ public class SQLitePipelineTest {
         assertEquals(expectedType, actualType, message + " (column: " + columnName + ")");
     }
 
-    private void deleteDirectory(File directory) {
-        if (!directory.exists()) {
-            return;
-        }
-
-        File[] files = directory.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    deleteDirectory(file);
-                } else {
-                    file.delete();
-                }
-            }
-        }
-        directory.delete();
-    }
 }

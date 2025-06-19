@@ -35,7 +35,6 @@ public class SQLiteConfig {
 
     // URI and Protocol constants
     public static final String SQLITE_SCHEME = "sqlite://";
-    public static final String SQLITE_TABLE_SCHEME = "sqlite-table://";
     public static final String JDBC_SQLITE_PREFIX = "jdbc:sqlite:";
 
     // URI parameter constants
@@ -43,6 +42,8 @@ public class SQLiteConfig {
     public static final String MODE_PARAM = "mode";
     public static final String TABLE_MODE_VALUE = "table";
     public static final String TABLE_PARAM_PREFIX = "?table=";
+    public static final String MODE_PARAM_PREFIX = "&mode=";
+    public static final String MODE_TABLE_PARAM = "&mode=table";
 
     // Default values
     public static final String DEFAULT_TABLE_NAME = "data";

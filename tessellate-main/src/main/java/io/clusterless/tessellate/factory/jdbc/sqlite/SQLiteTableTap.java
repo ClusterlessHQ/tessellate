@@ -33,7 +33,7 @@ public class SQLiteTableTap extends SQLiteBaseTap {
 
     @Override
     public String getIdentifier() {
-        return SQLiteConfig.SQLITE_TABLE_SCHEME + databasePath + SQLiteConfig.TABLE_PARAM_PREFIX + tableName;
+        return SQLiteConfig.SQLITE_SCHEME + databasePath + SQLiteConfig.TABLE_PARAM_PREFIX + tableName + SQLiteConfig.MODE_TABLE_PARAM;
     }
 
     @Override

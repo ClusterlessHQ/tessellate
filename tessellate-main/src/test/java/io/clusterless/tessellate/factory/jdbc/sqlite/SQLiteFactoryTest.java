@@ -45,12 +45,7 @@ public class SQLiteFactoryTest {
     @BeforeEach
     void setUp() {
         factory = (SQLiteFactory) SQLiteFactory.INSTANCE;
-        testConfig = new Properties();
-        SQLiteConfig.setDefaults(testConfig);
-
-        // Enable tracing for tests
-        testConfig.setProperty(SQLiteConfig.SQLITE_TRACE_ENABLED, "true");
-        testConfig.setProperty(SQLiteConfig.SQLITE_BATCH_SIZE, "10"); // Small batch for testing
+        testConfig = SQLiteTestUtils.createTestConfig();
     }
 
     @Test
@@ -358,7 +353,7 @@ public class SQLiteFactoryTest {
         Path path = Paths.get(output);
         createDirectories(path);
         Path dbPath = path.resolve("multi_table_test.db");
-        URI sqliteUri = URI.create("sqlite://" + dbPath + "?table=test_table&mode=table");
+        URI sqliteUri = URI.create("sqlite://" + dbPath + "?" + SQLiteConfig.TABLE_PARAM + "=test_table&" + SQLiteConfig.MODE_PARAM + "=" + SQLiteConfig.TABLE_MODE_VALUE);
 
         Schema schema = Schema.builder()
                 .withFormat(Format.sql)
@@ -378,6 +373,11 @@ public class SQLiteFactoryTest {
         assertTrue(tap instanceof SQLiteTableTap, "factory should create SQLiteTableTap when mode=table");
 
         SQLiteTableTap sqliteTableTap = (SQLiteTableTap) tap;
+        
+        // Test identifier includes mode parameter
+        String identifier = sqliteTableTap.getIdentifier();
+        assertTrue(identifier.contains(SQLiteConfig.MODE_PARAM + "=" + SQLiteConfig.TABLE_MODE_VALUE), "identifier should include mode=table parameter");
+        assertTrue(identifier.contains("sqlite://"), "identifier should use sqlite:// scheme");
 
         // Test resource creation
         assertFalse(sqliteTableTap.resourceExists(testConfig), "resource should not exist initially");
@@ -409,14 +409,114 @@ public class SQLiteFactoryTest {
     }
 
     @Test
+    void testSQLiteSchemeErrorHandling() {
+        Fields fields = new Fields("test");
+        SQLiteScheme scheme = new SQLiteScheme(fields);
+        
+        // Test source operations throw UnsupportedOperationException
+        assertThrows(UnsupportedOperationException.class, () -> {
+            scheme.sourceConfInit(null, null, null);
+        }, "source operations should not be supported");
+        
+        assertThrows(UnsupportedOperationException.class, () -> {
+            scheme.source(null, null);
+        }, "source operations should not be supported");
+        
+        assertThrows(UnsupportedOperationException.class, () -> {
+            scheme.sink(null, null);
+        }, "direct sink operations should not be supported");
+    }
+
+    @Test
+    void testSQLiteBaseTapSharedFunctionality(@PathForOutput URI output) throws Exception {
+        Path path = Paths.get(output);
+        createDirectories(path);
+        Path dbPath = path.resolve("base_tap_test.db");
+        URI sqliteUri = URI.create("sqlite://" + dbPath + "?table=base_test");
+
+        Schema schema = Schema.builder()
+                .withFormat(Format.sql)
+                .withTableName("base_test")
+                .build();
+
+        Sink sink = Sink.builder()
+                .withOutput(sqliteUri)
+                .withSchema(schema)
+                .build();
+
+        Fields fields = new Fields("id", "name", "timestamp");
+        fields = fields.applyTypes(Integer.class, String.class, java.time.Instant.class);
+
+        SQLiteScheme scheme = new SQLiteScheme(fields);
+        SQLiteTap tap = new SQLiteTap(scheme, sink);
+
+        // Test shared base functionality
+        assertFalse(tap.resourceExists(testConfig), "resource should not exist initially");
+        assertTrue(tap.createResource(testConfig), "resource creation should succeed");
+        assertTrue(tap.resourceExists(testConfig), "resource should exist after creation");
+        
+        // Test connection reuse
+        var conn1 = tap.getConnection(testConfig);
+        var conn2 = tap.getConnection(testConfig);
+        assertSame(conn1, conn2, "should reuse existing connection");
+        
+        // Test table name and database path extraction
+        assertEquals("base_test", tap.getTableName());
+        assertEquals(dbPath.toString(), tap.getDatabasePath());
+        
+        // Test transaction methods
+        assertTrue(tap.commitResource(testConfig), "commit should succeed");
+        assertTrue(tap.rollbackResource(testConfig), "rollback should succeed");
+        
+        // Clean up
+        tap.deleteResource(testConfig);
+    }
+
+    @Test
+    void testIdentifierConsistency(@PathForOutput URI output) throws Exception {
+        Path path = Paths.get(output);
+        createDirectories(path);
+        Path dbPath = path.resolve("identifier_test.db");
+        
+        // Test SQLiteTap identifier (no mode parameter)
+        URI sqliteUri = URI.create("sqlite://" + dbPath + "?table=test_table");
+        Schema schema = Schema.builder().withFormat(Format.sql).withTableName("test_table").build();
+        Sink sink = Sink.builder().withOutput(sqliteUri).withSchema(schema).build();
+        Fields fields = new Fields("id");
+        SQLiteScheme scheme = new SQLiteScheme(fields);
+        
+        SQLiteTap regularTap = new SQLiteTap(scheme, sink);
+        String regularIdentifier = regularTap.getIdentifier();
+        
+        // Test SQLiteTableTap identifier (includes mode=table parameter)
+        URI tableUri = URI.create("sqlite://" + dbPath + "?" + SQLiteConfig.TABLE_PARAM + "=test_table&" + SQLiteConfig.MODE_PARAM + "=" + SQLiteConfig.TABLE_MODE_VALUE);
+        Sink tableSink = Sink.builder().withOutput(tableUri).withSchema(schema).build();
+        SQLiteTableTap tableTap = new SQLiteTableTap(scheme, tableSink);
+        String tableIdentifier = tableTap.getIdentifier();
+        
+        // Both should use sqlite:// scheme
+        assertTrue(regularIdentifier.startsWith("sqlite://"), "regular tap should use sqlite:// scheme");
+        assertTrue(tableIdentifier.startsWith("sqlite://"), "table tap should use sqlite:// scheme");
+        
+        // Table tap should include mode parameter
+        String modeTableParam = SQLiteConfig.MODE_PARAM + "=" + SQLiteConfig.TABLE_MODE_VALUE;
+        assertFalse(regularIdentifier.contains(modeTableParam), "regular tap should not include mode parameter");
+        assertTrue(tableIdentifier.contains(modeTableParam), "table tap should include mode=table parameter");
+        
+        // Both should include table name
+        assertTrue(regularIdentifier.contains("test_table"), "regular tap identifier should include table name");
+        assertTrue(tableIdentifier.contains("test_table"), "table tap identifier should include table name");
+    }
+
+    @Test
     void testMultipleTablesInSameDatabase(@PathForOutput URI output) throws Exception {
         Path path = Paths.get(output);
         createDirectories(path);
         Path dbPath = path.resolve("shared_database.db");
         
         // Create two different table taps for the same database
-        URI table1Uri = URI.create("sqlite://" + dbPath + "?table=table1&mode=table");
-        URI table2Uri = URI.create("sqlite://" + dbPath + "?table=table2&mode=table");
+        URI table1Uri = URI.create("sqlite://" + dbPath + "?" + SQLiteConfig.TABLE_PARAM + "=table1&" + SQLiteConfig.MODE_PARAM + "=" + SQLiteConfig.TABLE_MODE_VALUE);
+        URI table2Uri = URI.create("sqlite://" + dbPath + "?" + SQLiteConfig.TABLE_PARAM + "=table2&" + SQLiteConfig.MODE_PARAM + "=" + SQLiteConfig.TABLE_MODE_VALUE);
 
         Schema schema1 = Schema.builder()
                 .withFormat(Format.sql)
@@ -481,5 +581,75 @@ public class SQLiteFactoryTest {
         // Clean up
         tap2.deleteResource(testConfig);
         dbPath.toFile().delete();
+    }
+
+    @Test
+    void testSQLiteTupleEntryCollectorErrorHandling(@PathForOutput URI output) throws Exception {
+        Path path = Paths.get(output);
+        createDirectories(path);
+        Path dbPath = path.resolve("collector_error_test.db");
+        URI sqliteUri = URI.create("sqlite://" + dbPath + "?table=error_test");
+
+        Schema schema = Schema.builder()
+                .withFormat(Format.sql)
+                .withTableName("error_test")
+                .build();
+
+        Sink sink = Sink.builder()
+                .withOutput(sqliteUri)
+                .withSchema(schema)
+                .build();
+
+        Fields fields = new Fields("id", "data");
+        fields = fields.applyTypes(Integer.class, String.class);
+
+        SQLiteScheme scheme = new SQLiteScheme(fields);
+        SQLiteTap tap = new SQLiteTap(scheme, sink);
+        
+        // Create the resource
+        assertTrue(tap.createResource(testConfig), "resource creation should succeed");
+        
+        // Test that collector can be created and closed properly
+        Properties flowConfig = new Properties();
+        SQLiteConfig.setDefaults(flowConfig);
+        cascading.flow.local.LocalFlowProcess flowProcess = new cascading.flow.local.LocalFlowProcess(flowConfig);
+        var collector = new SQLiteTupleEntryCollector(flowProcess, tap);
+        
+        // Test batch tracking
+        assertEquals(0, collector.getCurrentBatchCount(), "initial batch count should be 0");
+        assertEquals(0, collector.getTotalRowsProcessed(), "initial rows processed should be 0");
+        
+        // Test closing without errors
+        assertDoesNotThrow(() -> collector.close(), "collector close should not throw");
+        
+        // Clean up
+        tap.deleteResource(testConfig);
+    }
+
+    @Test
+    void testFactoryTapSelection() throws Exception {
+        // Test factory selects correct tap type based on URI parameters
+        Schema schema = Schema.builder().withFormat(Format.sql).withTableName("test").build();
+        Fields fields = new Fields("id");
+        
+        // Regular SQLite URI should create SQLiteTap
+        URI regularUri = URI.create("sqlite://test.db?table=test");
+        Sink regularSink = Sink.builder().withOutput(regularUri).withSchema(schema).build();
+        var regularTap = factory.getSink(null, regularSink, fields);
+        assertTrue(regularTap instanceof SQLiteTap, "regular URI should create SQLiteTap");
+        assertFalse(regularTap instanceof SQLiteTableTap, "regular URI should not create SQLiteTableTap");
+        
+        // SQLite URI with mode=table should create SQLiteTableTap
+        URI tableUri = URI.create("sqlite://test.db?" + SQLiteConfig.TABLE_PARAM + "=test&" + SQLiteConfig.MODE_PARAM + "=" + SQLiteConfig.TABLE_MODE_VALUE);
+        Sink tableSink = Sink.builder().withOutput(tableUri).withSchema(schema).build();
+        var tableTap = factory.getSink(null, tableSink, fields);
+        assertTrue(tableTap instanceof SQLiteTableTap, "mode=table URI should create SQLiteTableTap");
+        
+        // Other mode values should still create SQLiteTap
+        URI otherModeUri = URI.create("sqlite://test.db?" + SQLiteConfig.TABLE_PARAM + "=test&" + SQLiteConfig.MODE_PARAM + "=other");
+        Sink otherModeSink = Sink.builder().withOutput(otherModeUri).withSchema(schema).build();
+        var otherModeTap = factory.getSink(null, otherModeSink, fields);
+        assertTrue(otherModeTap instanceof SQLiteTap, "other mode values should create SQLiteTap");
+        assertFalse(otherModeTap instanceof SQLiteTableTap, "other mode values should not create SQLiteTableTap");
     }
 }

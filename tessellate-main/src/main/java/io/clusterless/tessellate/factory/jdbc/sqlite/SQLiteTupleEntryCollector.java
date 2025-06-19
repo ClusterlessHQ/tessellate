@@ -174,4 +174,17 @@ public class SQLiteTupleEntryCollector extends TupleEntryCollector {
         }
     }
 
+    /**
+     * Get the total number of rows processed by this collector
+     */
+    public long getTotalRowsProcessed() {
+        return totalRowsProcessed;
+    }
+
+    /**
+     * Get the current batch count
+     */
+    public int getCurrentBatchCount() {
+        return batchCount;
+    }
 }
