@@ -273,6 +273,18 @@ contract.
   exclude list trims Hadoop's transitive tree (yarn, jetty, jersey, protobuf,
   log4j/reload4j), so a Hadoop bump may need new excludes or may be missing a
   class at runtime.
+- **The distribution is trimmed by exclusion.** The `configurations.implementation`
+  exclude list also drops jars only referenced by code tess never reaches in
+  local mode (Hadoop's HTTP server, FTP, crypto key provider, OpenSSL channel
+  mode, bouncycastle, the SDK's apache5 client, ion serialization), each with
+  a comment naming the referencing path. Before excluding a jar, scan the
+  installed `lib/` for classes that reference its packages (constant-pool
+  byte search, e.g. a throwaway `Refs.java`) and confirm every referrer is an
+  unreachable path. Then run `check`, an s3a probe, and a format/compression
+  smoke through `installDist`. Keep `hadoop-hdfs-client` (hdfs protocol),
+  `zstd-jni` (reading zstd parquet written elsewhere),
+  `analyticsaccelerator-s3` (S3A 3.4.3's default read stream), and
+  `commons-math3` (metrics2).
 - **AWS SDK v2 is declared module by module.** `hadoop-aws` depends on the
   `software.amazon.awssdk:bundle` jar, which is excluded as too large; the
   modules S3A uses are declared from the SDK BOM (`s3`, `apache-client`,

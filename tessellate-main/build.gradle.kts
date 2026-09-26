@@ -127,9 +127,6 @@ dependencies {
 
     implementation("org.mvel:mvel2:2.5.0.Final")
 
-    // required by hadoop in java 9+
-    implementation("javax.xml.bind:jaxb-api:2.4.0-b180830.0359")
-
     // hadoop-aws depends on the aws sdk v2 bundle, which is too large, so only the modules s3a uses are included:
     // s3 and apache-client (sync client), netty-nio-client and s3-transfer-manager (copy and upload),
     // and sts (assumed roles)
@@ -209,6 +206,33 @@ dependencies {
             exclude(group = "com.jcraft")
             exclude(group = "com.nimbusds")
             exclude(group = "javax.servlet", module = "javax.servlet-api")
+
+            // dependencies only referenced by code paths tess never reaches in local mode, found by scanning the
+            // distribution jars for references to each package (see context/project-guidelines.md)
+            // hadoop http server and job history printer (jersey, jaxb, jettison, activation)
+            exclude(group = "com.github.pjfanning", module = "jersey-json")
+            exclude(group = "com.sun.xml.bind", module = "jaxb-impl")
+            exclude(group = "javax.xml.bind", module = "jaxb-api")
+            exclude(group = "javax.activation", module = "javax.activation-api")
+            exclude(group = "jakarta.activation", module = "jakarta.activation-api")
+            exclude(group = "org.codehaus.jettison", module = "jettison")
+            exclude(group = "javax.servlet.jsp", module = "jsp-api")
+            exclude(group = "io.dropwizard.metrics", module = "metrics-core")
+            // bouncycastle: netty self-signed cert utilities, and hadoop crypto only when configured as the jce provider
+            exclude(group = "org.bouncycastle")
+            // hadoop ftp filesystem, crypto key provider, qualified host resolver (hadoop.security.token.service.use_ip=false)
+            exclude(group = "commons-net", module = "commons-net")
+            exclude(group = "com.google.code.gson", module = "gson")
+            exclude(group = "dnsjava", module = "dnsjava")
+            // s3a ssl channel mode OpenSSL; the default mode is Default_JSSE
+            exclude(group = "org.wildfly.openssl", module = "wildfly-openssl")
+            // the sdk's apache 5 client; s3a builds its sync clients on apache-client (httpclient 4)
+            exclude(group = "software.amazon.awssdk", module = "apache5-client")
+            exclude(group = "org.apache.httpcomponents.client5")
+            exclude(group = "org.apache.httpcomponents.core5")
+            // cascading-nested-json's hadoop serialization, only used when named in io.serializations
+            exclude(group = "com.fasterxml.jackson.dataformat", module = "jackson-dataformat-ion")
+            exclude(group = "com.amazon.ion", module = "ion-java")
         }
     }
 }
