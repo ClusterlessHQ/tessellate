@@ -5,26 +5,39 @@ on:
     branches:
       - 'wip-*'
     paths-ignore:
-      - '*.txt'
-      - '*.md'
-      - '*.adoc'
+      - '**.txt'
+      - '**.md'
+      - '**.adoc'
 jobs:
-  run-all-tests-and-release:
+  # every wip-* branch (e.g. wip-1.0-modernize) runs the unit and integration tests
+  test:
     runs-on: ubuntu-latest
+    outputs:
+      publish: ${{ steps.publish.outputs.publish }}
 
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v3
-      - uses: actions/setup-java@v3
+        uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 11
 
       - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Setup Env
         run: echo "${{ vars.GRADLE_PROPERTIES }}" > gradle.properties
+
+      # only the version branch (wip-<release.major>) publishes; it is the
+      # same branch jreleaser releases from (release.github.branch in tessellate-main)
+      - name: Resolve Publish Branch
+        id: publish
+        run: |
+          major=$(sed -n 's/^release\.major=//p' version.properties)
+          if [ "${GITHUB_REF_NAME}" = "wip-${major}" ]; then publish=true; else publish=false; fi
+          echo "branch=${GITHUB_REF_NAME} release-branch=wip-${major} publish=${publish}"
+          echo "publish=${publish}" >> "$GITHUB_OUTPUT"
 
       - name: Run Tests
         env:
@@ -33,14 +46,36 @@ jobs:
         run: |
           ./gradlew --no-daemon --info --stacktrace check
 
+  # only the version branch releases, publishes the Homebrew and Docker images, and deploys docs
+  release:
+    needs: test
+    if: needs.test.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 11
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Setup Env
+        run: echo "${{ vars.GRADLE_PROPERTIES }}" > gradle.properties
+
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Release and Publish
         env:
+          USERNAME: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JRELEASER_GPG_PASSPHRASE: ${{ secrets.JRELEASER_GPG_PASSPHRASE }}
           JRELEASER_GPG_PUBLIC_KEY: ${{ secrets.JRELEASER_GPG_PUBLIC_KEY }}
@@ -55,7 +90,8 @@ jobs:
           curl -X POST -d '{}' https://api.netlify.com/build_hooks/67fe72e7760e879248fa36c4
 
       - name: Archive Release Log
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
+        if: always()
         with:
           name: jreleaser-log
           path: |
