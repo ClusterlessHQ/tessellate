@@ -254,8 +254,11 @@ contract.
 ### Build and test
 
 - **Toolchain:** Gradle wrapper 8.14.5 (checksum-pinned), Java 11 toolchain
-  via the foojay resolver (`settings.gradle.kts`), CI Temurin 11. The first
-  build needs network and GitHub Packages credentials.
+  via the foojay resolver (`settings.gradle.kts`). **Gradle itself needs
+  Java 17+**: foojay 1.0.0 is Java 17 bytecode and loads into the Gradle JVM.
+  CI installs Temurin 11 and 17, runs Gradle on 17, and points the toolchain
+  at 11 with `-Porg.gradle.java.installations.fromEnv=JAVA_HOME_11_X64`. The
+  first build needs network and GitHub Packages credentials.
 - **Dependency versions are inline** in `tessellate-main/build.gradle.kts`
   `dependencies {}` as local `val`s (`cascading`, `parquet`,
   `hadoop3Version`, `awsSdk`, `jackson`, `jupiter`, …). There is no catalog
@@ -319,8 +322,10 @@ contract.
 ### Modernization hazards (this branch's purpose)
 
 - **Java 11 appears in three places:** the `java.toolchain`, both CI jobs'
-  `setup-java`, and the jreleaser Docker/Homebrew packaging. Move them
-  together and inspect the generated `build/jreleaser` output after a bump.
+  `setup-java` list and `JAVA_HOME_11_X64` flag, and the jreleaser
+  Docker/Homebrew packaging. Move them together and inspect the generated
+  `build/jreleaser` output after a bump. The Gradle JVM (17 in CI) is
+  separate and must stay at or above what the settings plugins require.
 - **Gradle 9:** `./gradlew help --warning-mode all` reports no deprecations
   on Gradle 8.14.5. Check jreleaser plugin compatibility before moving the
   wrapper.
