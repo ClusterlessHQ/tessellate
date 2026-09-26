@@ -19,3 +19,16 @@ target
 .metadata
 .settings/
 .vscode
+.kotlin
+.claude
+CLAUDE.local.md
+_*
+.kata.local.toml
+# roborev snapshots
+/.roborev/
+.codex
+.agents/
+.worktrees/
+.roborev.toml
+.kata.toml
+.run-ship/
