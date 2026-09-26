@@ -68,9 +68,9 @@ dependencies {
     implementation("org.jetbrains:annotations:24.1.0")
     implementation("info.picocli:picocli:4.7.6")
 
-    implementation("org.slf4j:slf4j-api:2.0.16")
-    implementation("ch.qos.logback:logback-classic:1.5.16")
-    implementation("ch.qos.logback:logback-core:1.5.16")
+    implementation("org.slf4j:slf4j-api:2.0.20")
+    implementation("ch.qos.logback:logback-classic:1.6.4")
+    implementation("ch.qos.logback:logback-core:1.6.4")
 
     val cascading = "4.6.0-wip-37"
     implementation("net.wensel:cascading-core:$cascading")
