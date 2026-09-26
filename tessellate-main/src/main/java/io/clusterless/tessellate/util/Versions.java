@@ -20,8 +20,14 @@ public class Versions {
     public static String clsVersion() {
         Properties properties = new Properties();
 
-        try {
-            properties.load(resourceAsStream());
+        // version.properties is only written into the main resources by the build; absent when run
+        // from an ide or a classes dir
+        try (InputStream inputStream = resourceAsStream()) {
+            if (inputStream == null) {
+                return WIP;
+            }
+
+            properties.load(inputStream);
         } catch (IOException e) {
             return WIP;
         }
