@@ -58,7 +58,7 @@ public class InputOptions implements AWSOptions {
     }
 
     @Override
-    public String aswRegion() {
+    public String awsRegion() {
         return awsRegion;
     }
 

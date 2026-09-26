@@ -64,7 +64,7 @@ public class PipelineOptions implements AWSOptions {
     }
 
     @Override
-    public String aswRegion() {
+    public String awsRegion() {
         return region;
     }
 

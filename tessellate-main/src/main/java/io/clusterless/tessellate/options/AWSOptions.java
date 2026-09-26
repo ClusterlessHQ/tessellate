@@ -11,7 +11,7 @@ package io.clusterless.tessellate.options;
 public interface AWSOptions {
     String awsEndpoint();
 
-    String aswRegion();
+    String awsRegion();
 
     String awsAssumedRoleARN();
 
@@ -21,5 +21,9 @@ public interface AWSOptions {
 
     default boolean hasAwsEndpoint() {
         return awsEndpoint() != null;
+    }
+
+    default boolean hasAwsRegion() {
+        return awsRegion() != null;
     }
 }

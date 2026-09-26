@@ -287,6 +287,16 @@ public abstract class FSFactory extends FilesFactory {
                 .findFirst();
 
         Property.setIfNotNullFromEnvThenSystem(properties, "AWS_S3_ENDPOINT", Constants.ENDPOINT, hasAWSEndpoint.orElse(null));
+
+        // left unset when no option or system property supplies a region, so the sdk chain and s3a discovery still apply
+        Optional<String> hasAWSRegion = awsOptions.stream()
+                .filter(AWSOptions::hasAwsRegion)
+                .map(AWSOptions::awsRegion)
+                .findFirst();
+
+        Property.setIfNotNull(properties, Constants.AWS_REGION, hasAWSRegion.orElse(null));
+        Property.setIfNotNullFromSystem(properties, Constants.AWS_REGION);
+
         Property.setIfNotNullFromEnvThenSystem(properties, "AWS_ACCESS_KEY_ID", Constants.ACCESS_KEY);
         Property.setIfNotNullFromEnvThenSystem(properties, "AWS_SECRET_ACCESS_KEY", Constants.SECRET_KEY);
         Property.setIfNotNullFromSystem(properties, Constants.SESSION_TOKEN);

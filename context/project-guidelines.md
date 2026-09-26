@@ -150,6 +150,11 @@ given.
   - **Endpoint:** env `AWS_S3_ENDPOINT` **beats** the `fs.s3a.endpoint`
     system property, which beats `--aws-endpoint` (the CLI value is only the
     fallback default).
+  - **Region:** the `fs.s3a.endpoint.region` system property (via
+    `TESS_OPTS`) **beats** `--input-/--output-aws-region`, which beats
+    `--aws-region`. With none set, tess sets no region and leaves it to the
+    SDK chain (`AWS_REGION`, profile) and S3A discovery; tess never reads
+    `AWS_REGION` itself.
   - **Static state:** `FSFactory`'s static block sets a UGI login user so
     Hadoop works in containers.
 
@@ -391,9 +396,6 @@ contract.
 These exist in the model or CLI but have no working path. Don't build on
 them, and don't "fix" them piecemeal:
 
-- `--aws-region`, `--input-aws-region`, `--output-aws-region`:
-  `AWSOptions::aswRegion` (sic) is never called, so the region comes from
-  SDK/S3A defaults.
 - `PipelineDef.aws` (`model/AWS` endpoint, region, role) is never read;
   AWS is configured only by CLI, env, and system properties.
 - `Source.lines` (`LineOptions` sample/max) and `Source.select` are never
@@ -467,8 +469,8 @@ them, and don't "fix" them piecemeal:
   *Architecture*:
   - A named schema's scalars beat inline values.
   - `AWS_S3_ENDPOINT` and `-Dfs.s3a.endpoint` beat `--aws-endpoint`;
-    `-Dfs.s3a.assumed.role.arn` beats the role options.
-  - Region flags are unwired.
+    `-Dfs.s3a.assumed.role.arn` beats the role options;
+    `-Dfs.s3a.endpoint.region` beats the region options.
   - Relative CLI paths resolve against cwd, file paths against the pipeline
     file.
 - **"Output on stdout is garbled"** — log lines (`-v`) or `--metrics-print`

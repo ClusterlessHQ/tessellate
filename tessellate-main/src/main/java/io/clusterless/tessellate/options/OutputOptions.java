@@ -84,7 +84,7 @@ public class OutputOptions implements AWSOptions {
     }
 
     @Override
-    public String aswRegion() {
+    public String awsRegion() {
         return awsRegion;
     }
 
