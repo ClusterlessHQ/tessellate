@@ -140,10 +140,12 @@ given.
 - **AWS configuration** is built in `FSFactory::applyAWSProperties`:
   - **Credentials:** `DefaultAWSCredentialsProviderChain` first, then S3A's
     standard providers.
-  - **Assumed role:** `--input-/--output-aws-assumed-role-arn` beats
-    `--aws-assumed-role-arn`, which beats the system property.
-  - **Endpoint:** env `AWS_S3_ENDPOINT` **beats** `--aws-endpoint` (the CLI
-    value is only the fallback default).
+  - **Assumed role:** the `fs.s3a.assumed.role.arn` system property (via
+    `TESS_OPTS`) **beats** `--input-/--output-aws-assumed-role-arn`, which
+    beats `--aws-assumed-role-arn`; the system property is applied last.
+  - **Endpoint:** env `AWS_S3_ENDPOINT` **beats** the `fs.s3a.endpoint`
+    system property, which beats `--aws-endpoint` (the CLI value is only the
+    fallback default).
   - **Static state:** `FSFactory`'s static block sets a UGI login user so
     Hadoop works in containers.
 
@@ -437,7 +439,8 @@ them, and don't "fix" them piecemeal:
 - **"tess ignored my option/value"** — check the merge order in
   *Architecture*:
   - A named schema's scalars beat inline values.
-  - `AWS_S3_ENDPOINT` beats `--aws-endpoint`.
+  - `AWS_S3_ENDPOINT` and `-Dfs.s3a.endpoint` beat `--aws-endpoint`;
+    `-Dfs.s3a.assumed.role.arn` beats the role options.
   - Region flags are unwired.
   - Relative CLI paths resolve against cwd, file paths against the pipeline
     file.
