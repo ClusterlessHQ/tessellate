@@ -56,6 +56,9 @@ repositories {
 // https://github.com/junit-team/junit-framework/releases
 val jupiter = "5.14.4"
 
+// the aws sdk v2 version used by hadoop-aws (s3a) and the integration tests
+val awsSdk2 = "2.55.6"
+
 // the integrationTest suite is registered before the dependencies block so Gradle creates its configurations
 testing {
     suites {
@@ -107,10 +110,17 @@ dependencies {
     implementation("org.apache.parquet:parquet-column:$parquet")
     implementation("org.apache.parquet:parquet-hadoop:$parquet")
 
-    val hadoop3Version = "3.3.6"
-    implementation("org.apache.hadoop:hadoop-mapreduce-client-core:$hadoop3Version")
-    implementation("org.apache.hadoop:hadoop-common:$hadoop3Version")
-    implementation("org.apache.hadoop:hadoop-aws:$hadoop3Version")
+    // 3.4.3 is the first 3.4 release to run on java 24+ (HADOOP-19212, Subject api migration)
+    val hadoop3Version = "3.4.3"
+    implementation("org.apache.hadoop:hadoop-mapreduce-client-core:$hadoop3Version") {
+        exclude(group = "io.netty")
+    }
+    implementation("org.apache.hadoop:hadoop-common:$hadoop3Version") {
+        exclude(group = "io.netty")
+    }
+    implementation("org.apache.hadoop:hadoop-aws:$hadoop3Version") {
+        exclude(group = "io.netty")
+    }
 
     // enables use of lz4 compression
     implementation("at.yawk.lz4:lz4-java:1.8.1")
@@ -120,10 +130,16 @@ dependencies {
     // required by hadoop in java 9+
     implementation("javax.xml.bind:jaxb-api:2.4.0-b180830.0359")
 
-    // the bundle is too large, so we only include the s3 and dynamodb dependencies
-    val awsSdk = "1.12.797"
-    implementation("com.amazonaws:aws-java-sdk-s3:$awsSdk")
-    implementation("com.amazonaws:aws-java-sdk-dynamodb:$awsSdk")
+    // hadoop-aws depends on the aws sdk v2 bundle, which is too large, so only the modules s3a uses are included:
+    // s3 and apache-client (sync client), netty-nio-client and s3-transfer-manager (copy and upload),
+    // and sts (assumed roles)
+    // https://mvnrepository.com/artifact/software.amazon.awssdk
+    implementation(platform("software.amazon.awssdk:bom:$awsSdk2"))
+    implementation("software.amazon.awssdk:s3")
+    implementation("software.amazon.awssdk:sts")
+    implementation("software.amazon.awssdk:s3-transfer-manager")
+    implementation("software.amazon.awssdk:apache-client")
+    implementation("software.amazon.awssdk:netty-nio-client")
 
     val jackson = "2.22.3"
     implementation("com.fasterxml.jackson.core:jackson-core:$jackson")
@@ -154,9 +170,6 @@ dependencies {
 
     testImplementation("org.assertj:assertj-core:3.27.7")
 
-//     https://mvnrepository.com/artifact/software.amazon.awssdk
-    val awsSdk2 = "2.55.6"
-    "integrationTestImplementation"("software.amazon.awssdk:s3:$awsSdk2")
 
     // https://mvnrepository.com/artifact/org.testcontainers
     val testContainers = "2.0.5"
@@ -176,7 +189,7 @@ dependencies {
 
     configurations {
         implementation.configure {
-            exclude(group = "com.amazonaws", module = "aws-java-sdk-bundle")
+            exclude(group = "software.amazon.awssdk", module = "bundle")
             exclude(group = "org.apache.directory.server")
             exclude(group = "org.apache.curator")
             exclude(group = "org.apache.avro")
@@ -195,7 +208,6 @@ dependencies {
             exclude(group = "commons-cli")
             exclude(group = "com.jcraft")
             exclude(group = "com.nimbusds")
-            exclude(group = "io.netty")
             exclude(group = "javax.servlet", module = "javax.servlet-api")
         }
     }

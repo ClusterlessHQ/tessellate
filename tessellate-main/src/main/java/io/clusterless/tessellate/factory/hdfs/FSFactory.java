@@ -22,8 +22,8 @@ import cascading.tap.partition.Partition;
 import cascading.tap.type.TapWith;
 import cascading.tuple.Fields;
 import cascading.util.Util;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import io.clusterless.tessellate.factory.ManifestWriter;
+import io.clusterless.tessellate.factory.hdfs.aws.DefaultChainCredentialsProvider;
 import io.clusterless.tessellate.factory.Observed;
 import io.clusterless.tessellate.factory.hdfs.fs.ObserveLocalFileSystem;
 import io.clusterless.tessellate.factory.hdfs.fs.ObserveS3AFileSystem;
@@ -38,8 +38,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.s3a.Constants;
 import org.apache.hadoop.fs.s3a.S3AFileSystem;
-import org.apache.hadoop.fs.s3a.S3AUtils;
 import org.apache.hadoop.fs.s3a.auth.AssumedRoleCredentialProvider;
+import org.apache.hadoop.fs.s3a.auth.CredentialProviderListFactory;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.security.UserGroupInformation;
@@ -297,9 +297,9 @@ public abstract class FSFactory extends FilesFactory {
     }
 
     private String getAWSCredentialProviders() {
-        LinkedList<Class<?>> list = new LinkedList<>(S3AUtils.STANDARD_AWS_PROVIDERS);
+        LinkedList<Class<?>> list = new LinkedList<>(CredentialProviderListFactory.STANDARD_AWS_PROVIDERS);
 
-        list.addFirst(DefaultAWSCredentialsProviderChain.class);
+        list.addFirst(DefaultChainCredentialsProvider.class);
 
         return list.stream()
                 .map(Class::getName)
