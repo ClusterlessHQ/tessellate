@@ -104,7 +104,7 @@ dependencies {
     implementation("com.amazonaws:aws-java-sdk-s3:$awsSdk")
     implementation("com.amazonaws:aws-java-sdk-dynamodb:$awsSdk")
 
-    val jackson = "2.18.2"
+    val jackson = "2.22.3"
     implementation("com.fasterxml.jackson.core:jackson-core:$jackson")
     implementation("com.fasterxml.jackson.core:jackson-databind:$jackson")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-joda:$jackson")
