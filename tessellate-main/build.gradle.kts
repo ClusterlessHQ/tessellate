@@ -134,7 +134,7 @@ dependencies {
     testImplementation("org.assertj:assertj-core:3.26.3")
 
 //     https://mvnrepository.com/artifact/software.amazon.awssdk
-    val awsSdk2 = "2.29.51"
+    val awsSdk2 = "2.55.6"
     integrationTestImplementation("software.amazon.awssdk:s3:$awsSdk2")
 
     // https://mvnrepository.com/artifact/org.testcontainers
