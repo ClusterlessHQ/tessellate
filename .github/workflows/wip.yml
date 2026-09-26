@@ -19,12 +19,13 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v7
       # Gradle and its settings plugins (foojay 1.0.0) run on Java 17; the build
-      # compiles and tests on the Java 11 toolchain, found through JAVA_HOME_11_X64
+      # compiles and tests on the Java 25 toolchain, found through JAVA_HOME_25_X64;
+      # 17 is listed last so it stays JAVA_HOME and the Gradle JVM (Gradle 8.14.5 cannot run on 25)
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: |
-            11
+            25
             17
 
       - name: Setup Gradle
@@ -48,7 +49,7 @@ jobs:
           USERNAME: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ./gradlew --no-daemon --info --stacktrace -Porg.gradle.java.installations.fromEnv=JAVA_HOME_11_X64 check
+          ./gradlew --no-daemon --info --stacktrace -Porg.gradle.java.installations.fromEnv=JAVA_HOME_25_X64 check
 
   # only the version branch releases, publishes the Homebrew and Docker images, and deploys docs
   release:
@@ -60,12 +61,13 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v7
       # Gradle and its settings plugins (foojay 1.0.0) run on Java 17; the build
-      # compiles and tests on the Java 11 toolchain, found through JAVA_HOME_11_X64
+      # compiles and tests on the Java 25 toolchain, found through JAVA_HOME_25_X64;
+      # 17 is listed last so it stays JAVA_HOME and the Gradle JVM (Gradle 8.14.5 cannot run on 25)
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: |
-            11
+            25
             17
 
       - name: Setup Gradle
@@ -91,7 +93,7 @@ jobs:
           JRELEASER_HOMEBREW_GITHUB_TOKEN: ${{ secrets.JRELEASER_HOMEBREW_GITHUB_TOKEN }}
           JRELEASER_DOCKER_GITHUB_TOKEN: ${{ secrets.JRELEASER_DOCKER_GITHUB_TOKEN }}
         run: |
-          ./gradlew --no-daemon --info --stacktrace -Porg.gradle.java.installations.fromEnv=JAVA_HOME_11_X64 release
+          ./gradlew --no-daemon --info --stacktrace -Porg.gradle.java.installations.fromEnv=JAVA_HOME_25_X64 release
 
       - name: Trigger Netlify Doc Deploy
         run: |

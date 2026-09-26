@@ -40,7 +40,7 @@ Tessellate may be used from the command line, but also natively supports the
 
 ## Building
 
-Gradle must run on Java 17 or newer; the build compiles and tests against a Java 11 toolchain, which Gradle downloads
+Gradle must run on Java 17 or newer; the build compiles and tests against a Java 25 toolchain, which Gradle downloads
 if one is not installed.
 
 So that the Cascading WIP releases can be retrieved from GitHub Packages, add to `~/.gradle/gradle.properties`:
