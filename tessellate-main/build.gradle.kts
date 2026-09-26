@@ -53,10 +53,31 @@ repositories {
     }
 }
 
-var integrationTestImplementation = configurations.create("integrationTestImplementation")
-
 // https://github.com/junit-team/junit-framework/releases
 val jupiter = "5.14.4"
+
+// the integrationTest suite is registered before the dependencies block so Gradle creates its configurations
+testing {
+    suites {
+        val test by getting(JvmTestSuite::class) {
+            useJUnitJupiter(jupiter)
+        }
+        val integrationTest by registering(JvmTestSuite::class) {
+            useJUnitJupiter(jupiter)
+            dependencies {
+                implementation(project())
+            }
+
+            targets {
+                all {
+                    testTask.configure {
+                        shouldRunAfter(test)
+                    }
+                }
+            }
+        }
+    }
+}
 
 dependencies {
 
@@ -135,13 +156,13 @@ dependencies {
 
 //     https://mvnrepository.com/artifact/software.amazon.awssdk
     val awsSdk2 = "2.55.6"
-    integrationTestImplementation("software.amazon.awssdk:s3:$awsSdk2")
+    "integrationTestImplementation"("software.amazon.awssdk:s3:$awsSdk2")
 
     // https://mvnrepository.com/artifact/org.testcontainers
     val testContainers = "2.0.5"
-    integrationTestImplementation("org.testcontainers:testcontainers:$testContainers")
-    integrationTestImplementation("org.testcontainers:testcontainers-junit-jupiter:$testContainers")
-    integrationTestImplementation("org.testcontainers:testcontainers-localstack:$testContainers")
+    "integrationTestImplementation"("org.testcontainers:testcontainers:$testContainers")
+    "integrationTestImplementation"("org.testcontainers:testcontainers-junit-jupiter:$testContainers")
+    "integrationTestImplementation"("org.testcontainers:testcontainers-localstack:$testContainers")
 
     testFixturesImplementation("org.jetbrains:annotations:26.1.0")
     testFixturesImplementation("org.junit.jupiter:junit-jupiter-api:$jupiter")
@@ -176,28 +197,6 @@ dependencies {
             exclude(group = "com.nimbusds")
             exclude(group = "io.netty")
             exclude(group = "javax.servlet", module = "javax.servlet-api")
-        }
-    }
-}
-
-testing {
-    suites {
-        val test by getting(JvmTestSuite::class) {
-            useJUnitJupiter(jupiter)
-        }
-        val integrationTest by registering(JvmTestSuite::class) {
-            useJUnitJupiter(jupiter)
-            dependencies {
-                implementation(project())
-            }
-
-            targets {
-                all {
-                    testTask.configure {
-                        shouldRunAfter(test)
-                    }
-                }
-            }
         }
     }
 }
