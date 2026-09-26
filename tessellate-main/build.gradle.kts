@@ -55,7 +55,8 @@ repositories {
 
 var integrationTestImplementation = configurations.create("integrationTestImplementation")
 
-val jupiter = "5.10.3"
+// https://github.com/junit-team/junit-framework/releases
+val jupiter = "5.14.4"
 
 dependencies {
 
@@ -120,7 +121,7 @@ dependencies {
     testImplementation("net.wensel:cascading-core:$cascading:tests")
 
     // https://github.com/hosuaby/inject-resources
-    val injectResources = "0.3.4"
+    val injectResources = "1.0.0"
     testImplementation("io.hosuaby:inject-resources-core:$injectResources")
     testImplementation("io.hosuaby:inject-resources-junit-jupiter:$injectResources")
 
@@ -186,6 +187,7 @@ testing {
             useJUnitJupiter(jupiter)
         }
         val integrationTest by registering(JvmTestSuite::class) {
+            useJUnitJupiter(jupiter)
             dependencies {
                 implementation(project())
             }

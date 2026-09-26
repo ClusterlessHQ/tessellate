@@ -8,8 +8,8 @@
 
 package io.clusterless.tessellate.pipeline;
 
-import com.adelean.inject.resources.junit.jupiter.GivenTextResource;
-import com.adelean.inject.resources.junit.jupiter.TestWithResources;
+import io.hosuaby.inject.resources.junit.jupiter.GivenTextResource;
+import io.hosuaby.inject.resources.junit.jupiter.TestWithResources;
 import io.clusterless.tessellate.model.Field;
 import io.clusterless.tessellate.model.PipelineDef;
 import io.clusterless.tessellate.options.PipelineOptions;
