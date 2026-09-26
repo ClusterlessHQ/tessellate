@@ -138,8 +138,12 @@ given.
   - An empty input manifest short-circuits to writing an `empty` sink
     manifest (`Pipeline.State.EMPTY_MANIFEST`).
 - **AWS configuration** is built in `FSFactory::applyAWSProperties`:
-  - **Credentials:** `DefaultAWSCredentialsProviderChain` first, then S3A's
-    standard providers.
+  - **Credentials:** `factory/hdfs/aws/DefaultChainCredentialsProvider` (the
+    SDK v2 default chain) first, then S3A's
+    `CredentialProviderListFactory.STANDARD_AWS_PROVIDERS`. S3A instantiates
+    and closes providers per filesystem, so a provider must not wrap a shared
+    instance like `DefaultCredentialsProvider.create()` (closing one
+    filesystem would close it for all).
   - **Assumed role:** the `fs.s3a.assumed.role.arn` system property (via
     `TESS_OPTS`) **beats** `--input-/--output-aws-assumed-role-arn`, which
     beats `--aws-assumed-role-arn`; the system property is applied last.
@@ -263,11 +267,21 @@ contract.
   first build needs network and GitHub Packages credentials.
 - **Dependency versions are inline** in `tessellate-main/build.gradle.kts`
   `dependencies {}` as local `val`s (`cascading`, `parquet`,
-  `hadoop3Version`, `awsSdk`, `jackson`, `jupiter`, …). There is no catalog
-  or constraints block. A global `configurations.implementation` exclude
-  list trims Hadoop's transitive tree (yarn, jetty, jersey, protobuf, netty,
-  `aws-java-sdk-bundle`, log4j/reload4j), so a Hadoop bump may need new
-  excludes or may be missing a class at runtime.
+  `hadoop3Version`, `jackson`, `jupiter`, …; `awsSdk2` sits above the block
+  because it is shared by main and the integration tests). There is no
+  catalog or constraints block. A global `configurations.implementation`
+  exclude list trims Hadoop's transitive tree (yarn, jetty, jersey, protobuf,
+  log4j/reload4j), so a Hadoop bump may need new excludes or may be missing a
+  class at runtime.
+- **AWS SDK v2 is declared module by module.** `hadoop-aws` depends on the
+  `software.amazon.awssdk:bundle` jar, which is excluded as too large; the
+  modules S3A uses are declared from the SDK BOM (`s3`, `apache-client`,
+  `netty-nio-client` and `s3-transfer-manager` for copy/rename and upload,
+  `sts` for assumed roles). Netty is excluded from the Hadoop artifacts only,
+  so the SDK's Netty client stays. S3A's `ConfigureShadedAWSSocketFactory`
+  needs the bundle's shaded httpclient; without it
+  `fs.s3a.ssl.channel.mode` is ignored (logged at debug). Client-side
+  encryption would also need `kms`.
 - **Cascading comes from GitHub Packages.** The repository is
   `https://maven.pkg.github.com/cwensel/*`, restricted to
   `net.wensel:cascading-*:*-wip-*`.
@@ -331,13 +345,12 @@ contract.
 - **Gradle 9:** `./gradlew help --warning-mode all` reports no deprecations
   on Gradle 8.14.5. Check jreleaser plugin compatibility before moving the
   wrapper.
-- **Hadoop 3.3.6 → 3.4 swaps AWS SDK v1 for v2.** That breaks
-  `FSFactory::getAWSCredentialProviders` (v1
-  `DefaultAWSCredentialsProviderChain`, `S3AUtils.STANDARD_AWS_PROVIDERS`),
-  the explicit `aws-java-sdk-s3` / `aws-java-sdk-dynamodb` deps, and the
-  `aws-java-sdk-bundle` exclude. Re-verify that `ObserveS3AFileSystem`'s
-  `create` overrides are still the write path, or manifests silently go
-  empty. AWS SDK v1 is past end-of-support.
+- **Hadoop sets the JDK ceiling.** Hadoop 3.3.x calls
+  `Subject.getSubject`, which throws on JDK 24+; 3.4.3 and 3.5.0 carry the
+  fix (HADOOP-19212). On 3.4.3 the suites pass on JDK 11, 21, 25, and 27.
+  Hadoop 3.5 needs a Java 17 floor. On any Hadoop bump, re-verify that
+  `ObserveS3AFileSystem`'s `create` overrides are still the write path, or
+  manifests silently go empty.
 - **The Cascading `-wip-` pin** is only resolvable from GitHub Packages. The
   APIs used are wip-level (`LocalHfsAdaptor`, `TypedParquetScheme`,
   `JSONTextLine`, `PartitionTap`, anonymous `Hfs` subclasses overriding
@@ -346,12 +359,12 @@ contract.
   `cascading-hadoop3-parquet`.
 - **LocalStack stays pinned at `localstack/localstack:2.1.0` — do not bump
   it.** Since 2026-03-23 every current LocalStack image requires an auth
-  token; pinned older tags still run without one. The integration test's AWS
-  SDK v2 (`awsSdk2`) sends the SDK's default flexible checksums (2.30+),
-  which old LocalStack rejects on puts; the bucket create carries none. If a
-  test adds puts, set `AWS_REQUEST_CHECKSUM_CALCULATION` /
-  `AWS_RESPONSE_CHECKSUM_VALIDATION=WHEN_REQUIRED` in the test env, as
-  clusterless does.
+  token; pinned older tags still run without one. AWS SDK v2 2.30+ sends
+  flexible checksums by default, which old LocalStack rejects on puts. S3A
+  3.4.3 builds its clients with `WHEN_REQUIRED` unless
+  `fs.s3a.checksum.generation` is set, so S3A writes work; a test that puts
+  through its own SDK client must set `AWS_REQUEST_CHECKSUM_CALCULATION` /
+  `AWS_RESPONSE_CHECKSUM_VALIDATION=WHEN_REQUIRED`, as clusterless does.
 - **lz4-java** moved from `org.lz4` to `at.yawk.lz4`; declare the new
   coordinates (the old ones are relocation POMs) and keep only one on the
   classpath.
@@ -424,8 +437,10 @@ them, and don't "fix" them piecemeal:
 - **Look up idioms before inventing a shape.** Code → **semble first**
   (`semble search "<behavior>" .`). Cascading 4.6 wip source is not checked
   out anywhere current; use `javap` against the `net.wensel` jars in the
-  Gradle cache. AWS SDK v2 source (relevant to a Hadoop 3.4 move) is in
-  `../thirdparty/aws-sdk-java-v2`.
+  Gradle cache. Sparse checkouts in `../thirdparty/`: `hadoop` at
+  `rel/release-3.4.3` (hadoop-aws main and site docs, hadoop-common `fs` and
+  `security`, hadoop-project) and `aws-sdk-java-v2` at `2.55.6`. Re-pin with
+  `git -C ../thirdparty/<repo> checkout <tag>` when the dependency is bumped.
 - **Run `integrationTest` for anything touching `FSFactory`, S3A, Hadoop,
   Parquet, AWS, or Cascading versions.** Unit tests only exercise `file:`
   paths.
