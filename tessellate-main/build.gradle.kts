@@ -137,12 +137,11 @@ dependencies {
     val awsSdk2 = "2.29.51"
     integrationTestImplementation("software.amazon.awssdk:s3:$awsSdk2")
 
-    val testContainers = "1.20.4"
+    // https://mvnrepository.com/artifact/org.testcontainers
+    val testContainers = "2.0.5"
     integrationTestImplementation("org.testcontainers:testcontainers:$testContainers")
-    integrationTestImplementation("org.testcontainers:junit-jupiter:$testContainers")
-    integrationTestImplementation("org.testcontainers:localstack:$testContainers")
-    // https://github.com/testcontainers/testcontainers-java/issues/1442#issuecomment-694342883
-    integrationTestImplementation("com.amazonaws:aws-java-sdk-s3:$awsSdk")
+    integrationTestImplementation("org.testcontainers:testcontainers-junit-jupiter:$testContainers")
+    integrationTestImplementation("org.testcontainers:testcontainers-localstack:$testContainers")
 
     testFixturesImplementation("org.jetbrains:annotations:24.1.0")
     testFixturesImplementation("org.junit.jupiter:junit-jupiter-api:$jupiter")

@@ -22,7 +22,7 @@ import io.clusterless.tessellate.util.json.JSONUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
@@ -53,9 +53,7 @@ public class PipelineIntegrationTest {
 
     @Container
     static LocalStackContainer localstack = new LocalStackContainer(localstackImage)
-            .withServices(
-                    LocalStackContainer.Service.S3
-            );
+            .withServices("s3");
 
     protected String defaultRegion() {
         return localstack.getRegion();
@@ -67,13 +65,13 @@ public class PipelineIntegrationTest {
             .set("AWS_ACCESS_KEY_ID", localstack.getAccessKey())
             .set("AWS_SECRET_ACCESS_KEY", localstack.getSecretKey())
             .set("AWS_DEFAULT_REGION", localstack.getRegion())
-            .set("AWS_S3_ENDPOINT", localstack.getEndpointOverride(LocalStackContainer.Service.S3).toString());
+            .set("AWS_S3_ENDPOINT", localstack.getEndpoint().toString());
 
     @BeforeEach
     public void bootstrap() {
         try (S3Client s3 = S3Client.builder()
                 .region(Region.of(defaultRegion()))
-                .endpointOverride(localstack.getEndpointOverride(LocalStackContainer.Service.S3))
+                .endpointOverride(localstack.getEndpoint())
                 .build()) {
             s3.createBucket(b -> b.bucket(TEST_BUCKET));
         }
