@@ -63,10 +63,10 @@ dependencies {
     val commons = "0.15"
     implementation("io.clusterless:clusterless-commons-core:$commons")
 
-    implementation("com.google.guava:guava:33.4.0-jre")
+    implementation("com.google.guava:guava:33.7.1-jre")
 
-    implementation("org.jetbrains:annotations:24.1.0")
-    implementation("info.picocli:picocli:4.7.6")
+    implementation("org.jetbrains:annotations:26.1.0")
+    implementation("info.picocli:picocli:4.7.7")
 
     implementation("org.slf4j:slf4j-api:2.0.20")
     implementation("ch.qos.logback:logback-classic:1.6.4")
@@ -111,7 +111,7 @@ dependencies {
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jackson")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8:$jackson")
 
-    implementation("org.fusesource.jansi:jansi:2.4.1")
+    implementation("org.fusesource.jansi:jansi:2.4.3")
     implementation("com.github.hal4j:uritemplate:1.3.1")
 
     implementation("org.jparsec:jparsec:3.1")
@@ -131,7 +131,7 @@ dependencies {
     testImplementation("uk.org.webcompere:system-stubs-jupiter:$systemStubs")
     testImplementation("org.mockito:mockito-core:5.24.0")
 
-    testImplementation("org.assertj:assertj-core:3.26.3")
+    testImplementation("org.assertj:assertj-core:3.27.7")
 
 //     https://mvnrepository.com/artifact/software.amazon.awssdk
     val awsSdk2 = "2.55.6"
@@ -143,7 +143,7 @@ dependencies {
     integrationTestImplementation("org.testcontainers:testcontainers-junit-jupiter:$testContainers")
     integrationTestImplementation("org.testcontainers:testcontainers-localstack:$testContainers")
 
-    testFixturesImplementation("org.jetbrains:annotations:24.1.0")
+    testFixturesImplementation("org.jetbrains:annotations:26.1.0")
     testFixturesImplementation("org.junit.jupiter:junit-jupiter-api:$jupiter")
 
     configurations.configureEach {
