@@ -81,7 +81,7 @@ dependencies {
     implementation("net.wensel:cascading-hadoop3-parquet:$cascading")
     implementation("net.wensel:cascading-hadoop3-io:$cascading")
 
-    val parquet = "1.15.1"
+    val parquet = "1.15.2"
     implementation("org.apache.parquet:parquet-common:$parquet")
     implementation("org.apache.parquet:parquet-column:$parquet")
     implementation("org.apache.parquet:parquet-hadoop:$parquet")
@@ -92,7 +92,7 @@ dependencies {
     implementation("org.apache.hadoop:hadoop-aws:$hadoop3Version")
 
     // enables use of lz4 compression
-    implementation("org.lz4:lz4-java:1.8.0")
+    implementation("at.yawk.lz4:lz4-java:1.8.1")
 
     implementation("org.mvel:mvel2:2.5.0.Final")
 
@@ -100,7 +100,7 @@ dependencies {
     implementation("javax.xml.bind:jaxb-api:2.4.0-b180830.0359")
 
     // the bundle is too large, so we only include the s3 and dynamodb dependencies
-    val awsSdk = "1.12.765"
+    val awsSdk = "1.12.797"
     implementation("com.amazonaws:aws-java-sdk-s3:$awsSdk")
     implementation("com.amazonaws:aws-java-sdk-dynamodb:$awsSdk")
 
