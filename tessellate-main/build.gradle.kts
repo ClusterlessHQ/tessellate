@@ -128,7 +128,7 @@ dependencies {
     val systemStubs = "2.1.8"
     testImplementation("uk.org.webcompere:system-stubs-core:$systemStubs")
     testImplementation("uk.org.webcompere:system-stubs-jupiter:$systemStubs")
-    testImplementation("org.mockito:mockito-inline:5.2.0")
+    testImplementation("org.mockito:mockito-core:5.24.0")
 
     testImplementation("org.assertj:assertj-core:3.26.3")
 
