@@ -167,29 +167,32 @@ meet all of it; **new and touched code must**.
   static block); `-v` is INFO, `-vv` DEBUG. A failure reported only through
   `LOG.error` is invisible by default. Log for diagnosis; print to stderr for
   the user.
-- **stdout is data, stderr is everything else.** Today `logback.xml`'s
-  console appender, `--metrics-print` (`MetricsPrinter.printStream`), and the
-  usage-on-parse-error all write to stdout. That corrupts data when the sink
-  is stdout (no `-o`). Don't build on it; fix it when touched. `-d/--debug`
-  uses Cascading `Debug`.
+- **stdout is data, stderr is everything else.** stdout carries only sink
+  data (no `-o` means the stdout sink), the machine outputs below, and
+  requested `--help` / `--version`. Logs (`logback.xml`'s console appender
+  targets `System.err`), `--metrics-print` (`MetricsPrinter.printStream`),
+  usage on a parse error, and error messages go to stderr. `-d/--debug` uses
+  Cascading `Debug`, which also writes to stderr. Never print to `System.out`
+  from new code unless it is a documented machine output.
 - **Machine outputs are contracts.** These are stable JSON on stdout: adding
   is safe, renaming or removing is breaking.
   - `--show-source` / `--show-sink` `{formats,protocols,compression}`
   - `--print-pipeline [simple|all]` (`simple` = `@JsonSimpleView` fields)
   - `--print-output-schema` with `--print-format JSON|SQL` (Athena dialect,
     `printer/TypeMap`)
-- **Exit codes today are ad hoc:**
+- **Exit codes are deliberate.** `Main::run` parses once through picocli
+  `execute` and returns the code; `Main::main` is the only `System.exit`.
 
   | Case | Output | Exit |
   |---|---|---|
-  | `MissingParameter` / `UnmatchedArgument` | message on stderr, usage on stdout | 255 (`System.exit(-1)`) |
-  | Any other picocli parse error, e.g. a bad enum value | uncaught out of `parseArgs` | 1 |
-  | Exception inside `call` | picocli's default handler prints the stack trace | 1 |
-  | Missing pipeline file, Cascading flow failure (`Pipeline::handleCascadingException`) | message on stderr | 255 |
+  | Success, including `--help`, `--version`, `--show-*`, `--print-*`, an empty manifest | data or machine output on stdout | 0 (`ExitCode.OK`) |
+  | Exception inside `call` (`Main::handleExecutionException`) | message on stderr, stack trace only with `-v` | 1 (`ExitCode.SOFTWARE`) |
+  | Any picocli `ParameterException`, a missing pipeline file | message and usage on stderr | 2 (`ExitCode.USAGE`) |
+  | Cascading flow failure (`Pipeline::handleCascadingException`) | `flow failed with:` on stderr | 3 (`Pipeline.FLOW_FAILED`) |
 
-  The try/catch around `execute` in `Main::main` never fires, so its
-  `-v`-gated stack trace is dead code. New code returns deliberate
-  non-negative codes and does not add `System.exit` calls.
+  New failure classes map onto this table, or add a named constant and a
+  row here; never return a negative code or call `System.exit` outside
+  `main`.
 - **Option naming.** Long options are kebab-case. AWS options come in
   triads: `--input-aws-*`, `--output-aws-*`, and global `--aws-*`; the
   per-side value wins. Short flags are taken: `-i -o -m -t -l -p -d -v`. An
@@ -346,10 +349,11 @@ contract.
     that skips when its environment is missing looks green while proving
     nothing. Docker 29 needs Testcontainers 2.x; 1.x reports "Could not find
     a valid Docker environment".
-- **Coverage is thin where DX lives.** No test runs `Main`: parse errors,
-  exit codes, and stdout/stderr separation are untested. Any CLI change adds
-  a test through the real entry path, asserting stdout, stderr, and exit code
-  (system-stubs can catch `System.exit`).
+- **CLI tests go through `Main::run`.** `MainTest` calls `Main.run(args)`
+  with system-stubs `SystemOut`/`SystemErr` and asserts stdout, stderr, and
+  the exit code. Any CLI change adds a case there. Swap the streams before
+  the run: `StdOutTap` reads `System.out` when the flow opens the sink, and
+  `MetricsPrinter` captures `System.err` when it is constructed.
 - **Style:** no formatter or linter; match surrounding code. MPL-2.0 header
   on every file (copy an existing one). Nullability via
   `org.jetbrains:annotations`. No `module-info.java`.
@@ -439,7 +443,7 @@ them, and don't "fix" them piecemeal:
 
 - **Build the CLI once and reproduce verbatim.** `./gradlew installDist`,
   then run the reproducer from a temp dir with `-vv` (logs are off by
-  default and go to stdout, so separate them from data with `-o`).
+  default and go to stderr, so stdout stays data).
 - **Look at the merged pipeline first.** `tess -p <file> [overrides]
   --print-pipeline all` prints the post-merge, post-MVEL, named-schema-overlaid
   definition without running it. Most "tess ignored my value" reports are
@@ -476,8 +480,9 @@ them, and don't "fix" them piecemeal:
     `-Dfs.s3a.endpoint.region` beats the region options.
   - Relative CLI paths resolve against cwd, file paths against the pipeline
     file.
-- **"Output on stdout is garbled"** — log lines (`-v`) or `--metrics-print`
-  are interleaved with stdout-sink data.
+- **"Output on stdout is garbled"** — something other than the sink wrote
+  to `System.out` (logs and `--metrics-print` go to stderr), or the caller
+  merged the streams with `2>&1`.
 - **"Manifest is empty or missing":**
   - The sink went through `LocalDirectoryFactory` (`file://` non-parquet).
   - The output path contains `/_`.

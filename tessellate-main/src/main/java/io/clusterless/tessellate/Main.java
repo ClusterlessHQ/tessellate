@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Callable;
@@ -88,64 +89,62 @@ public class Main implements Callable<Integer> {
     )
     protected Show showSink;
 
+    /**
+     * The only place tess exits the JVM, see {@link #run(String[])} for the exit codes.
+     */
     public static void main(String[] args) {
+        System.exit(run(args));
+    }
+
+    /**
+     * Parses and executes the command line once and returns the exit code:
+     * <ul>
+     *     <li>{@link CommandLine.ExitCode#OK} (0) on success, including --help, --version, --show-*, --print-*,
+     *     and an empty manifest</li>
+     *     <li>{@link CommandLine.ExitCode#SOFTWARE} (1) on an unexpected error</li>
+     *     <li>{@link CommandLine.ExitCode#USAGE} (2) on a usage error, an invalid option or a missing pipeline file</li>
+     *     <li>{@link Pipeline#FLOW_FAILED} (3) when the flow fails</li>
+     * </ul>
+     * stdout carries only sink data and the requested machine outputs, everything else goes to stderr.
+     */
+    static int run(String[] args) {
         Main main = new Main();
 
-        CommandLine commandLine = new CommandLine(main);
+        CommandLine commandLine = new CommandLine(main)
+                .setParameterExceptionHandler(Main::handleParameterException)
+                .setExecutionExceptionHandler((e, cmd, parseResult) -> main.handleExecutionException(e, cmd));
 
-        try {
-            commandLine.parseArgs(args);
-        } catch (CommandLine.MissingParameterException | CommandLine.UnmatchedArgumentException e) {
-            System.err.println(e.getMessage());
-            commandLine.usage(System.out);
-            System.exit(-1);
+        if (args.length == 0) {
+            commandLine.usage(commandLine.getOut());
+            return CommandLine.ExitCode.OK;
         }
 
-        if (args.length == 0 || commandLine.isUsageHelpRequested()) {
-            commandLine.usage(System.out);
-            return;
-        } else if (commandLine.isVersionHelpRequested()) {
-            commandLine.printVersionHelp(System.out);
-            return;
+        return commandLine.execute(args);
+    }
+
+    private static int handleParameterException(CommandLine.ParameterException e, String[] args) {
+        CommandLine commandLine = e.getCommandLine();
+        PrintWriter err = commandLine.getErr();
+
+        err.println(e.getMessage());
+        commandLine.usage(err);
+        err.flush();
+
+        return CommandLine.ExitCode.USAGE;
+    }
+
+    private int handleExecutionException(Exception e, CommandLine commandLine) {
+        PrintWriter err = commandLine.getErr();
+
+        err.println(e.getMessage() != null ? e.getMessage() : e.toString());
+
+        if (verbosity().isVerbose()) {
+            e.printStackTrace(err);
         }
 
-        if (main.showSource != null) {
-            if (main.showSource == Show.protocols) {
-                System.out.println(JSONUtil.writeAsStringSafePretty(TapFactories.getSourceProtocols()));
-            } else if (main.showSource == Show.formats) {
-                System.out.println(JSONUtil.writeAsStringSafePretty(TapFactories.getSourceFormats()));
-            } else if (main.showSource == Show.compression) {
-                System.out.println(JSONUtil.writeAsStringSafePretty(TapFactories.getSourceCompression()));
-            }
-            return;
-        }
+        err.flush();
 
-        if (main.showSink != null) {
-            if (main.showSink == Show.protocols) {
-                System.out.println(JSONUtil.writeAsStringSafePretty(TapFactories.getSinkProtocols()));
-            } else if (main.showSink == Show.formats) {
-                System.out.println(JSONUtil.writeAsStringSafePretty(TapFactories.getSinkFormats()));
-            } else if (main.showSink == Show.compression) {
-                System.out.println(JSONUtil.writeAsStringSafePretty(TapFactories.getSinkCompression()));
-            }
-            return;
-        }
-
-        int exitCode = 0;
-
-        try {
-            exitCode = commandLine.execute(args);
-        } catch (Exception e) {
-            System.err.println(e.getMessage());
-
-            if (main.verbosity().isVerbose()) {
-                e.printStackTrace(System.err);
-            }
-
-            System.exit(-1); // get exit code from exception
-        }
-
-        System.exit(exitCode);
+        return CommandLine.ExitCode.SOFTWARE;
     }
 
     public Main() {
@@ -157,11 +156,33 @@ public class Main implements Callable<Integer> {
 
     @Override
     public Integer call() throws IOException {
+        if (showSource != null) {
+            if (showSource == Show.protocols) {
+                System.out.println(JSONUtil.writeAsStringSafePretty(TapFactories.getSourceProtocols()));
+            } else if (showSource == Show.formats) {
+                System.out.println(JSONUtil.writeAsStringSafePretty(TapFactories.getSourceFormats()));
+            } else if (showSource == Show.compression) {
+                System.out.println(JSONUtil.writeAsStringSafePretty(TapFactories.getSourceCompression()));
+            }
+            return CommandLine.ExitCode.OK;
+        }
+
+        if (showSink != null) {
+            if (showSink == Show.protocols) {
+                System.out.println(JSONUtil.writeAsStringSafePretty(TapFactories.getSinkProtocols()));
+            } else if (showSink == Show.formats) {
+                System.out.println(JSONUtil.writeAsStringSafePretty(TapFactories.getSinkFormats()));
+            } else if (showSink == Show.compression) {
+                System.out.println(JSONUtil.writeAsStringSafePretty(TapFactories.getSinkCompression()));
+            }
+            return CommandLine.ExitCode.OK;
+        }
+
         Path path = pipelineOptions.pipelinePath();
 
         if (path != null && !Files.exists(path)) {
             System.err.println("pipeline file does not exist: " + path);
-            return -1;
+            return CommandLine.ExitCode.USAGE;
         }
 
         PipelineOptionsMerge merge = new PipelineOptionsMerge(pipelineOptions);
@@ -177,7 +198,7 @@ public class Main implements Callable<Integer> {
                     System.out.println(JSONUtil.writeRWAsPrettyStringSafe(pipelineDef));
                     break;
             }
-            return 0;
+            return CommandLine.ExitCode.OK;
         }
 
         return executePipeline(pipelineDef);
@@ -194,7 +215,7 @@ public class Main implements Callable<Integer> {
             pipeline.build();
 
             if (pipeline.state() == Pipeline.State.EMPTY_MANIFEST) {
-                return 0;
+                return CommandLine.ExitCode.OK;
             }
 
             return pipeline.run();

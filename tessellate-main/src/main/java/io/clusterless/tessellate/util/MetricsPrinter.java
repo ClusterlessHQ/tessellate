@@ -33,7 +33,8 @@ public class MetricsPrinter {
 
     private AtomicBoolean completed = new AtomicBoolean(false);
     private Timer timer;
-    private PrintStream printStream = System.out;
+    // stderr, so the status lines never interleave with stdout sink data
+    private PrintStream printStream = System.err;
 
     private class AnsiPrinterTimerTask extends TimerTask {
         protected Consumer<PrintStream> doOnce = this::clearSpace;

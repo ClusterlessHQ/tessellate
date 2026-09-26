@@ -65,6 +65,12 @@ public class Pipeline {
         COMPLETE
     }
 
+    /**
+     * The exit code returned by {@link #run()} when the flow fails, distinct from the usage (2) and
+     * unexpected error (1) codes returned by {@code Main}.
+     */
+    public static final int FLOW_FAILED = 3;
+
     private final PipelineOptions pipelineOptions;
     private final PipelineDef pipelineDef;
     private State state = State.NONE;
@@ -394,12 +400,12 @@ public class Pipeline {
                 System.err.println("flow failed with: " + cause.getMessage());
             }
 
-            return -1;
+            return FLOW_FAILED;
         }
 
         LOG.error("flow failed with: {}", cascadingException.getMessage(), cascadingException);
         System.err.println("flow failed with: " + cascadingException.getMessage());
 
-        return -1;
+        return FLOW_FAILED;
     }
 }
