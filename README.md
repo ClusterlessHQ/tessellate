@@ -40,15 +40,19 @@ Tessellate may be used from the command line, but also natively supports the
 
 ## Building
 
-So that the Cascading WIP releases can be retrieved, to `gradle.properties` add:
+Gradle must run on Java 17 or newer; the build compiles and tests against a Java 11 toolchain, which Gradle downloads
+if one is not installed.
+
+So that the Cascading WIP releases can be retrieved from GitHub Packages, add to `~/.gradle/gradle.properties`:
 
 ```properties
 githubUsername=[your github username]
-githubPassword=[your github personal access token]
+githubPassword=[your github personal access token with the read:packages scope]
 ```
 
 See creating a personal access
-token [here](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
+token [here](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token). With the
+[GitHub CLI](https://cli.github.com), `-PgithubPassword="$(gh auth token)"` works as well.
 
 ```shell
 ./gradlew installDist
@@ -58,4 +62,18 @@ token [here](https://docs.github.com/en/github/authenticating-to-github/creating
 ./tessellate-main/build/install/tessellate/bin/tess --help
 ```
 
-Documentation coming soon, but see the tests for usage. 
+To run the unit and integration tests (the integration tests start LocalStack, so Docker must be running):
+
+```shell
+./gradlew check
+```
+
+## Contributing
+
+Enable the repository git hooks once per clone:
+
+```shell
+git config core.hooksPath .githooks
+```
+
+Commit messages follow [Conventional Commits](https://www.conventionalcommits.org), and pushed commits must be signed.
