@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URI;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -95,7 +96,7 @@ public class TapFactories {
     }
 
     public static SourceFactory findSourceFactory(List<URI> uris, Format format, Compression compression) {
-        return findFactory(uris, format, compression, sourceFactories);
+        return findFactory(uris, format, compression, sourceFactories, TapFactory::getCompressions);
     }
 
     public static SinkFactory findSinkFactory(Sink sinkModel) {
@@ -115,10 +116,16 @@ public class TapFactories {
     }
 
     public static SinkFactory findSinkFactory(List<URI> uris, Format format, Compression compression) {
-        return findFactory(uris, format, compression, sinkFactories);
+        return findFactory(uris, format, compression, sinkFactories, SinkFactory::getSinkCompressions);
     }
 
-    public static <T extends TapFactory> T findFactory(List<URI> uris, Format format, Compression compression, LinkedListMultimap<Protocol, T> factoriesMap) {
+    /**
+     * Finds the factory for the uris scheme, format and compression. The compression is checked even when the
+     * scheme has a single factory, so an unsupported compression fails here, before the flow starts.
+     *
+     * @param compressions the compressions a factory supports on this side, read for a source, written for a sink
+     */
+    public static <T extends TapFactory> T findFactory(List<URI> uris, Format format, Compression compression, LinkedListMultimap<Protocol, T> factoriesMap, Function<T, Set<Compression>> compressions) {
         Set<String> schemes = uris.stream()
                 .map(URI::getScheme)
                 .filter(Objects::nonNull)
@@ -137,20 +144,26 @@ public class TapFactories {
             throw new IllegalArgumentException("no factory found for: " + scheme);
         }
 
-        // if only one factory, return it
-        if (factories.size() == 1) {
-            return factories.get(0);
+        // if only one factory, it is the only candidate, else disambiguate factories by format
+        List<T> candidates = factories.size() == 1 ? factories : factories.stream()
+                .filter(factory -> factory.hasFormat(format.parent()))
+                .toList();
+
+        if (candidates.isEmpty()) {
+            throw new IllegalArgumentException("no factory found for: " + protocol + ", with format: " + format.parent());
         }
 
-        // disambiguate factories by format
-        Optional<T> first = factories.stream()
-                .filter(factory -> factory.hasFormat(format.parent()))
-                .filter(factory -> factory.hasCompression(compression))
+        Optional<T> first = candidates.stream()
+                .filter(factory -> compressions.apply(factory).contains(compression))
                 .findFirst();
 
-        return first.orElseThrow(() ->
-                new IllegalArgumentException("no factory found for: " + scheme + ", with format: " + format.parent() + ", with compression: " + compression)
-        );
+        return first.orElseThrow(() -> {
+            Set<Compression> supported = candidates.stream()
+                    .flatMap(factory -> compressions.apply(factory).stream())
+                    .collect(Collectors.toCollection(() -> EnumSet.noneOf(Compression.class)));
+
+            return new IllegalArgumentException("unsupported compression: " + compression + ", for: " + protocol + ", with format: " + (format == null ? null : format.parent()) + ", supported: " + supported);
+        });
     }
 
     public static List<SourceFactory> getSourceFactory(URI uri) {
@@ -194,7 +207,7 @@ public class TapFactories {
     public static Map<Protocol, Set<Compression>> getSinkCompression() {
         return sinkFactories.entries().stream()
                 .filter(e -> e.getKey() != null)
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getCompressions(), TapFactories::merge));
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getSinkCompressions(), TapFactories::merge));
     }
 
     private static <T> Set<T> merge(Set<T> lhs, Set<T> rhs) {

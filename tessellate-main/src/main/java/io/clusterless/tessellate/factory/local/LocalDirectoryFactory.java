@@ -68,6 +68,14 @@ public class LocalDirectoryFactory extends FilesFactory {
         return Set.of(Compression.none, Compression.gzip, Compression.snappy, Compression.brotli, Compression.lz4);
     }
 
+    /**
+     * brotli can only be read, commons-compress has no brotli compressor
+     */
+    @Override
+    public Set<Compression> getSinkCompressions() {
+        return Set.of(Compression.none, Compression.gzip, Compression.snappy, Compression.lz4);
+    }
+
     @Override
     public int openWritesThreshold() {
         return openWritesThreshold;

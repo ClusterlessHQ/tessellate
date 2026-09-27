@@ -20,13 +20,12 @@ public interface TapFactory {
 
     Set<Format> getFormats();
 
+    /**
+     * The compressions this factory can read, and write unless {@link SinkFactory#getSinkCompressions()} narrows them.
+     */
     Set<Compression> getCompressions();
 
     default boolean hasFormat(Format format) {
         return getFormats().contains(format);
-    }
-
-    default boolean hasCompression(Compression compression) {
-        return getCompressions().contains(compression);
     }
 }

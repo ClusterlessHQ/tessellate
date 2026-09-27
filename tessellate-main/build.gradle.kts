@@ -125,6 +125,9 @@ dependencies {
     // enables use of lz4 compression
     implementation("at.yawk.lz4:lz4-java:1.8.1")
 
+    // enables commons-compress to read brotli, it has no brotli compressor so brotli cannot be written
+    implementation("org.brotli:dec:0.1.2")
+
     implementation("org.mvel:mvel2:2.5.0.Final")
 
     // hadoop-aws depends on the aws sdk v2 bundle, which is too large, so only the modules s3a uses are included:

@@ -162,6 +162,25 @@ public class MainTest {
     }
 
     @Test
+    void brotliSinkRejectedBeforeFlow(@PathForResource("/data/delimited-header.csv") URI input) throws IOException {
+        String json = """
+                {
+                  "source": { "inputs": ["%s"], "schema": { "format": "csv", "embedsSchema": true } },
+                  "sink": { "output": "%s", "schema": { "format": "csv", "compression": "brotli" } }
+                }
+                """.formatted(input, tempDir.resolve("output").toUri());
+
+        Path pipeline = Files.writeString(tempDir.resolve("pipeline.json"), json);
+
+        assertEquals(CommandLine.ExitCode.SOFTWARE, Main.run(new String[]{"-p", pipeline.toString()}));
+
+        assertEquals("", out());
+        assertTrue(err().contains("[none, gzip, snappy, lz4]"), this::err);
+        assertFalse(err().contains("flow failed with:"), this::err);
+        assertNoStackTrace(err());
+    }
+
+    @Test
     void exceptionInCall() throws IOException {
         Path pipeline = Files.writeString(tempDir.resolve("pipeline.json"), "{ not json");
 

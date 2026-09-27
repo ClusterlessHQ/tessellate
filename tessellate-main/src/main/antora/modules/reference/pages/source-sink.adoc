@@ -72,7 +72,7 @@ Som common formats supported are:
 * gzip
 * lz4
 * bzip2
-* brotli
+* brotli (read only, local files only)
 * snappy
 
 == Partitioning

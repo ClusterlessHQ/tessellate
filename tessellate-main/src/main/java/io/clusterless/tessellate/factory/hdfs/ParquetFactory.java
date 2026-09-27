@@ -42,12 +42,11 @@ public class ParquetFactory extends FSFactory {
 
     @Override
     public Set<Compression> getCompressions() {
-        // lzo needs a proprietary library
+        // lzo needs a proprietary library, brotli needs a native codec library
         return Set.of(
                 Compression.none,
                 Compression.gzip,
                 Compression.snappy,
-                Compression.brotli,
                 Compression.lz4
         );
     }
@@ -70,9 +69,6 @@ public class ParquetFactory extends FSFactory {
                 break;
             case snappy:
                 compressionCodecName = CompressionCodecName.SNAPPY;
-                break;
-            case brotli:
-                compressionCodecName = CompressionCodecName.BROTLI;
                 break;
             case lz4:
                 compressionCodecName = CompressionCodecName.LZ4;
