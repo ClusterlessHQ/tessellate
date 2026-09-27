@@ -90,7 +90,9 @@ Overriding command line options include
 
 A lot passes through from birth: when neither `-l` nor the pipeline's `sink.manifestLot` is
 given, the sink uses the source lot (`--input-manifest-lot` or `source.manifestLot`), so
-`@{sink.manifestLot}` and the output manifest carry the input lot.
+`@{sink.manifestLot}` and the output manifest carry the input lot. A templated source lot, such as
+`@{rnd64Next()}`, is resolved once, so the source, the sink, and every `@{source.manifestLot}` and
+`@{sink.manifestLot}` reference see the same value.
 
 == Pipeline Template Expressions
 

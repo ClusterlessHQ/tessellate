@@ -142,11 +142,12 @@ public class PipelineOptionsMerge {
         loadAndMerge(pipelineDef, "/source");
         loadAndMerge(pipelineDef, "/sink");
 
+        MVELContext context = getContext(JSONUtil.writeAsStringSafe(pipelineDef));
+
         // a lot id passes through from birth, the sink inherits the source lot unless given its own
-        inheritManifestLot(pipelineDef);
+        inheritManifestLot(pipelineDef, context);
 
         String mergedPipelineDef = JSONUtil.writeAsStringSafe(pipelineDef);
-        MVELContext context = getContext(mergedPipelineDef);
         String resolved = TemplateRuntime.eval(mergedPipelineDef, context).toString();
         LOG.info("pipeline: {}", resolved);
 
@@ -160,12 +161,19 @@ public class PipelineOptionsMerge {
         return LiteralResolver.context((Map<String, Object>) map.get("source"), (Map<String, Object>) map.get("sink"));
     }
 
-    private static void inheritManifestLot(JsonNode pipelineDef) {
+    private static void inheritManifestLot(JsonNode pipelineDef, MVELContext context) {
         JsonNode sourceLot = pipelineDef.at("/source/manifestLot");
 
         if (sourceLot.isMissingNode() || sourceLot.isNull()) {
             return;
         }
+
+        // a templated lot, e.g. @{rnd64Next()}, is resolved once so the sink and every @{source.manifestLot}
+        // and @{sink.manifestLot} reference see the same value
+        String lot = TemplateRuntime.eval(sourceLot.asText(), context).toString();
+
+        ((ObjectNode) pipelineDef.get("source")).put("manifestLot", lot);
+        context.source().put("manifestLot", lot);
 
         JsonNode sinkLot = pipelineDef.at("/sink/manifestLot");
 
@@ -180,9 +188,10 @@ public class PipelineOptionsMerge {
             sink = root.putObject("sink");
         }
 
-        LOG.info("sink manifest lot not given, using source manifest lot: {}", sourceLot.asText());
+        LOG.info("sink manifest lot not given, using source manifest lot: {}", lot);
 
-        ((ObjectNode) sink).set("manifestLot", sourceLot);
+        ((ObjectNode) sink).put("manifestLot", lot);
+        context.sink().put("manifestLot", lot);
     }
 
     private void loadAndMerge(JsonNode jsonNode, String target) {

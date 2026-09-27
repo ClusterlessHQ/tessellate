@@ -137,6 +137,80 @@ public class PipelineOptionsMergerTest {
         assertEquals("input-lot", ((AssignmentStatement) merged.transform().statements().get(0)).literal());
     }
 
+    private static final String TEMPLATED_LOT_PIPELINE = """
+            {
+              "source": {
+                "inputs": ["s3://bucket/input"],
+                "schema": {"declared": ["one|string"], "format": "csv"},
+                "manifestLot": "lot-@{rnd64Next()}"
+              },
+              "transform": [
+                "@{source.manifestLot}=>source_lot|string",
+                "@{sink.manifestLot}=>sink_lot|string"
+              ]
+            }
+            """;
+
+    /**
+     * A templated source lot is resolved once, so the inherited sink lot and every {@code @{source.*}} and
+     * {@code @{sink.*}} reference carry the same value.
+     */
+    @Test
+    void sinkInheritsResolvedTemplatedSourceLot() throws IOException {
+        PipelineDef merged = mergeLot(TEMPLATED_LOT_PIPELINE);
+
+        String lot = merged.source().manifestLot();
+
+        assertNotNull(lot);
+        assertFalse(lot.contains("@{"), lot);
+        assertEquals(lot, merged.sink().manifestLot());
+        assertEquals(lot, ((AssignmentStatement) merged.transform().statements().get(0)).literal());
+        assertEquals(lot, ((AssignmentStatement) merged.transform().statements().get(1)).literal());
+    }
+
+    @Test
+    void sinkInheritsTemplatedSourceLotOnce() throws IOException {
+        String pipelineJson = """
+                {
+                  "source": {
+                    "inputs": ["s3://bucket/input"],
+                    "schema": {"declared": ["one|string"], "format": "csv"},
+                    "manifestLot": "@{rnd64Next()}"
+                  }
+                }
+                """;
+
+        PipelineDef merged = mergeLot(pipelineJson);
+
+        String lot = merged.source().manifestLot();
+
+        assertFalse(lot.contains("@{"), lot);
+        assertEquals(lot, merged.sink().manifestLot());
+    }
+
+    @Test
+    void sinkInheritsResolvedTemplatedInputLot() throws IOException {
+        PipelineDef merged = mergeLot(LOT_PIPELINE, "--input-manifest-lot", "lot-@{rnd64Next()}");
+
+        String lot = merged.source().manifestLot();
+
+        assertFalse(lot.contains("@{"), lot);
+        assertEquals(lot, merged.sink().manifestLot());
+        assertEquals(lot, ((AssignmentStatement) merged.transform().statements().get(0)).literal());
+    }
+
+    @Test
+    void outputLotOverridesTemplatedSourceLot() throws IOException {
+        PipelineDef merged = mergeLot(TEMPLATED_LOT_PIPELINE, "-l", "output-lot");
+
+        String lot = merged.source().manifestLot();
+
+        assertFalse(lot.contains("@{"), lot);
+        assertEquals("output-lot", merged.sink().manifestLot());
+        assertEquals(lot, ((AssignmentStatement) merged.transform().statements().get(0)).literal());
+        assertEquals("output-lot", ((AssignmentStatement) merged.transform().statements().get(1)).literal());
+    }
+
     /**
      * An output manifest requires a lot, an inherited lot satisfies it.
      */
