@@ -154,7 +154,7 @@ public class PipelineOptionsMerge {
     private static MVELContext getContext(String mergedPipelineDef) {
         Map map = JSONUtil.stringToValue(mergedPipelineDef, Map.class);
 
-        return LiteralResolver.context((Map<String, Object>) map.get("source"), (Map<String, Object>) map.get("source"));
+        return LiteralResolver.context((Map<String, Object>) map.get("source"), (Map<String, Object>) map.get("sink"));
     }
 
     private void loadAndMerge(JsonNode jsonNode, String target) {

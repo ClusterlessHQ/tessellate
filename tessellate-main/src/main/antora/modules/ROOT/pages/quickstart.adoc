@@ -23,5 +23,5 @@ Print a column as json:: `tess --input input.gz.parquet --output-fields json --o
 Use this issue to suggest cli improvements: https://github.com/ClusterlessHQ/tessellate/issues/10
 
 - The json output format expects a single column currently.
-- `tess` can read from `s3://`, `http(s)://`, and `hdfs://` natively.
+- `tess` can read from `file://`, `s3://`, and `hdfs://` natively.
 - `tess` can write to `s3://` and `hdfs://` natively.

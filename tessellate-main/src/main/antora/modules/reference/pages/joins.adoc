@@ -56,9 +56,11 @@ The `lhs` dataset must be declared in the `sources` section of the pipeline.
 
 == Join Types
 
+There is no default join type, the join operator must name one, e.g. `+inner{}`.
+
 The following join types are supported:
 
-* `inner`:: The default join type, only rows that have matching keys in both datasets are returned.
+* `inner`:: Only rows that have matching keys in both datasets are returned.
 * `left`:: All rows from the left side dataset are returned, and matching rows from the right side dataset are returned.
 * `right`:: All rows from the right side dataset are returned, and matching rows from the left side dataset are returned.
 * `outer`:: All rows from both datasets are returned, and matching rows are returned.

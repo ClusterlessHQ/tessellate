@@ -20,6 +20,8 @@ tess --show-source=formats
 text/regex:: Lines of text parsed by regex (like Apache or S3 log files).
 csv:: With or without headers.
 tsv:: With or without headers.
+delimited:: Split on the schema `delimiterChar`, with or without headers.
+json:: One JSON object per line.
 parquet:: [Apache Parquet](https://parquet.apache.org)
 
 Regex support is based on regex groups.

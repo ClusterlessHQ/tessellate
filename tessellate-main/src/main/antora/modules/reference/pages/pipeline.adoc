@@ -77,12 +77,16 @@ the pipeline JSON file.
 
 Overriding command line options include
 
-- `--inputs`
-- `--input-manifest`
+- `-i`, `--input`
+- `-m`, `--input-manifest`
 - `--input-manifest-lot`
-- `--output`
-- `--output-manifest`
-- `--output-manifest-lot`
+- `--input-errors`
+- `-o`, `--output`
+- `--output-fields`
+- `--output-format`
+- `-t`, `--output-manifest-template`
+- `-l`, `--output-manifest-lot`
+- `--output-errors`
 
 == Pipeline Template Expressions
 

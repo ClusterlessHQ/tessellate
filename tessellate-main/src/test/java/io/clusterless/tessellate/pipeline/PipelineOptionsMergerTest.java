@@ -19,6 +19,7 @@ import io.clusterless.tessellate.parser.ast.UnaryOperation;
 import io.clusterless.tessellate.util.Format;
 import io.clusterless.tessellate.util.json.JSONUtil;
 import org.junit.jupiter.api.Test;
+import picocli.CommandLine;
 
 import java.io.IOException;
 import java.net.URI;
@@ -68,6 +69,38 @@ public class PipelineOptionsMergerTest {
         assertEquals(output, merged.sink().output());
         assertEquals(declared, merged.sink().schema().declared());
         assertEquals(Format.json, merged.sink().schema().format());
+    }
+
+    /**
+     * The pipeline file is an MVEL template, {@code @{source.*}} must resolve against the merged source and
+     * {@code @{sink.*}} against the merged sink.
+     */
+    @Test
+    void templateResolvesSourceAndSink() throws IOException {
+        String pipelineJson = """
+                {
+                  "source": {
+                    "inputs": ["s3://bucket/input"],
+                    "schema": {"declared": ["one|string"], "format": "csv"}
+                  },
+                  "transform": [
+                    "@{source.manifestLot}=>source_lot|string",
+                    "@{sink.manifestLot}=>sink_lot|string"
+                  ]
+                }
+                """;
+
+        PipelineOptions pipelineOptions = new PipelineOptions();
+        new CommandLine(pipelineOptions).parseArgs("--input-manifest-lot", "input-lot", "-l", "output-lot");
+
+        PipelineOptionsMerge merger = new PipelineOptionsMerge(pipelineOptions);
+
+        PipelineDef merged = merger.merge(JSONUtil.readTree(pipelineJson));
+
+        assertEquals("input-lot", merged.source().manifestLot());
+        assertEquals("output-lot", merged.sink().manifestLot());
+        assertEquals("input-lot", ((AssignmentStatement) merged.transform().statements().get(0)).literal());
+        assertEquals("output-lot", ((AssignmentStatement) merged.transform().statements().get(1)).literal());
     }
 
     @Test

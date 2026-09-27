@@ -94,8 +94,8 @@ given.
   Jackson bind failure, not a pipeline failure.
 - **The whole pipeline file is an MVEL template.** Any `@{…}` / `@code{…}`
   anywhere, including regex patterns and literals, gets evaluated. The context
-  comes from `LiteralResolver::context(source, source)`, so **`@{sink.*}`
-  resolves against the source map**.
+  comes from `LiteralResolver::context(source, sink)` over the merged JSON, so
+  `@{source.*}` and `@{sink.*}` see the command line overrides.
 - **Factory dispatch is by URI scheme, then format parent** (`TapFactories::findFactory`):
   - **Scheme to Protocol.** The scheme goes through `Protocol.valueOf`, so it
     must equal an enum name: `s3a://` throws. `s3://` is served by S3A via
@@ -213,7 +213,9 @@ meet all of it; **new and touched code must**.
   exist: <path>"), naming the offending file/URI/field. Log messages match
   that style.
 - **Help lives only in picocli annotations.** There is no generated CLI
-  reference; the Antora pages hand-copy option names and drift (see below).
+  reference; the Antora pages hand-copy option names. `DocsConsistencyTest`
+  fails on any `--option` in the pages that picocli does not declare, and on
+  protocols/formats that `TapFactories` does not register.
 
 ### Pipeline JSON and persisted formats — changes here break users
 
@@ -429,16 +431,6 @@ them, and don't "fix" them piecemeal:
 - **Standalone.** No links into gitignored `_*` folders or to sibling-repo
   support material.
 - **docs/ drift.** Verify against code before citing:
-  - **`pipeline.adoc`:** its override list names `--inputs` and
-    `--output-manifest` (the real options are `-i/--input` and
-    `-t/--output-manifest-template`) and omits `--output-fields`,
-    `--output-format`, and `--*-errors`. Its `@{sink.manifestLot}` example
-    actually resolves the source.
-  - **`quickstart.adoc`:** claims `http(s)://` reads; there is no factory
-    for them.
-  - **`source-sink.adoc`:** its format list omits `json` and `delimited`.
-  - **`joins.adoc`:** calls `inner` the default, but the grammar requires
-    an explicit `+type{}`.
   - **`OPERATIONS.md`:** describes `!{java}` expressions and `@[pointer]`
     operators that are not implemented.
 
