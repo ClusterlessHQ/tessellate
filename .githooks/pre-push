@@ -51,9 +51,43 @@ unsigned_failed=0
 # requires, so a failure here is a real local-repo problem (missing object,
 # corrupt ref) rather than a network hiccup -- report it instead of waving
 # the push through unscanned. `git push --no-verify` remains the bypass.
+# The one object git names that may legitimately be missing, a remote tip
+# this clone never fetched, is checked for before any range is built.
 refuse() {
 	echo "pre-push: $1; refusing push" >&2
 	exit 1
+}
+
+# Set $commits to what $2 reaches that no remote-tracking ref already does,
+# so a push is judged on what it adds rather than re-scanning (and
+# re-litigating) all of published history.
+#
+# Built with a read loop, not mapfile: mapfile is bash 4+, and the bundled
+# macOS /bin/bash is 3.2. Both the declaration and the count guard are
+# load-bearing under `set -u`: bash 3.2 calls "${arr[@]}" unbound when arr
+# is unset OR empty, which empties $commits and silently skips the scan.
+#
+# for-each-ref is captured into a variable first, not fed through
+# `done < <(...)`: that form reports the loop's status, never the
+# producer's, so a failed ref listing would be indistinguishable from "no
+# remote refs" and silently widen the scan. Capturing it makes the failure
+# checkable.
+unpublished_commits() {
+	local excludes ref_exclude
+	local -a range_args
+	excludes=$(git for-each-ref --format='^%(refname)' refs/remotes/) || refuse \
+		"unable to list remote refs for $1 (git for-each-ref failed)"
+	range_args=()
+	while IFS= read -r ref_exclude; do
+		[ -n "$ref_exclude" ] && range_args+=("$ref_exclude")
+	done <<<"$excludes"
+	if [ "${#range_args[@]}" -gt 0 ]; then
+		commits=$(git rev-list "$2" "${range_args[@]}") || refuse \
+			"unable to enumerate commits for $1 (git rev-list failed)"
+	else
+		commits=$(git rev-list "$2") || refuse \
+			"unable to enumerate commits for $1 (git rev-list failed)"
+	fi
 }
 
 while read -r local_ref local_sha _remote_ref remote_sha; do
@@ -61,34 +95,20 @@ while read -r local_ref local_sha _remote_ref remote_sha; do
 	[ "$local_sha" = "$zero" ] && continue
 
 	if [ "$remote_sha" = "$zero" ]; then
-		# New branch on the remote. Bound the walk to commits not already
-		# reachable from some other remote ref, so creating a branch does
-		# not re-scan (and re-litigate) all of published history.
-		# Built with a read loop, not mapfile: mapfile is bash 4+, and
-		# the bundled macOS /bin/bash is 3.2. Both the declaration and
-		# the count guard are load-bearing under `set -u`: bash 3.2
-		# calls "${arr[@]}" unbound when arr is unset OR empty, which
-		# empties $commits and silently skips the scan below.
-		#
-		# for-each-ref is captured into a variable first, not fed
-		# through `done < <(...)`: that form reports the loop's status,
-		# never the producer's, so a failed ref listing would be
-		# indistinguishable from "no remote refs" and silently widen
-		# the scan. Capturing it makes the failure checkable.
-		excludes=$(git for-each-ref --format='^%(refname)' refs/remotes/) || refuse \
-			"unable to list remote refs for $local_ref (git for-each-ref failed)"
-		range_args=()
-		while IFS= read -r ref_exclude; do
-			[ -n "$ref_exclude" ] && range_args+=("$ref_exclude")
-		done <<<"$excludes"
-		if [ "${#range_args[@]}" -gt 0 ]; then
-			commits=$(git rev-list "$local_sha" "${range_args[@]}") || refuse \
-				"unable to enumerate commits for $local_ref (git rev-list failed)"
-		else
-			commits=$(git rev-list "$local_sha") || refuse \
-				"unable to enumerate commits for $local_ref (git rev-list failed)"
-		fi
+		# New branch on the remote.
+		unpublished_commits "$local_ref" "$local_sha"
+	elif ! git cat-file -e "$remote_sha^{commit}" 2>/dev/null; then
+		# The remote tip is one this clone has never fetched: a force-push
+		# replacing a branch someone else advanced. `remote..local` cannot
+		# resolve then, and refusing would block a fully signed rewrite.
+		# Whatever only that tip reaches is already on the remote, not
+		# published by this push, so walk it like a new branch: everything
+		# local that no remote-tracking ref already covers. That errs
+		# toward scanning more, never less.
+		unpublished_commits "$local_ref" "$local_sha"
 	else
+		# The tip is present, so a failure here is a genuinely broken
+		# range, not an unfetched one.
 		commits=$(git rev-list "$remote_sha..$local_sha") || refuse \
 			"unable to enumerate commits for $local_ref (git rev-list failed)"
 	fi

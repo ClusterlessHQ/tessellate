@@ -49,6 +49,12 @@ MAX_COMMITS=${MAX_UNSIGNED_SCAN:-50}
 # state files, not on refs/heads/*. The one branch update a rebase does
 # make is the concluding move, which is exactly what must be checked.
 
+# A range whose commits cannot be listed cannot be cleared either.
+unwalkable() {
+  echo "reference-transaction: REFUSED — unable to enumerate $1 on $2" >&2
+  echo "  (git rev-list failed); signatures cannot be verified." >&2
+}
+
 rc=0
 while read -r old new ref; do
   case "$ref" in refs/heads/*) ;; *) continue ;; esac
@@ -61,11 +67,13 @@ while read -r old new ref; do
   # transaction has not landed, so `refs/heads/x` still resolves to its old
   # value on an update and is absent on a creation. Resolve it and prefer
   # that over `$old`.
+  #
+  # "All zeros" means any length, not the 40 of SHA-1: a SHA-256 repository
+  # reports 64. Matching one literal took the 64-zero ID as a real commit,
+  # built an unresolvable range from it, and waved every update through --
+  # the same shape as the deletion test on `$new` above.
   prev=$(git rev-parse --verify -q "$ref^{commit}" 2>/dev/null) || prev=""
-  case "$old" in
-    0000000000000000000000000000000000000000) ;;
-    *) prev="$old" ;;
-  esac
+  case "$old" in *[!0]*) prev="$old" ;; esac
 
   set --
   if [ -n "$prev" ]; then
@@ -87,15 +95,31 @@ while read -r old new ref; do
   # sample. A cap keeps a big import fast, but exceeding it refuses
   # rather than silently skipping the commits past the bound: a partial
   # look is indistinguishable from a clean one.
-  count=$(git rev-list --count "$range" "$@" 2>/dev/null) || count=""
-  case "$count" in ''|*[!0-9]*) count=0 ;; esac
+  #
+  # A range git cannot walk (missing object, unresolvable ID) refuses for
+  # the same reason. Both rev-lists used to discard their status, so a
+  # failed count read as 0 and a failed listing as no commits: an update
+  # nothing had inspected passed as clean. Each status is checked on its
+  # own, and git's stderr is left alone so it says what broke.
+  if ! count=$(git rev-list --count "$range" "$@"); then
+    unwalkable "$range" "$ref"
+    rc=1
+    continue
+  fi
   if [ "$count" -gt "$MAX_COMMITS" ]; then
     echo "reference-transaction: REFUSED — $range introduces $count commits on $ref," >&2
     echo "  over the $MAX_COMMITS-commit inspection bound; signatures cannot be verified." >&2
     rc=1
     continue
   fi
-  for c in $(git rev-list "$range" "$@" 2>/dev/null); do
+  # Captured rather than looped over directly: `for c in $(...)` has no
+  # status to check, so a failed listing would be an empty, clean loop.
+  if ! commits=$(git rev-list "$range" "$@"); then
+    unwalkable "$range" "$ref"
+    rc=1
+    continue
+  fi
+  for c in $commits; do
     [ "$(git log -1 --pretty=%G? "$c" 2>/dev/null)" = "N" ] || continue
     echo "reference-transaction: REFUSED — unsigned commit $(git rev-parse --short "$c") on $ref" >&2
     echo "  $(git log -1 --pretty=%s "$c" 2>/dev/null | cut -c1-70)" >&2
@@ -110,6 +134,7 @@ if [ "$rc" -ne 0 ]; then
   echo "without -S: that plumbing ignores commit.gpgsign entirely." >&2
   echo "A range over the inspection bound is refused for the same reason:" >&2
   echo "raise it with MAX_UNSIGNED_SCAN=<n> once you have vetted the range." >&2
+  echo "So is a range git cannot walk; 'git fsck' names what is missing." >&2
   echo "Deliberate exception: ALLOW_UNSIGNED=1 <git command>" >&2
 fi
 exit $rc
