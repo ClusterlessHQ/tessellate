@@ -98,7 +98,6 @@ dependencies {
 
     val cascading = "4.6.0-wip-37"
     implementation("net.wensel:cascading-core:$cascading")
-    implementation("net.wensel:cascading-expression:$cascading")
     implementation("net.wensel:cascading-nested-json:$cascading")
     implementation("net.wensel:cascading-local:$cascading")
     implementation("net.wensel:cascading-local-hadoop3-io:$cascading")

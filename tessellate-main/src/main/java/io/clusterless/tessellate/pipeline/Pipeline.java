@@ -15,7 +15,7 @@ import cascading.flow.local.LocalFlowConnector;
 import cascading.flow.local.LocalFlowProcess;
 import cascading.flow.stream.duct.DuctException;
 import cascading.operation.Debug;
-import cascading.operation.expression.ExpressionFilter;
+import cascading.operation.regex.RegexFilter;
 import cascading.operation.regex.RegexParser;
 import cascading.pipe.Each;
 import cascading.pipe.Pipe;
@@ -149,7 +149,8 @@ public class Pipeline {
             // this is a hack to skip the first line
             LOG.info("sourcing format: {}, embedSchema is true, skipping first line, but not using the schema", sourceSchema.format());
             Fields num = new Fields("num");
-            Pipe pipe = new Each(context.pipe, num, new ExpressionFilter("num == 0"));
+            // num is the line number (local) or byte offset (hadoop), either is 0 only on the first line of each file
+            Pipe pipe = new Each(context.pipe, num, new RegexFilter("^0$", true));
             pipe = new Discard(pipe, num);
             Fields currentFields = context.currentFields.subtract(num);
             logCurrentFields(currentFields);
