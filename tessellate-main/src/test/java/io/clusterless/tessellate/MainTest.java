@@ -180,6 +180,50 @@ public class MainTest {
         assertNoStackTrace(err());
     }
 
+    private String[] manifestArgs(URI input, String... lotArgs) throws IOException {
+        String json = """
+                {
+                  "source": { "inputs": ["%s"], "schema": { "format": "csv", "embedsSchema": true } },
+                  "sink": { "output": "%s", "schema": { "format": "parquet" } }
+                }
+                """.formatted(input, tempDir.resolve("output").toUri());
+
+        Path pipeline = Files.writeString(tempDir.resolve("pipeline.json"), json);
+        String template = tempDir.toUri() + "manifest/lot={lot}/state={state}{/attempt*}/manifest.json";
+
+        List<String> args = new java.util.ArrayList<>(List.of("-p", pipeline.toString(), "-t", template));
+        args.addAll(List.of(lotArgs));
+
+        return args.toArray(String[]::new);
+    }
+
+    /**
+     * A lot id passes through from birth, given only the input lot the output manifest carries it.
+     */
+    @Test
+    void manifestInheritsInputLot(@PathForResource("/data/delimited-header.csv") URI input) throws IOException {
+        int exitCode = Main.run(manifestArgs(input, "--input-manifest-lot", "20230101PT5M000"));
+
+        assertEquals(CommandLine.ExitCode.OK, exitCode, this::err);
+
+        Path lotDir = tempDir.resolve("manifest/lot=20230101PT5M000");
+
+        assertTrue(Files.isDirectory(lotDir), () -> "missing: " + lotDir);
+
+        try (var files = Files.walk(lotDir)) {
+            String manifest = Files.readString(files.filter(p -> p.getFileName().toString().equals("manifest-data.json")).findFirst().orElseThrow());
+
+            assertEquals("20230101PT5M000", JSONUtil.readTree(manifest).get("lotId").asText());
+        }
+    }
+
+    @Test
+    void manifestWithoutAnyLotFails(@PathForResource("/data/delimited-header.csv") URI input) throws IOException {
+        assertEquals(CommandLine.ExitCode.SOFTWARE, Main.run(manifestArgs(input)));
+
+        assertTrue(err().contains("lot is required when manifest is set"), this::err);
+    }
+
     @Test
     void exceptionInCall() throws IOException {
         Path pipeline = Files.writeString(tempDir.resolve("pipeline.json"), "{ not json");

@@ -142,6 +142,9 @@ public class PipelineOptionsMerge {
         loadAndMerge(pipelineDef, "/source");
         loadAndMerge(pipelineDef, "/sink");
 
+        // a lot id passes through from birth, the sink inherits the source lot unless given its own
+        inheritManifestLot(pipelineDef);
+
         String mergedPipelineDef = JSONUtil.writeAsStringSafe(pipelineDef);
         MVELContext context = getContext(mergedPipelineDef);
         String resolved = TemplateRuntime.eval(mergedPipelineDef, context).toString();
@@ -155,6 +158,31 @@ public class PipelineOptionsMerge {
         Map map = JSONUtil.stringToValue(mergedPipelineDef, Map.class);
 
         return LiteralResolver.context((Map<String, Object>) map.get("source"), (Map<String, Object>) map.get("sink"));
+    }
+
+    private static void inheritManifestLot(JsonNode pipelineDef) {
+        JsonNode sourceLot = pipelineDef.at("/source/manifestLot");
+
+        if (sourceLot.isMissingNode() || sourceLot.isNull()) {
+            return;
+        }
+
+        JsonNode sinkLot = pipelineDef.at("/sink/manifestLot");
+
+        if (!sinkLot.isMissingNode() && !sinkLot.isNull()) {
+            return;
+        }
+
+        ObjectNode root = (ObjectNode) pipelineDef;
+        JsonNode sink = root.get("sink");
+
+        if (sink == null || sink.isNull()) {
+            sink = root.putObject("sink");
+        }
+
+        LOG.info("sink manifest lot not given, using source manifest lot: {}", sourceLot.asText());
+
+        ((ObjectNode) sink).set("manifestLot", sourceLot);
     }
 
     private void loadAndMerge(JsonNode jsonNode, String target) {

@@ -10,6 +10,7 @@ package io.clusterless.tessellate.pipeline;
 
 import io.hosuaby.inject.resources.junit.jupiter.GivenTextResource;
 import io.hosuaby.inject.resources.junit.jupiter.TestWithResources;
+import io.clusterless.tessellate.factory.ManifestWriter;
 import io.clusterless.tessellate.model.Field;
 import io.clusterless.tessellate.model.PipelineDef;
 import io.clusterless.tessellate.options.PipelineOptions;
@@ -19,13 +20,14 @@ import io.clusterless.tessellate.parser.ast.UnaryOperation;
 import io.clusterless.tessellate.util.Format;
 import io.clusterless.tessellate.util.json.JSONUtil;
 import org.junit.jupiter.api.Test;
+import org.mvel2.PropertyAccessException;
 import picocli.CommandLine;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 @TestWithResources
 public class PipelineOptionsMergerTest {
@@ -101,6 +103,101 @@ public class PipelineOptionsMergerTest {
         assertEquals("output-lot", merged.sink().manifestLot());
         assertEquals("input-lot", ((AssignmentStatement) merged.transform().statements().get(0)).literal());
         assertEquals("output-lot", ((AssignmentStatement) merged.transform().statements().get(1)).literal());
+    }
+
+    private static final String LOT_PIPELINE = """
+            {
+              "source": {
+                "inputs": ["s3://bucket/input"],
+                "schema": {"declared": ["one|string"], "format": "csv"}
+              },
+              "transform": [
+                "@{sink.manifestLot}=>sink_lot|string"
+              ]
+            }
+            """;
+
+    private static PipelineDef mergeLot(String pipelineJson, String... args) throws IOException {
+        PipelineOptions pipelineOptions = new PipelineOptions();
+        new CommandLine(pipelineOptions).parseArgs(args);
+
+        return new PipelineOptionsMerge(pipelineOptions).merge(JSONUtil.readTree(pipelineJson));
+    }
+
+    /**
+     * A lot id passes through from birth, so without an output lot the sink inherits the input lot, both in the
+     * model and in {@code @{sink.*}} templates.
+     */
+    @Test
+    void sinkInheritsSourceLot() throws IOException {
+        PipelineDef merged = mergeLot(LOT_PIPELINE, "--input-manifest-lot", "input-lot");
+
+        assertEquals("input-lot", merged.source().manifestLot());
+        assertEquals("input-lot", merged.sink().manifestLot());
+        assertEquals("input-lot", ((AssignmentStatement) merged.transform().statements().get(0)).literal());
+    }
+
+    /**
+     * An output manifest requires a lot, an inherited lot satisfies it.
+     */
+    @Test
+    void manifestAcceptsInheritedLot() throws IOException {
+        PipelineDef merged = mergeLot(LOT_PIPELINE, "--input-manifest-lot", "input-lot", "-t", "file:///tmp/manifest/lot={lot}/state={state}/manifest.json");
+
+        assertNotSame(ManifestWriter.NULL, ManifestWriter.from(merged.sink(), null));
+    }
+
+    @Test
+    void outputLotOverridesSourceLot() throws IOException {
+        PipelineDef merged = mergeLot(LOT_PIPELINE, "--input-manifest-lot", "input-lot", "-l", "output-lot");
+
+        assertEquals("output-lot", merged.sink().manifestLot());
+        assertEquals("output-lot", ((AssignmentStatement) merged.transform().statements().get(0)).literal());
+    }
+
+    @Test
+    void pipelineSinkLotOverridesSourceLot() throws IOException {
+        String pipelineJson = """
+                {
+                  "source": {
+                    "inputs": ["s3://bucket/input"],
+                    "schema": {"declared": ["one|string"], "format": "csv"}
+                  },
+                  "sink": {"manifestLot": "pipeline-lot"}
+                }
+                """;
+
+        PipelineDef merged = mergeLot(pipelineJson, "--input-manifest-lot", "input-lot");
+
+        assertEquals("input-lot", merged.source().manifestLot());
+        assertEquals("pipeline-lot", merged.sink().manifestLot());
+    }
+
+    @Test
+    void noLotIsNotInvented() throws IOException {
+        String pipelineJson = """
+                {
+                  "source": {
+                    "inputs": ["s3://bucket/input"],
+                    "schema": {"declared": ["one|string"], "format": "csv"}
+                  }
+                }
+                """;
+
+        PipelineDef merged = mergeLot(pipelineJson);
+
+        assertNull(merged.source().manifestLot());
+        assertNull(merged.sink().manifestLot());
+    }
+
+    /**
+     * A lot referenced but never given fails naming the property, with or without a sink block in the pipeline.
+     */
+    @Test
+    void missingSinkLotReferenceFails() {
+        PropertyAccessException exception = assertThrows(PropertyAccessException.class, () -> mergeLot(LOT_PIPELINE));
+
+        assertTrue(exception.getMessage().contains("could not access: manifestLot"), exception::getMessage);
     }
 
     @Test

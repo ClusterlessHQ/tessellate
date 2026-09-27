@@ -33,8 +33,9 @@ public class MVELContext {
     }
 
     public MVELContext(Map<String, Object> source, Map<String, Object> sink) {
-        this.source = source;
-        this.sink = sink;
+        // a pipeline may omit either block, so @{source.*} and @{sink.*} resolve to null rather than fail
+        this.source = source == null ? new HashMap<>() : source;
+        this.sink = sink == null ? new HashMap<>() : sink;
     }
 
     public Map<String, String> env() {

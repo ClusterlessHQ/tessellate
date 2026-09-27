@@ -88,6 +88,10 @@ Overriding command line options include
 - `-l`, `--output-manifest-lot`
 - `--output-errors`
 
+A lot passes through from birth: when neither `-l` nor the pipeline's `sink.manifestLot` is
+given, the sink uses the source lot (`--input-manifest-lot` or `source.manifestLot`), so
+`@{sink.manifestLot}` and the output manifest carry the input lot.
+
 == Pipeline Template Expressions
 
 In order to embed system properties, environment variables, or other provided intrinsic values,

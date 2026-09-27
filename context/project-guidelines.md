@@ -261,7 +261,10 @@ contract.
   - States are `complete` / `empty`. `ManifestReader::isEmptyManifest` keys
     on the literal `state=empty` in the manifest URI, so the `state={state}`
     template convention is load-bearing.
-  - A manifest template without a lot throws.
+  - A manifest template without a lot throws. The sink lot defaults to the
+    source lot (`PipelineOptionsMerge::inheritManifestLot`; a lot passes
+    through from birth), so only a run with neither an input nor an output
+    lot throws. A rollup whose output lot differs must pass `-l`.
 - **Instant interval units** (`Twelfths`, `Fourths`, …) come from
   `clusterless-commons` `IntervalUnits`, the vocabulary shared with
   clusterless lots. Bump commons in lockstep; its source is the sibling

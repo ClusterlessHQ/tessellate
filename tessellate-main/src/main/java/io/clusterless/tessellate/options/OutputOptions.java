@@ -24,7 +24,7 @@ public class OutputOptions implements AWSOptions {
     private Format outputFormat;
     @CommandLine.Option(names = {"-t", "--output-manifest-template"}, description = "output manifest uri template")
     private String outputManifestTemplate;
-    @CommandLine.Option(names = {"-l", "--output-manifest-lot"}, description = "output lot")
+    @CommandLine.Option(names = {"-l", "--output-manifest-lot"}, description = "output lot, defaults to the input lot")
     private String outputLot;
     @CommandLine.Option(names = {"--output-aws-endpoint"}, description = "aws endpoint")
     protected String awsEndpoint;
