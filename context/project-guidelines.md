@@ -267,10 +267,10 @@ contract.
 
 ### Build and test
 
-- **Toolchain:** Gradle wrapper 8.14.5 (checksum-pinned), Java 25 toolchain
+- **Toolchain:** Gradle wrapper 9.8.0 (checksum-pinned), Java 25 toolchain
   via the foojay resolver (`settings.gradle.kts`). **Gradle itself needs
   Java 17+**: foojay 1.0.0 is Java 17 bytecode and loads into the Gradle JVM.
-  Gradle 8.14.5 cannot run on 25. CI installs Temurin 25 and 17 (17 listed
+  Gradle 9.8.0 can also run on 25. CI installs Temurin 25 and 17 (17 listed
   last, so it is `JAVA_HOME` and the Gradle JVM), runs Gradle on 17, and
   points the toolchain at 25 with
   `-Porg.gradle.java.installations.fromEnv=JAVA_HOME_25_X64`. The
@@ -363,12 +363,19 @@ contract.
 - **Java 25 appears in three places:** the `java.toolchain`, both CI jobs'
   `setup-java` list and `JAVA_HOME_25_X64` flag, and the jreleaser
   Docker/Homebrew packaging (`azul/zulu-openjdk-alpine:25-jre`,
-  `openjdk@25`, both derived from the toolchain). Move them together and
-  inspect the generated `build/jreleaser` output after a bump. The Gradle JVM (17 in CI) is
-  separate and must stay at or above what the settings plugins require.
-- **Gradle 9:** `./gradlew help --warning-mode all` reports no deprecations
-  on Gradle 8.14.5. Check jreleaser plugin compatibility before moving the
-  wrapper.
+  `openjdk@25`). The packaging version is pinned from the toolchain by
+  `jreleaser.project.languages.java.version`; without that pin jreleaser
+  1.26.0 uses the version of the JVM running Gradle (17 in CI). Move the
+  toolchain and CI together and inspect the generated `build/jreleaser`
+  output after a bump. The Gradle JVM (17 in CI) is separate and must stay
+  at or above what the settings plugins require.
+- **Gradle 9.8.0 and jreleaser 1.26.0:** `./gradlew help --warning-mode all`
+  reports no deprecations. jreleaser's signing settings live under
+  `signing.pgp`. `createPath` is not configuration-cache compatible.
+- **jreleaser tasks need a full clone.** `createPath jreleaserConfig` and
+  `jreleaserPrepare` fail in a linked worktree (JGit "Could not determine
+  git HEAD") and need a remote named `clusterless` with the GitHub URL; a
+  local-path remote fails with "Could not determine remote".
 - **Hadoop sets the JDK ceiling.** Hadoop 3.3.x calls
   `Subject.getSubject`, which throws on JDK 24+; 3.4.3 and 3.5.0 carry the
   fix (HADOOP-19212). On 3.4.3 the suites pass on JDK 11, 21, 25, and 27.

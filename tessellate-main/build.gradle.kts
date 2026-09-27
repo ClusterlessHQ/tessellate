@@ -16,7 +16,7 @@ plugins {
     java
     application
     `java-test-fixtures`
-    id("org.jreleaser") version "1.16.0"
+    id("org.jreleaser") version "1.26.0"
 }
 
 val versionProperties = Properties().apply {
@@ -62,10 +62,10 @@ val awsSdk2 = "2.55.6"
 // the integrationTest suite is registered before the dependencies block so Gradle creates its configurations
 testing {
     suites {
-        val test by getting(JvmTestSuite::class) {
+        val test = getByName<JvmTestSuite>("test") {
             useJUnitJupiter(jupiter)
         }
-        val integrationTest by registering(JvmTestSuite::class) {
+        register<JvmTestSuite>("integrationTest") {
             useJUnitJupiter(jupiter)
             dependencies {
                 implementation(project())
@@ -278,11 +278,21 @@ distributions {
     }
 }
 
+// jreleaser takes the Docker base image and the Homebrew openjdk version from project.languages.java.version,
+// which it otherwise derives from the JVM running Gradle, not the toolchain.
+// Read here because inside jreleaser.project `java` resolves to jreleaser's own block.
+val toolchainVersion = java.toolchain.languageVersion.map { it.toString() }
+
 jreleaser {
     dryrun.set(false)
 
     project {
         description.set("Tessellate is tool for parsing and partitioning data.")
+        languages {
+            java {
+                version.set(toolchainVersion)
+            }
+        }
         authors.add("Chris K Wensel")
         copyright.set("Chris K Wensel")
         license.set("MPL-2.0")
@@ -295,9 +305,12 @@ jreleaser {
     }
 
     signing {
-        armored.set(true)
         active.set(Active.ALWAYS)
-        verify.set(false)
+        pgp {
+            active.set(Active.ALWAYS)
+            armored.set(true)
+            verify.set(false)
+        }
     }
 
     release {
