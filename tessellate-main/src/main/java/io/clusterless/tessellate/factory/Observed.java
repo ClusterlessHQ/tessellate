@@ -51,14 +51,26 @@ public class Observed {
 
     private static void add(Map<String, Set<URI>> map, final URI uri) {
         URI clean = URIs.cleanFileUrls(uri);
-
-        if (clean.getPath().contains("/_")) {
-            return;
-        }
+        String path = clean.toString();
 
         map.entrySet()
                 .stream()
-                .filter(e -> clean.toString().startsWith(e.getKey()))
+                .filter(e -> path.startsWith(e.getKey()))
+                .filter(e -> !hidden(path.substring(e.getKey().length())))
                 .forEach(e -> e.getValue().add(clean));
+    }
+
+    /**
+     * Only the path under the registered prefix is checked, so a prefix under a {@code _*} directory still
+     * records its writes, while {@code _SUCCESS} and {@code _temporary/...} under it are skipped.
+     */
+    private static boolean hidden(String remainder) {
+        for (String segment : remainder.split("/")) {
+            if (segment.startsWith("_")) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

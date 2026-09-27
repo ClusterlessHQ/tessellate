@@ -60,8 +60,7 @@ given.
   for a red/green check: `cp <path> /tmp/save && git show <rev>:<path> >
   <path>` … run … `cp /tmp/save <path>`, then `cmp`.
 - **Scratch lives in `_*` directories** (gitignored by `_*`). Don't
-  `git add -f` them unless asked. Don't point a manifest-producing sink at a
-  `_*` path (see *Manifests*).
+  `git add -f` them unless asked.
 
 ### Architecture: how a `tess` invocation runs
 
@@ -132,7 +131,9 @@ given.
 - **Manifests are fed by filesystem interception.** `factory/Observed` is a
   static singleton. It records only writes that go through the
   `ObserveS3AFileSystem` / `ObserveLocalFileSystem` `create` overloads, and it
-  skips any path containing `/_`.
+  skips a path with a `_*` segment under the sink root (`_SUCCESS`,
+  `_temporary/…`). A `_*` segment above the root, as in the macOS temp dir, is
+  fine.
   - `ManifestWriter` is only attached by `FSFactory`. **`file://`
     non-parquet sinks (`LocalDirectoryFactory`) never write a manifest.**
   - An empty input manifest short-circuits to writing an `empty` sink
@@ -487,7 +488,7 @@ them, and don't "fix" them piecemeal:
   merged the streams with `2>&1`.
 - **"Manifest is empty or missing":**
   - The sink went through `LocalDirectoryFactory` (`file://` non-parquet).
-  - The output path contains `/_`.
+  - The written file has a `_*` segment under the sink root.
   - The write bypassed the overridden `create` overloads.
   - The template lacks `state={state}`.
 - **"no factory found" / `No enum constant …Protocol`** — the URI scheme

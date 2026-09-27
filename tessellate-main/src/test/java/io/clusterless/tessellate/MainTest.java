@@ -180,16 +180,23 @@ public class MainTest {
         assertNoStackTrace(err());
     }
 
+    /**
+     * Rooted under a {@code _*} directory, as the macOS temp dir is, so writes must still reach the manifest.
+     */
+    private Path manifestRoot() {
+        return tempDir.resolve("_scratch");
+    }
+
     private String[] manifestArgs(URI input, String... lotArgs) throws IOException {
         String json = """
                 {
                   "source": { "inputs": ["%s"], "schema": { "format": "csv", "embedsSchema": true } },
                   "sink": { "output": "%s", "schema": { "format": "parquet" } }
                 }
-                """.formatted(input, tempDir.resolve("output").toUri());
+                """.formatted(input, manifestRoot().resolve("output").toUri());
 
         Path pipeline = Files.writeString(tempDir.resolve("pipeline.json"), json);
-        String template = tempDir.toUri() + "manifest/lot={lot}/state={state}{/attempt*}/manifest.json";
+        String template = manifestRoot().resolve("manifest").toUri() + "/lot={lot}/state={state}{/attempt*}/manifest.json";
 
         List<String> args = new java.util.ArrayList<>(List.of("-p", pipeline.toString(), "-t", template));
         args.addAll(List.of(lotArgs));
@@ -206,14 +213,26 @@ public class MainTest {
 
         assertEquals(CommandLine.ExitCode.OK, exitCode, this::err);
 
-        Path lotDir = tempDir.resolve("manifest/lot=20230101PT5M000");
+        Path stateDir = manifestRoot().resolve("manifest/lot=20230101PT5M000/state=complete");
 
-        assertTrue(Files.isDirectory(lotDir), () -> "missing: " + lotDir);
+        assertTrue(Files.isDirectory(stateDir), () -> "missing: " + stateDir);
 
-        try (var files = Files.walk(lotDir)) {
+        Path part;
+        try (var files = Files.list(manifestRoot().resolve("output"))) {
+            part = files.filter(p -> p.getFileName().toString().matches("part-.*\\.parquet")).findFirst().orElseThrow();
+        }
+
+        try (var files = Files.walk(stateDir)) {
             String manifest = Files.readString(files.filter(p -> p.getFileName().toString().equals("manifest-data.json")).findFirst().orElseThrow());
+            var tree = JSONUtil.readTree(manifest);
 
-            assertEquals("20230101PT5M000", JSONUtil.readTree(manifest).get("lotId").asText());
+            assertEquals("20230101PT5M000", tree.get("lotId").asText());
+            assertEquals("complete", tree.get("state").asText());
+
+            List<String> uris = new java.util.ArrayList<>();
+            tree.get("uris").forEach(u -> uris.add(URI.create(u.asText()).getPath()));
+
+            assertEquals(List.of(part.toUri().getPath()), uris, manifest);
         }
     }
 
