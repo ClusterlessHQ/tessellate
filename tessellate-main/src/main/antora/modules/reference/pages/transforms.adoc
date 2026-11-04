@@ -130,6 +130,23 @@ The default.
 - `upperUnderscore` - converts to upper case and replaces `/\ .-` with underscores
 - `camelCase` - converts to camel case
 
+`hash`:: Hash the argument fields into a single field, using MurmurHash3 x64 128-bit with a seed of `0`.
+The string value of each argument is hashed, so the same values always produce the same hash.
+The result is `null` if every argument is `null`.
+A single argument hashes the UTF-8 bytes of its value, so it matches other MurmurHash3 x64 128-bit implementations.
+Many arguments are hashed together with a length prefix and a null marker for each value.
+Def:::
+- `from_field ^hash{} +> into_field` - append the 64-bit hash of `from_field` as a `Long`
+- `from_field1 + from_field2 ^hash{} +> into_field|string` - append the 64-bit hash of both fields as a hex string
+- `^hash{bits:128} +> into_field` - append the 128-bit hash of ALL fields as a hex string
+- `user_id ^hash{modulo:16} +> bin` - append a deterministic bin number from `0` to `15`
+`type`:::: must be `string`, `Long`, or `long`, defaults to `Long`, or `string` when `bits` is `128`.
+A `long` coerces a `null` hash to `0`.
+When `string`, the hash is rendered as lower case hex, and a 64-bit hash is the first 16 characters of the 128-bit hash.
+Params:::
+`bits`:::: The hash size, `64` or `128`, defaults to `64`.
+`modulo`:::: Return the hash modulo the given positive number, always from `0` to `modulo - 1`, requires `64` bits.
+When `string`, the bin number is rendered in base-10.
 
 `sourcePath`:: Add the URI of the data currently being processed.
 Def:::

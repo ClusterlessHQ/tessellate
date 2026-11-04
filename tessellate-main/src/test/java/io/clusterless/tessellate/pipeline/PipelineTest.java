@@ -855,6 +855,21 @@ public class PipelineTest {
         baseTransformPartial(input, output, "first+third ^toJson{} +> json", 6);
     }
 
+    @Test
+    void hashPartialSwap(@PathForResource("/data/delimited-header.csv") URI input, @PathForOutput("output") URI output) throws IOException {
+        baseTransformPartial(input, output, "first+third ^hash{} -> hashed", 4);
+    }
+
+    @Test
+    void hashPartialAppend(@PathForResource("/data/delimited-header.csv") URI input, @PathForOutput("output") URI output) throws IOException {
+        baseTransformPartial(input, output, "first ^hash{modulo:16} +> bin|string", 6);
+    }
+
+    @Test
+    void hashAllAppend(@PathForResource("/data/delimited-header.csv") URI input, @PathForOutput("output") URI output) throws IOException {
+        baseTransformPartial(input, output, "^hash{bits:128} +> hashed", 6);
+    }
+
     private static void baseTransformPartial(URI input, URI output, String transform, int numFields) throws IOException {
         PipelineOptions pipelineOptions = new PipelineOptions();
 
