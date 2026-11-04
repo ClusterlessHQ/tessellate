@@ -30,6 +30,7 @@ public class Intrinsics {
         add(new ToJsonIntrinsic());
         add(new FromJsonIntrinsic());
         add(new FormatFieldsIntrinsic());
+        add(new HashIntrinsic());
     }
 
     public static Map<String, IntrinsicBuilder> builders() {
